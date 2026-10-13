@@ -1168,7 +1168,7 @@ const SONG_FX={
   'baile-sobran':{acu:{hp:120,lp:9000,mid:[400,-3],pres:[3500,3],hi:2,cho:.15,rev:.22,dbl:1}},
   'wish-you-were-here':{all:{rev:.16,dbl:1},doce:{hp:90,pres:[3500,1.5]}},
   'no-podras':{cho:{cho:.4,delayS:[.35,.3,.2],rev:.3},dist:{mid:[700,-2],pres:[3000,2],rev:.15,dbl:1},acu:{cho:.15,rev:.2}},
-  'november-rain':{crunch:{drive:5,mid:[800,3],pres:[2500,1],delayS:[.42,.25,.18],rev:.22},neck:{rev:.2},acu:{rev:.18,dbl:1}},
+  'november-rain':{crunch:{drive:7,mid:[800,3],pres:[2500,1.5],delayS:[.42,.25,.18],rev:.22},neck:{rev:.2},acu:{rev:.18,dbl:1}},
   'rayando-el-sol':{cho:{cho:.35,delay:[.75,.3,.2],rev:.25},acu:{cho:.1,rev:.2,dbl:1},crunch:{drive:4,delay:[.5,.25,.15],rev:.2}},
   'tren-al-sur':{doce:{hp:350,lp:11000,mid:[800,-2],pres:[4000,4],hi:3,cho:.1,rev:.2,dbl:1},acu:{cho:.2,delay:[.5,.25,.15],rev:.25},cho:{cho:.45,delayS:[.375,.35,.25],rev:.3}},
   'persiana-americana':{cho:{cho:.35,delay:[.75,.2,.12],rev:.18,dbl:1},crunch:{drive:3,delay:[.75,.3,.18],rev:.2}},
@@ -1294,7 +1294,13 @@ function playGp(g,t,vscale,spb,b){const k=g.tr,ns=g.ns.slice().sort((a,c)=>a.str
     if(old)stopVoice(old,w,strm?.025:.015);
     if(n.dead){const v=voice(n.midi,{when:w,vel:clamp(base*(strm?.3:.75),.06,1),dir:up?'up':'down',mul:strm?.4:.7,bank:mbank,pan,dest:dst,soft:strm&&!orig?.004:0});stopVoice(v,w+.09,.03);GPV[key]=null;return}
     const vv=clamp(base*(chord?.85:1)*(n.hopo?.7:1)*(orig&&n.pm?.8:1)*(orig&&chord?(1.18-i*.05):1),.08,1),bk=n.pm&&!orig?mbank:bank;
-    const v=voice(n.midi,{when:w,vel:vv,dir:up?'up':'down',mul:g.lead?1.05:.85,pan,bank:bk,dest:dst,soft:strm&&!orig?(light?.022:.012):0,detune:flam?(Math.random()-.5)*8:0});GPV[key]=v;
+    const v=voice(n.midi,{when:w,vel:vv,dir:up?'up':'down',mul:g.lead?1.05:.85,pan,bank:bk,dest:dst,soft:n.hopo&&!chord&&newSnd()?.012:strm&&!orig?(light?.022:.012):0,detune:flam?(Math.random()-.5)*8:0});GPV[key]=v;
+    // expresión del solista: bends de la partitura, vibrato (y vibrato natural en notas largas de solo), slides y ligados sin púa
+    if(!chord&&!n.dead&&newSnd()){const durS=Math.max(.05,n.dur*spb),dt=v.src.detune;
+      if(old&&old.slideOut&&old.midi!==n.midi&&Math.abs(old.midi-n.midi)<=12){dt.setValueAtTime((old.midi-n.midi)*100,w);dt.linearRampToValueAtTime(0,w+Math.min(.09,durS*.5))}
+      if(n.bend&&n.bend.length){dt.setValueAtTime(n.bend[0][1],w);n.bend.forEach(([ps,c])=>dt.linearRampToValueAtTime(c,w+.005+ps*durS))}
+      if(n.vib||durS>=.35&&(g.role==='solo'||g.lead||g.mel)){const o=ctx.createOscillator(),og=ctx.createGain();o.frequency.value=n.vib?5.8:5.2;og.gain.setValueAtTime(0,w);og.gain.linearRampToValueAtTime(n.vib?45:24,w+Math.min(.5,durS*.7));o.connect(og).connect(dt);o.start(w+Math.min(.18,durS*.3));o.stop(w+durS+1.2)}
+      v.slideOut=n.slide}
     let len=n.pm?Math.min(orig?.16:.2,n.dur*spb):g.dense&&chord?Math.max(1,n.dur)*spb+.08:Math.max(.06,n.dur*spb*(n.letRing?2.5:1))+.05;if(g.ring&&!n.pm&&!n.dead&&!/dist|crunch/.test(gk))len=Math.max(len,Math.min(3.2,4*spb));   // arpegio: suena hasta que esa cuerda se vuelve a tocarstopVoice(v,w+len,n.pm?.04:.07);
     // 12 cuerdas: las cuatro graves llevan su octava, las dos agudas van dobladas al unísono; chorus: una segunda guitarra apenas desafinada
     const xs=[];if(GT&&GT.twelve)xs.push(n.str<4?[12,.42,.004]:[0,.5,.006]);if(GT&&GT.cho)xs.push([0,.45,.011]);
@@ -2882,7 +2888,7 @@ function gpParseBin(buf){
     const prog=ch[ci]?ch[ci].prog:0,drums=!!(f&1)||ci===9;
     tracks.push({id:i,name,type:drums?'drumKit':prog>=24&&prog<=31?'electricGuitar':prog>=32&&prog<=39?'electricBass':'other',drums,prog,tuningHi:tun,tuning:tun.slice().reverse(),capo,ev:[],last:{}})}
   const tempos=[{bar:0,pos:0,bpm:tempo}];
-  const readBend=()=>{I8();I32();const c=I32();for(let k=0;k<c;k++){I32();I32();BOOL()}};
+  const readBend=()=>{I8();I32();const c=I32(),P=[];for(let k=0;k<c;k++){const ps=I32(),vl=I32();BOOL();P.push([clamp(ps/60,0,1),vl*2])}return P.length?P:null};   // curva del bend: [posición 0-1, cents]
   const readChord=()=>{if(!BOOL()){ibss();if(I32())for(let k=0;k<6;k++)I32();return}
     if(V===3){BOOL();skip(3);for(let k=0;k<5;k++)I32();BOOL();bss(22);for(let k=0;k<3;k++)I32();I32();for(let k=0;k<6;k++)I32();I32();for(let k=0;k<6;k++)I32();for(let k=0;k<7;k++)BOOL();skip(1)}
     else{BOOL();skip(3);U8();U8();U8();I32();I32();BOOL();bss(22);U8();U8();U8();I32();for(let k=0;k<7;k++)I32();U8();skip(15);for(let k=0;k<7;k++)BOOL();skip(1);skip(7);BOOL()}};
@@ -2896,16 +2902,16 @@ function gpParseBin(buf){
       let d=4/(1<<(I8()+2));if(f&1)d*=1.5;if(f&0x20){const tu=I32();const tt={3:[3,2],5:[5,4],6:[6,4],7:[7,4],9:[9,8],10:[10,8],11:[11,8],12:[12,8],13:[13,8]}[tu];if(tt)d*=tt[1]/tt[0]}
       if(f&2)readChord();if(f&4)ibss();let brush=null;if(f&8)brush=readBeatFx();if(f&16)readMix(bi);
       const sf=U8(),notes=[];let vmax=0,ngh=0,nac=0;
-      for(let sn=1;sn<=T.tuningHi.length;sn++){if(!(sf&(1<<(7-sn))))continue;const nf=U8();let type=1,fret=0,pm=false,slide=false,hopo=false,letRing=false,vel=6;
+      for(let sn=1;sn<=T.tuningHi.length;sn++){if(!(sf&(1<<(7-sn))))continue;const nf=U8();let type=1,fret=0,pm=false,slide=false,hopo=false,letRing=false,vel=6,bend=null,vib=false;
         if(nf&0x04)ngh++;if(nf&0x42)nac++;   // nota fantasma (golpe suave, apenas rozado) y nota acentuada
         if(nf&0x20)type=U8();if(nf&1){I8();I8()}if(nf&0x10)vel=I8();vmax=Math.max(vmax,vel);if(nf&0x20){fret=I8();if(fret<0||fret>=100)fret=0}if(nf&0x80){I8();I8()}
-        if(nf&8){if(V===3){const e=U8();hopo=!!(e&2);letRing=!!(e&8);slide=!!(e&4);if(e&1)readBend();if(e&0x10){I8();U8();U8();I8()}}
-          else{const e1=I8(),e2=I8();hopo=!!(e1&2);letRing=!!(e1&8);pm=!!(e2&2);if(e1&1)readBend();if(e1&0x10){I8();U8();U8();I8()}if(e2&4)I8();if(e2&8){I8();slide=true}if(e2&0x10)I8();if(e2&0x20){I8();I8()}}}
-        const str=T.tuningHi.length-sn;notes.push({str,fret,type,dead:type===3,pm,slide,hopo,letRing})}
+        if(nf&8){if(V===3){const e=U8();hopo=!!(e&2);letRing=!!(e&8);slide=!!(e&4);if(e&1)bend=readBend();if(e&0x10){I8();U8();U8();I8()}}
+          else{const e1=I8(),e2=I8();hopo=!!(e1&2);letRing=!!(e1&8);pm=!!(e2&2);vib=!!(e2&0x40);if(e1&1)bend=readBend();if(e1&0x10){I8();U8();U8();I8()}if(e2&4)I8();if(e2&8){I8();slide=true}if(e2&0x10)I8();if(e2&0x20){I8();I8()}}}
+        const str=T.tuningHi.length-sn;notes.push({str,fret,type,dead:type===3,pm,slide,hopo,letRing,bend,vib})}
       if(status!==0&&T.drums&&notes.length)T.ev.push({b:t,d,notes:notes.filter(n=>n.type!==2).map(n=>({midi:n.fret,str:n.str,fret:n.fret,dur:d,dead:false})),dyn:'MF',brush:null});
       if(status!==0&&!T.drums&&notes.length){const ns=[];
         notes.forEach(n=>{if(n.type===2){const l=T.last[n.str];if(l){l.dur+=d;return}}  // ligada: alarga la anterior
-          const o={midi:T.tuningHi[T.tuningHi.length-1-n.str]+n.fret+T.capo,str:n.str,fret:n.fret,dead:n.dead,pm:n.pm,slide:n.slide,hopo:n.hopo,letRing:n.letRing,dur:d,tieO:false,tieD:false};T.last[n.str]=o;ns.push(o)});
+          const o={midi:T.tuningHi[T.tuningHi.length-1-n.str]+n.fret+T.capo,str:n.str,fret:n.fret,dead:n.dead,pm:n.pm,slide:n.slide,hopo:n.hopo,letRing:n.letRing,bend:n.bend,vib:n.vib,dur:d,tieO:false,tieD:false};T.last[n.str]=o;ns.push(o)});
         if(ns.length)T.ev.push({b:t,d,notes:ns,dyn:['MF','PPP','PP','P','MP','MF','F','FF','FFF'][Math.max(0,Math.min(8,vmax))]||'MF',brush,gh:ngh>0&&ngh>=notes.length-1,ac:nac>0})}
       if(status!==0)t+=d}}
   tracks.forEach(T=>{delete T.last;delete T.tuningHi});
@@ -2940,7 +2946,7 @@ function gpParseGP5(buf){
     tracks.push({id:i,name,type:drums?'drumKit':prog>=24&&prog<=31?'electricGuitar':prog>=32&&prog<=39?'electricBass':'other',drums,prog,tuningHi:tun,tuning:tun.slice().reverse(),capo,ev:[],last:{}})}
   skip(V51?1:2);
   const tempos=[{bar:0,pos:0,bpm:tempo}];
-  const readBend=()=>{I8();I32();const c=I32();for(let k=0;k<c;k++){I32();I32();BOOL()}};
+  const readBend=()=>{I8();I32();const c=I32(),P=[];for(let k=0;k<c;k++){const ps=I32(),vl=I32();BOOL();P.push([clamp(ps/60,0,1),vl*2])}return P.length?P:null};   // curva del bend: [posición 0-1, cents]
   const readChord=()=>{if(!BOOL()){ibss();if(I32())for(let k=0;k<6;k++)I32();return}
     BOOL();skip(3);U8();U8();U8();I32();I32();BOOL();bss(22);U8();U8();U8();I32();for(let k=0;k<7;k++)I32();U8();skip(15);for(let k=0;k<7;k++)BOOL();skip(1);skip(7);BOOL()};
   const readBeatFx=()=>{let brush=null;const f1=I8(),f2=I8();if(f1&0x20)I8();if(f2&0x04)readBend();if(f1&0x40){const up=I8(),d=I8();brush=up>0?'Up':d>0?'Down':null}if(f2&0x02)I8();return brush};
@@ -2952,18 +2958,18 @@ function gpParseGP5(buf){
         let d=4/(1<<(I8()+2));if(f&1)d*=1.5;if(f&0x20){const tu=I32();const tt={3:[3,2],5:[5,4],6:[6,4],7:[7,4],9:[9,8],10:[10,8],11:[11,8],12:[12,8],13:[13,8]}[tu];if(tt)d*=tt[1]/tt[0]}
         if(f&2)readChord();if(f&4)ibss();let brush=null;if(f&8)brush=readBeatFx();if(f&16)readMix(bi);
         const sf=U8(),notes=[];let vmax=0,ngh=0,nac=0;
-        for(let sn=1;sn<=7;sn++){if(!(sf&(1<<(7-sn))))continue;const nf=U8();let type=1,fret=0,pm=false,slide=false,hopo=false,letRing=false,vel=6;if(nf&0x04)ngh++;if(nf&0x42)nac++;
+        for(let sn=1;sn<=7;sn++){if(!(sf&(1<<(7-sn))))continue;const nf=U8();let type=1,fret=0,pm=false,slide=false,hopo=false,letRing=false,vel=6,bend=null,vib=false;if(nf&0x04)ngh++;if(nf&0x42)nac++;
           if(nf&0x20)type=U8();if(nf&0x10)vel=I8();if(nf&0x20){fret=I8();if(fret<0||fret>=100)fret=0}if(nf&0x80){I8();I8()}if(nf&0x01)skip(8);U8();
           if(nf&0x04)vel=Math.min(vel,4);
-          if(nf&8){const e1=I8(),e2=I8();hopo=!!(e1&2);letRing=!!(e1&8);pm=!!(e2&2);if(e1&1)readBend();if(e1&0x10)skip(5);if(e2&4)I8();if(e2&8){U8();slide=true}
+          if(nf&8){const e1=I8(),e2=I8();hopo=!!(e1&2);letRing=!!(e1&8);pm=!!(e2&2);vib=!!(e2&0x40);if(e1&1)bend=readBend();if(e1&0x10)skip(5);if(e2&4)I8();if(e2&8){U8();slide=true}
             if(e2&0x10){const ht=I8();if(ht===2)skip(3);else if(ht===3)skip(1)}if(e2&0x20){I8();I8()}}
           vmax=Math.max(vmax,vel);if(sn>T.tuningHi.length)continue;
-          const str=T.tuningHi.length-sn;notes.push({str,fret,type,dead:type===3,pm,slide,hopo,letRing})}
+          const str=T.tuningHi.length-sn;notes.push({str,fret,type,dead:type===3,pm,slide,hopo,letRing,bend,vib})}
         I16()&0x0800&&U8();
         if(status!==0&&T.drums&&notes.length)T.ev.push({b:t,d,notes:notes.filter(n=>n.type!==2).map(n=>({midi:n.fret,str:n.str,fret:n.fret,dur:d,dead:false})),dyn:DY[Math.max(0,Math.min(8,vmax))]||'MF',brush:null,vo});
         if(status!==0&&!T.drums&&notes.length){const ns=[],L=T.last[vo]||(T.last[vo]={});
           notes.forEach(n=>{if(n.type===2){const l=L[n.str];if(l)l.dur+=d;return}
-            const o={midi:T.tuningHi[T.tuningHi.length-1-n.str]+n.fret+T.capo,str:n.str,fret:n.fret,dead:n.dead,pm:n.pm,slide:n.slide,hopo:n.hopo,letRing:n.letRing,dur:d,tieO:false,tieD:false};L[n.str]=o;ns.push(o)});
+            const o={midi:T.tuningHi[T.tuningHi.length-1-n.str]+n.fret+T.capo,str:n.str,fret:n.fret,dead:n.dead,pm:n.pm,slide:n.slide,hopo:n.hopo,letRing:n.letRing,bend:n.bend,vib:n.vib,dur:d,tieO:false,tieD:false};L[n.str]=o;ns.push(o)});
           if(ns.length)T.ev.push({b:t,d,notes:ns,dyn:DY[Math.max(0,Math.min(8,vmax))]||'MF',brush,vo,gh:ngh>0&&ngh>=notes.length-1,ac:nac>0})}
         if(status!==0)t+=d}}U8()}}
   tracks.forEach(T=>{delete T.last;delete T.tuningHi;T.ev.sort((a,b)=>a.b-b.b)});
@@ -3305,7 +3311,7 @@ async function renderSheet(){
       <small class="p" style="margin:0">¿No tienes ese archivo? Pídeselo a Claude, o carga tus Guitar Pro en 📁 Tablaturas.</small></div>`}
   else if(sheet.kind==='more'){
     const row=(k,t,d)=>`<button class="item" data-sheet="${k}"><span class="main"><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
-    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 117</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
+    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 118</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
       <div class="group"><span class="eyebrow">Sonido de la guitarra</span><div class="seg" style="flex-wrap:wrap">${[['orig',{n:'⭐ Como en el disco'}]].concat(Object.entries(GTS)).map(([k,v])=>`<button data-gpsnd="${k}" aria-pressed="${(GTS[S.gpSnd]?S.gpSnd:'orig')===k}">${v.n}</button>`).join('')}</div><small class="p" style="margin:0">"Como en el disco": cada guitarra suena como la de la grabación original.</small></div>
       <div class="group"><span class="eyebrow">Modo</span><div class="seg">${MODES.map(([m,l])=>`<button data-setmode="${m}" aria-pressed="${S.mode===m}">${l}</button>`).join('')}</div></div>`;
   }
