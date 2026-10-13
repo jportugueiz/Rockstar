@@ -76,7 +76,13 @@ body.lefty #app{grid-template-columns:var(--keysw) minmax(0,1fr);grid-template-a
 .songbar i{flex:var(--w) 1 0;border-radius:3px;background:rgba(255,255,255,.16);position:relative;overflow:hidden}
 .songbar i b{position:absolute;left:0;top:0;bottom:0;width:var(--p);background:var(--gold)}
 #nextBtn.goNow{background:#c81e32!important;border-color:#ff5a6a!important;color:#fff!important;box-shadow:0 0 0 3px rgba(255,70,90,.45),0 0 28px rgba(255,40,60,.75)!important;animation:goP .8s ease-in-out infinite}#nextBtn.goNow.wait{animation-duration:.45s}#nextBtn.goNow *{color:#fff!important}@keyframes goP{50%{box-shadow:0 0 0 7px rgba(255,70,90,.15),0 0 40px rgba(255,40,60,.95)}}
-#hrecBtn.on{background:#d8324a!important;animation:hrp 1.2s infinite}@keyframes hrp{50%{opacity:.7}}
+.bandPill{flex:none;height:40px;padding:0 14px 0 10px;margin-right:6px;border-radius:999px;border:1px solid rgba(255,190,110,.6);background:linear-gradient(135deg,#ff6a3d,#e0475e 55%,#b0306a);color:#fff;font:800 15px system-ui,sans-serif;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 16px rgba(224,71,94,.45);white-space:nowrap;cursor:pointer}
+.bandPill .bpIc{font-size:19px;line-height:1}.bandPill .bpDot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.35);box-shadow:inset 0 0 0 1px rgba(255,255,255,.5)}
+.bandPill[aria-pressed="true"]{background:linear-gradient(135deg,#ffb347,#ff6a3d 55%,#e0475e);animation:bpGlow 1.6s ease-in-out infinite}.bandPill[aria-pressed="true"] .bpDot{background:#5cff8a;box-shadow:0 0 8px #5cff8a}
+@keyframes bpGlow{50%{box-shadow:0 4px 24px rgba(255,140,60,.8)}}
+#bandBtn.bandPill[aria-pressed="true"]{background:linear-gradient(135deg,#ffb347,#ff6a3d 55%,#e0475e)}
+.slist{display:flex;flex-direction:column;gap:6px}.slist .folder .slist{margin-top:6px}.card.scard{flex-direction:row;align-items:center;gap:6px;padding:0;border-radius:12px}.card.scard[aria-current="true"]{border-color:var(--gold)}.scard .sopen{flex:1;min-width:0;text-align:left;background:none;border:0;color:inherit;padding:12px 4px 12px 14px;display:flex;flex-direction:column;gap:2px;font:inherit;cursor:pointer}.scard .sopen b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scard .sopen small{opacity:.75}.card.scard .star{position:static;flex:none;padding:10px 12px}.scard .sdel{flex:none;margin-right:8px;padding:6px 10px}
+#hrecBtn[hidden]{display:none!important}#hrecBtn.on{background:#d8324a!important;animation:hrp 1.2s infinite}@keyframes hrp{50%{opacity:.7}}
 .sectoast{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);font-size:clamp(30px,10vh,64px);font-weight:700;color:#f4f1ec;text-shadow:0 2px 14px #000,0 0 4px #000;pointer-events:none;opacity:0;transition:opacity .7s;white-space:nowrap;z-index:2}
 .sectoast.show{opacity:.95;transition:opacity .08s}
 
@@ -239,9 +245,9 @@ select.field{flex:none;padding:7px 8px;font-size:13px}
     </div>
     <div class="center"><div class="bigchord" id="curName">—</div><div class="pos" id="pos"></div><div class="beats" id="beats" hidden></div></div>
     <div class="tools">
-      <button id="folderBtn" aria-label="Mis tablaturas: subir PDF" style="flex:none;height:40px;padding:0 14px;border-radius:999px;background:var(--gold,#e6b867);color:#1a1206;font-weight:800;font-size:14px;white-space:nowrap;margin-right:6px">📁 Tablaturas</button>
-      <button id="bandBtn" class="ib" aria-pressed="false" aria-label="Banda de acompañamiento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M9.5 3h5l4 18h-13z"/><path d="M7.4 15h9.2"/><path d="M12 15l5-9"/></svg></button>
-      <button id="favBtn" class="ib" aria-pressed="false" aria-label="Favorita"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path class="fillme" d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0112 7.3 4.3 4.3 0 0119.5 10c0 5.4-7.5 10-7.5 10z"/></svg></button>
+      <button id="folderBtn" hidden aria-label="Mis tablaturas: subir PDF" style="flex:none;height:40px;padding:0 14px;border-radius:999px;background:var(--gold,#e6b867);color:#1a1206;font-weight:800;font-size:14px;white-space:nowrap;margin-right:6px">📁 Tablaturas</button>
+      <button id="bandBtn" class="bandPill" aria-pressed="false" aria-label="Banda: agregar batería, bajo y teclado"><span class="bpIc">🥁</span><span class="bpTx">Banda</span><span class="bpDot"></span></button>
+      <button id="favBtn" hidden class="ib" aria-pressed="false" aria-label="Favorita"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path class="fillme" d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0112 7.3 4.3 4.3 0 0119.5 10c0 5.4-7.5 10-7.5 10z"/></svg></button>
       <button id="recBtn" class="ib" aria-pressed="false" aria-label="Grabar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle class="dot" cx="12" cy="12" r="5" fill="#e0475e"/></svg></button>
       <button id="micBtn" class="ib" aria-pressed="false" aria-label="Micrófono: cantar" title="Cantar (toca para encender o apagar; mantén para efectos)" style="font-size:19px">🎤</button>
       <button id="moreBtn" class="ib" aria-label="Más opciones"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5.5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="18.5" r="1.7"/></svg></button>
@@ -251,7 +257,7 @@ select.field{flex:none;padding:7px 8px;font-size:13px}
   <div class="board" id="board" aria-label="Cuerdas: rasguea aquí">
     <canvas id="cv"></canvas>
     <button id="soloBtn" type="button" style="position:absolute;right:10px;top:10px;z-index:5;border:0;border-radius:999px;padding:9px 14px;font:700 14px system-ui,sans-serif;background:rgba(232,80,138,.92);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.4)">▶ Tocar sola</button>
-    <button id="hrecBtn" type="button" style="position:absolute;left:10px;top:10px;z-index:5;border:0;border-radius:999px;padding:9px 14px;font:700 14px system-ui,sans-serif;background:rgba(30,26,24,.88);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.4)">⏺ Grabar mano</button>
+    <button id="hrecBtn" type="button" hidden style="position:absolute;left:10px;top:10px;z-index:5;border:0;border-radius:999px;padding:9px 14px;font:700 14px system-ui,sans-serif;background:rgba(30,26,24,.88);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.4)">⏺ Grabar mano</button>
     <div class="calbar" id="calbar" hidden><span id="calTxt"></span><button data-cal="back">Deshacer</button><button data-cal="save" class="on">Guardar</button><button data-cal="cancel">Cancelar</button></div><div class="songbar" id="songbar"></div><div class="sectoast" id="sectoast"></div><div class="hint" id="hint"></div>
   </div>
 
@@ -570,7 +576,7 @@ let leadVoices=[];
 function ensureAudio(){
   if(ctx){if(ctx.state!=='running')ctx.resume();return}
   const AC=window.AudioContext||window.webkitAudioContext;
-  try{ctx=new AC({latencyHint:window.ROCK_PRUEBA?'balanced':'interactive'})}catch(e){ctx=new AC()}setTimeout(()=>{try{ensureBank(bankKind(inst()))}catch(_){}},0);
+  try{ctx=new AC({latencyHint:newEng()?'balanced':'interactive'})}catch(e){ctx=new AC()}setTimeout(()=>{try{ensureBank(bankKind(inst()))}catch(_){}},0);
   buildGraph();buildInstBus();applyFx();setVol();applyBandMix();try{gpBanks(GPS[S.songId])}catch(e){}
   if(ctx.resume)ctx.resume();
   prefetch();
@@ -764,7 +770,7 @@ const LIVE=new Set(),MAXV=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent
 function voice(midi,{when,vel,dir='down',pan=0,mul=1,damp=false,detune=0,dest=null,bank=null,soft=0}){
   const sm=sampleFor(midi,bank,vel),b=sm?sm.b:getBuf(midi),src=ctx.createBufferSource();src.buffer=b;if(sm)src.playbackRate.value=sm.rate;src.detune.value=detune;
   const f=ctx.createBiquadFilter();f.type='lowpass';f.Q.value=.4;f.frequency.value=sm&&sm.real?Math.min(20000,(5000+15000*vel)*(dir==='up'?1.15:1)):(1400+9500*Math.pow(vel,1.5))*(dir==='up'?1.3:1);
-  const g=ctx.createGain(),peak=(.12+.3*vel)*mul*(sm&&sm.gain||1);if(soft){g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(peak,when+.006)}else if(window.ROCK_PRUEBA){g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(peak,when+.002)}else g.gain.setValueAtTime(peak,when);
+  const g=ctx.createGain(),peak=(.12+.3*vel)*mul*(sm&&sm.gain||1);if(soft){g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(peak,when+.006)}else if(newEng()){g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(peak,when+.002)}else g.gain.setValueAtTime(peak,when);
   if(damp)g.gain.setTargetAtTime(0,when+.004,.012);
   else if(S.res<.98)g.gain.setTargetAtTime(0,when+.06,.18+S.res*3.2);
   let out=g;if(ctx.createStereoPanner){const pn=ctx.createStereoPanner();pn.pan.value=pan;g.connect(pn);out=pn}
@@ -773,7 +779,7 @@ function voice(midi,{when,vel,dir='down',pan=0,mul=1,damp=false,detune=0,dest=nu
   const off=soft?Math.min(soft,b.duration*.1):0;src.start(when,off);src.stop(when+(b.duration-off)/(sm?sm.rate:1));
   const v={src,g,f,out,midi,t:when};src.onended=()=>{try{out.disconnect();g.disconnect()}catch(e){}LIVE.delete(v)};
   // límite de voces: un teléfono se ahoga (cortes, ruidos raros, se cuelga) si suenan cientos a la vez; la más antigua se apaga suave
-  LIVE.add(v);if(LIVE.size>MAXV){let old=null;if(window.ROCK_PRUEBA){const nw=ctx.currentTime;for(const x of LIVE){if(x!==v&&!x.cut&&x.rel!=null&&x.rel<=nw+.01){old=x;break}}}if(!old)for(const x of LIVE){if(x!==v&&!x.cut&&!(window.ROCK_PRUEBA&&x.t>ctx.currentTime)){old=x;break}}if(old){old.cut=1;stopVoice(old,Math.max(ctx.currentTime,old.t)+.005,.03);LIVE.delete(old)}}
+  LIVE.add(v);if(LIVE.size>MAXV){let old=null;if(newEng()){const nw=ctx.currentTime;for(const x of LIVE){if(x!==v&&!x.cut&&x.rel!=null&&x.rel<=nw+.01){old=x;break}}}if(!old)for(const x of LIVE){if(x!==v&&!x.cut&&!(newEng()&&x.t>ctx.currentTime)){old=x;break}}if(old){old.cut=1;stopVoice(old,Math.max(ctx.currentTime,old.t)+.005,.03);LIVE.delete(old)}}
   return v;
 }
 function stopVoice(v,when,tc=.02){if(!v)return;v.rel=when;const p=v.g.gain;if(p.cancelAndHoldAtTime)p.cancelAndHoldAtTime(when);else p.cancelScheduledValues(when);p.setTargetAtTime(0,when,tc);try{v.src.stop(when+tc*10)}catch(e){}}
@@ -1446,8 +1452,96 @@ function mbVamp(dir,vel){const L=mbLoop();if(!L)return;const E=STEP.ev,now=ctx.c
   else{const it=seq.items[idx]||seq.items[UN()[MB.sec].end-1];if(it&&it.chord){const c=it.chord;fireEv([0,up?'TOP4':'ALL',up?'u':'d',v],c,roles(c),now)}}
   stage.flash=Math.min(1,stage.flash+.3)}
 function vampStop(){if(MB.vampTr==null||!ctx)return;const t=ctx.currentTime+.03,p=MB.vampTr+':';Object.keys(GPV).forEach(k=>{if(k.startsWith(p)&&GPV[k]){stopVoice(GPV[k],t,.12);GPV[k]=null}});MB.vampTr=null}
+function newEng(){return S.motor!=='old'}
+/* ═════════ Forma de tocar «nueva» (por defecto; en Ajustes se puede volver a la anterior) ═════════
+   La canción va con su reloj a su velocidad real mientras tu mano se mueva (si paras ~1,5 tiempos, espera).
+   A · Guitar Hero/Rock Band: la guitarra de la partitura SIEMPRE suena a su tiempo; tu mano la «abre».
+       Pasada cerca (hasta 0,17 s antes) = suena fuerte, con tu fuerza. Sin pasada = suena bajito.
+       Notas muy seguidas (menos de 1/3 de tiempo entre ellas, como los ligados de Rock Band) siguen a la primera: una pasada toca la frase.
+   B · Wii Music: cada nota tiene su espacio (de una nota a la siguiente). La primera pasada en ese espacio la toca:
+       a tiempo si llegaste antes, o en el momento de tu pasada si llegaste un poco tarde. Sin pasada, ese espacio queda en silencio.
+       Pasadas extra: un roce apagado de cuerdas (sin cortar lo que suena).
+   Sonido: ataques con rampa corta (sin clics), el roce nunca corta las cuerdas que suenan, el límite de voces
+   apaga primero las que ya se están apagando, y el reloj corre en un hilo aparte (no se atrasa si el teléfono se ocupa). */
+const CL={st:[],sv:[],base:0,push:1,pend:null,dead:0,run:{},worker:null,ticker:null};
+function clMode(){return 'A'}
+function clSpeed(){return S.clSpeed||1}
+function clTe(e){return MB.t0+(e.b-MB.p0)/MB.rate}
+function clIOI(){const a=CL.st,d=[];for(let i=Math.max(1,a.length-9);i<a.length;i++){const x=a[i]-a[i-1];if(x<1)d.push(x)}if(!d.length)return .25;d.sort((x,y)=>x-y);return d[d.length>>1]}
+function clSingle(e){const g=e.gp;return !!g&&(g.ns.length<=2||g.role==='solo'||g.role==='mel'||g.role==='lead')}
+// reloj en un hilo aparte: el temporizador de la página se atrasa cuando el teléfono está ocupado; el de un Worker no
+function clStartTicker(){clearInterval(MB.timer);MB.timer=null;
+  try{if(!CL.worker){const u=URL.createObjectURL(new Blob(['let t=null;onmessage=e=>{clearInterval(t);if(e.data>0)t=setInterval(()=>postMessage(0),e.data)}'],{type:'text/javascript'}));CL.worker=new Worker(u);CL.worker.onmessage=()=>clTick()}
+    CL.worker.postMessage(8);CL.ticker='w'}catch(e){CL.ticker=null;MB.timer=setInterval(clTick,8)}}
+function clStopTicker(){try{CL.worker&&CL.worker.postMessage(0)}catch(e){}clearInterval(MB.timer)}
+// roce: la mano pasa por las cuerdas agudas apagadas; voces aparte, NO corta las cuerdas que están sonando
+function clRoce(dir,vel,now){const E=STEP.ev,pos=mbPosAt(now);
+  for(let j=Math.min(E.length,MB.ei)-1;j>=0&&j>MB.ei-60;j--){const x=E[j];if(x.band||!x.gp)continue;if(pos-x.b>2.5)return;if(clSingle(x))return;
+    const g=x.gp,orig=gpOrig(),gk=GTS[S.gpSnd]?S.gpSnd:GTS[g.snd]?g.snd:'strat',GT=orig?GTS[gk]:null,mb=orig?GT.m:gpSnd().mute,dst=orig&&A.gpBus?rigIn(gk,g.tr):null;
+    const ns=g.ns.slice().sort((a,c)=>c.midi-a.midi).slice(0,3),up=dir==='up';(up?ns:ns.slice().reverse()).forEach((n,i)=>{
+      const v=voice(n.midi,{when:now+.003+i*.006,vel:clamp(.18+.22*(vel==null?.6:vel),.12,.45),dir,mul:.35,bank:mb,dest:dst,pan:g.pan||-.1,soft:.002});stopVoice(v,now+.07+i*.006,.02)});return}}
+function clPlay(e,t,v){playEv(e,t,v,1/MB.rate)}
+function clPass(vel,dir){
+  ensureAudio();if(seq.type!=='chords'||!seq.items.length)return;stepBuild();const E=STEP.ev;if(!E.length)return;
+  const now=ctx.currentTime;if(now-MB.last<.035)return;
+  if(MB.hold&&idx===MB.idx){if(MB.go&&loopOn()&&MB.sec<UN().length-1){vampStop();MB.hold=false;MB.go=false;MB.sec++;if(S.auto)flashMsg('▶ '+UN()[MB.sec].name);render()}
+    else if(loopOn()){MB.last=now;mbVamp(dir,vel);seenHint();return}else MB.hold=false}
+  if(MB.key!==STEP.key){MB.key=STEP.key;mbSeek(MB.pos)}
+  if(idx!==MB.idx){MB.hold=false;MB.on=false;clStopTicker();const e0=STEP.ev[STEP.st[idx]];mbSeek(MB.seekB!=null?MB.seekB:STEP.cum&&STEP.cum[idx]!=null?STEP.cum[idx]:e0?Math.floor(e0.b):0);MB.limit=MB.pos;MB.idx=idx;MB.sec=MB.seekB!=null?MB.sec:unIdx(idx);MB.seekB=null;MB.go=false}
+  if(MB.sec==null)MB.sec=unIdx(idx);
+  MB.last=now;const v=vel==null?.7:vel;MB.vel=MB.vel*.5+v*.5;curVel=clamp(.45+.6*v,.4,1);
+  CL.st.push(now);CL.sv.push(v);if(CL.st.length>40){CL.st.shift();CL.sv.shift()}
+  // «te vuelves loco tocando»: si tu mano va bastante más rápida y fuerte que tu ritmo normal, la canción se apura un poco (hasta +12 %);
+  // si te calmas, vuelve sola a su velocidad. Tu ritmo normal se aprende despacio (unos 15 s).
+  {const a=CL.st,n=a.length;if(n>=2){const d=a[n-1]-a[n-2];if(d<.6){const al=1-Math.exp(-d/15);CL.base=CL.base?CL.base*(1-al)+d*al:d}}
+    if(n>=7&&CL.base){const ds=[];for(let i=n-6;i<n;i++){const x=a[i]-a[i-1];if(x<.6)ds.push(x)}
+      if(ds.length>=4){ds.sort((x,y)=>x-y);const sh=ds[ds.length>>1],vr=CL.sv.slice(-6).reduce((x,y)=>x+y,0)/6,vb=CL.sv.reduce((x,y)=>x+y,0)/CL.sv.length,
+        en=(CL.base/sh)*Math.sqrt(Math.max(.5,vr/Math.max(.2,vb))),tg=1+(en>1.12?Math.min(.12,(en-1.12)*.4):en<.8?Math.max(-.05,(en-.8)*.3):0);CL.push=CL.push*.9+tg*.1}}}
+  const rate=mbOrig()*clSpeed()*CL.push;
+  if(!MB.on){// el reloj estaba detenido: parte aquí; si viene un silencio corto, salta a la próxima nota para que tu pasada suene al tiro
+    let j=MB.ei;while(j<E.length&&E[j].band)j++;const nx=E[j],L=mbLoop();
+    if(nx&&nx.b>MB.pos&&nx.b-MB.pos<4&&!(L&&nx.b>=L.b-1e-6)){MB.pos=nx.b;mbSeek0(nx.b)}
+    MB.on=true;MB.p0=MB.pos;MB.t0=now+.004;MB.rate=rate;CL.pend=null;CL.run={};CL.used=-1;clStartTicker()}
+  else if(Math.abs(MB.rate-rate)>1e-6)mbAnchor(now,rate);
+  CL.dead=now+Math.max(.6,1.5/MB.rate);
+  if(clMode()==='B'){// Wii: si hay un espacio esperando tu pasada, lo tocas ahora; si no, y este espacio ya sonó, es una pasada extra (roce)
+    if(CL.pend&&now<=CL.pend.until){CL.pend.evs.forEach(e=>clPlay(e,now+.002,.8+.3*MB.vel));CL.used=CL.pend.area;CL.pend=null}
+    else{let j=MB.ei;while(j<E.length&&E[j].band)j++;const nx=E[j];if(!(nx&&clTe(nx)<=now+.12))clRoce(dir,v,now)}}
+  else{// Guitar Hero: si la frase que suena se te pasó hace un instante, tu pasada la abre desde aquí
+    Object.values(CL.run).forEach(r=>{if(!r.hit&&now-r.t<=.12)r.hit=true})}
+  clTick();seenHint();
+}
+function clTick(){
+  if(!MB.on||!ctx)return;const now=ctx.currentTime,E=STEP.ev,mode=clMode();
+  if(now>CL.dead){MB.pos=mbPosAt(now);MB.on=false;clStopTicker();MB.limit=MB.pos;CL.pend=null;return}   // paraste la mano: la canción espera aquí
+  if(CL.pend&&now>CL.pend.until)CL.pend=null;   // B: nadie tocó ese espacio: queda en silencio
+  const ioi=clIOI(),moving=now-(CL.st[CL.st.length-1]||-9)<Math.min(.4,1.6*ioi);
+  for(let guard=0;guard<400&&MB.ei<E.length;guard++){const e=E[MB.ei],te=clTe(e);if(te>now+.012)break;
+    const L=mbLoop();
+    if(L&&e.b>=L.b-1e-6){
+      if(MB.go&&MB.sec<UN().length-1){MB.go=false;MB.sec++;const nx=UN()[MB.sec];if(S.auto)flashMsg('▶ '+nx.name);render();continue}
+      MB.pos=L.b;MB.on=false;clStopTicker();MB.hold=true;CL.pend=null;render();return}   // fin de la parte (sin Auto): espera con el último acorde
+    MB.ei++;const t=Math.max(now,te)+.001;
+    if(e.band){clPlay(e,t,.8+.3*MB.vel);continue}
+    const near=CL.st.some(s=>s>=te-.17&&s<=te+.012),tr=e.gp?e.gp.tr:'x',r=CL.run[tr],cont=r&&e.b-r.b<.354;   // .354 tiempo = 170/480 (umbral de ligado de Rock Band)
+    if(mode==='A'){
+      let sv=MB.vel;for(let k=CL.st.length-1;k>=0;k--){if(CL.st[k]<=te+.012&&CL.st[k]>=te-.17){sv=CL.sv[k];break}if(CL.st[k]<te-.17)break}
+      const hit=near||(cont&&r.hit)||moving;if(!cont||!r)CL.run[tr]={b:e.b,t:te,hit};else{r.b=e.b;r.t=te;if(hit)r.hit=true}
+      clPlay(e,t,hit?.72+.42*sv:.34)}
+    else{// B · Wii: espacio = de esta nota a la siguiente
+      const area=e.b;if(cont&&r&&r.hit){r.b=e.b;clPlay(e,t,.8+.3*MB.vel)}           // ligado dentro de una frase que tocaste: sigue
+      else if(near&&CL.used!==area){CL.used=area;CL.run[tr]={b:e.b,hit:true};clPlay(e,t,.8+.3*MB.vel)}
+      else{CL.run[tr]={b:e.b,hit:false};let nb=null;for(let j=MB.ei;j<E.length;j++)if(!E[j].band&&E[j].b>e.b+1e-6){nb=E[j].b;break}
+        const until=Math.min(te+.6,nb!=null?MB.t0+(nb-MB.p0)/MB.rate:te+.6);
+        if(CL.pend&&CL.pend.area===area)CL.pend.evs.push(e);else CL.pend={area,evs:[e],until}}}
+    if(STEP.ev[MB.ei]&&STEP.ev[MB.ei].ii!==e.ii)animAt(t,()=>{if(idx!==e.ii){idx=e.ii;MB.idx=idx;render()}})}
+  if(MB.ei>=E.length&&!mbLoop()){MB.on=false;clStopTicker();mbSeek(0);MB.limit=0;idx=0;MB.idx=0;MB.sec=0;flashMsg('¡Fin de la canción! Vuelve a empezar');render()}
+}
+// iPhone: si Safari deja el audio «interrumpido» al volver a la app, lo despierta
+document.addEventListener('visibilitychange',()=>{try{if(document.visibilityState==='visible'&&ctx&&ctx.state!=='running'){ctx.suspend&&ctx.suspend().catch(()=>{});setTimeout(()=>ctx.resume&&ctx.resume(),60)}}catch(e){}});
+
 function mbSeek0(beat){const E=STEP.ev;const j=E.findIndex(e=>e.b>=beat-1e-6);MB.ei=j<0?E.length:j}
-function easyStroke(dir,vel,gap){diagMark(dir);if(HREC.on){hrecStroke(dir,vel,gap);if(HREC.mode==='sigue'){stage.flash=Math.min(1,stage.flash+.3);try{navigator.vibrate&&navigator.vibrate(6)}catch(_){}return}}if(origActive()){origStroke(dir,vel);return}if(stepOn()){if(cond.on)condStop();if(DEMO.on)demoHand();(window.ROCK_PRUEBA&&typeof clPass==='function'?clPass:mbPass)(vel,dir);return}if(teach.on&&ctx){const t=ctx.currentTime;if(t>=teach.t0-teach.beat*.3&&t<teach.end)teach.hits.push({t,dir,vel:vel==null?.7:vel});strum(dir,vel==null?.7:vel);return}curVel=vel==null?.72:vel;curGap=gap==null?null:gap;try{navigator.vibrate&&navigator.vibrate(Math.round(6+curVel*10))}catch(_){}if(dir==='up'){playEasyUp();return}condTap()}
+function easyStroke(dir,vel,gap){diagMark(dir);if(HREC.on){hrecStroke(dir,vel,gap);if(HREC.mode==='sigue'){stage.flash=Math.min(1,stage.flash+.3);try{navigator.vibrate&&navigator.vibrate(6)}catch(_){}return}}if(origActive()){origStroke(dir,vel);return}if(stepOn()){if(cond.on)condStop();if(DEMO.on)demoHand();(newEng()?clPass:mbPass)(vel,dir);return}if(teach.on&&ctx){const t=ctx.currentTime;if(t>=teach.t0-teach.beat*.3&&t<teach.end)teach.hits.push({t,dir,vel:vel==null?.7:vel});strum(dir,vel==null?.7:vel);return}curVel=vel==null?.72:vel;curGap=gap==null?null:gap;try{navigator.vibrate&&navigator.vibrate(Math.round(6+curVel*10))}catch(_){}if(dir==='up'){playEasyUp();return}condTap()}
 // velocidad del gesto → fuerza y separación entre cuerdas
 function strokeFeel(dy,dt){if(HREC.on)HREC.g={dy,dt};const Hh=Math.max(120,H||300),v=Math.abs(dy)/Math.max(4,dt)*1000/Hh;return{vel:clamp(.28+(v-1.2)*.075,.25,1),gap:clamp((1/6)/Math.max(.5,v),.002,.045)}}
 /* Director: tus golpes hacia abajo solo ponen en marcha la canción y le dan el tempo.
@@ -3018,29 +3112,28 @@ async function renderSheet(){
   const body=$('#sheetBody');$('#sheetTitle').textContent=TITLES[sheet.kind]||'';
   if(sheet.kind==='songs'){
     const hadFocus=document.activeElement&&document.activeElement.id==='songQ';
-    const songs=allSongs().filter(x=>{const q=sheet.q.toLowerCase();if(q&&!(x.title+' '+x.artist).toLowerCase().includes(q))return false;
-      if(sheet.filter==='solos')return x.zone==='solos';if(sheet.filter==='fav')return favs.has(x.id);if(sheet.filter==='todas'&&x.zone==='solos')return false;if(sheet.filter==='mine')return !!x.custom;const L2=lists.find(l=>l.id===sheet.filter);if(L2)return L2.songs.includes(x.id);return true});
-    const songCard=x=>{const r=resume[x.id];return `<div class="card" aria-current="${x.id===S.songId&&S.mode!=='libre'}">
-        <b>${esc(x.title)}</b><small>${esc(x.artist)}${x.bpm?` · ${x.bpm} bpm`:''}${x.zone==='solos'&&!x.original&&!x.imported?' · práctica al estilo, no es el solo original':''}${x.imported?' · cargado por ti':''}</small>
-        <span class="tags"><span class="tag">${esc(KIND_LABEL[(INSTRUMENTS.find(i=>i.id===x.inst)||{}).kind]||'Guitarra')}</span>${x.gp&&!x.needGp?'<span class="tag">✓ Archivo cargado</span>':''}${x.needGp?`<span class="tag">${gpHas(x.id)?'✓ Archivo cargado':'Falta su archivo .gp'}</span>`:''}${x.imported?'<span class="tag">Importado</span>':x.zone==='solos'&&!x.original?'<span class="tag">Solo histórico</span>':x.solo?'<span class="tag">Solo</span>':x.riff?'<span class="tag">Melodía/riff</span>':''}${x.real?'<span class="tag">Acordes completos</span>':''}${x.timeSig===3?'<span class="tag">3/4</span>':''}${x.original?'<span class="tag">Original</span>':''}</span>
+    if(!['todas','art','fav','solos'].includes(sheet.filter)&&!lists.some(l=>l.id===sheet.filter))sheet.filter='todas';
+    const cmp=(a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}),q=sheet.q.toLowerCase();
+    const songs=allSongs().filter(x=>{if(q&&!(x.title+' '+x.artist).toLowerCase().includes(q))return false;
+      if(sheet.filter==='solos')return x.zone==='solos';if(sheet.filter==='fav')return favs.has(x.id);const L2=lists.find(l=>l.id===sheet.filter);if(L2)return L2.songs.includes(x.id);
+      return x.zone!=='solos'||!!q}).sort((a,b)=>cmp(a.title,b.title));
+    // tarjeta simple: nombre, artista, ✓ si tiene su partitura; tocar la tarjeta abre la canción
+    const ready=x=>gpHas(x.id)||x.gp&&!x.needGp;
+    const songCard=x=>`<div class="card scard" aria-current="${x.id===S.songId&&S.mode!=='libre'}">
+        <button class="sopen" data-open="${x.id}"><b>${esc(x.title)}</b><small>${esc(x.artist||'')}${ready(x)?' · <span style="color:var(--gold)">✓ partitura</span>':x.needGp?' · falta su archivo':''}</small></button>
         <button class="star" data-fav="${x.id}" aria-pressed="${favs.has(x.id)}" aria-label="Favorita">★</button>
-        <div class="inline"><button class="btn playbtn" data-open="${x.id}">Tocar</button>${x.custom?`<button class="btn quiet playbtn" data-delsong="${x.id}">Borrar</button>`:''}${r&&(r.c||r.n)?`<button class="btn quiet playbtn" data-resume="${x.id}">Continuar</button>`:''}
-        ${lists.length?`<select class="field" data-addlist="${x.id}" aria-label="Añadir a lista"><option value="">+ Lista</option>${lists.map(l=>`<option value="${l.id}">${l.songs.includes(x.id)?'✓ ':''}${esc(l.name)}</option>`).join('')}</select>`:''}</div></div>`};
+        ${x.custom?`<button class="btn quiet sdel" data-delsong="${x.id}" aria-label="Borrar">Borrar</button>`:''}</div>`;
+    // carpetas por artista: la app las arma sola cuando un artista tiene 2 canciones o más
+    const artists=()=>{const by=new Map();songs.forEach(x=>{const k=gpNorm(x.artist||'');if(!k)return;if(!by.has(k))by.set(k,{name:x.artist,L:[]});by.get(k).L.push(x)});
+      const F=[...by.entries()].filter(([k,v])=>v.L.length>=2).sort((a,b)=>cmp(a[1].name,b[1].name));
+      if(!F.length)return '<div class="empty">Cuando tengas 2 canciones o más de un mismo artista, aquí aparece su carpeta.</div>';
+      return F.map(([k,v])=>`<details class="folder" data-art="${esc(k)}" ${(sheet.openArt||{})[k]?'open':''}><summary>📁 ${esc(v.name)} <small>(${v.L.length})</small></summary><div class="slist">${v.L.map(songCard).join('')}</div></details>`).join('')};
+    const tab=(f,l)=>`<button data-filter="${f}" aria-pressed="${sheet.filter===f}">${l}</button>`;
     body.innerHTML=`
-      <button class="btn big" data-sheet="orig" style="width:100%;font-size:20px;padding:16px">🎵 TOCAR CON LA CANCIÓN ORIGINAL (MP3)</button>
-      <button class="btn quiet" data-sheet="install" style="width:100%">📲 Instalar en mi teléfono</button>
-      <button class="btn quiet" data-sheet="ses" style="width:100%">👥 Tocar con amigos · elegir instrumento</button>
-      <button class="btn quiet" data-sheet="folder" style="width:100%">📁 Subir mis tablaturas</button>
-      <input id="songQ" class="field" placeholder="Buscar por canción o artista" value="${esc(sheet.q)}" aria-label="Buscar canción">
-      <div class="seg" role="group" aria-label="Filtro"><button data-filter="todas" aria-pressed="${sheet.filter==='todas'}">Canciones</button><button data-filter="solos" aria-pressed="${sheet.filter==='solos'}">Solos históricos</button><button data-filter="fav" aria-pressed="${sheet.filter==='fav'}">Favoritas</button><button data-filter="mine" aria-pressed="${sheet.filter==='mine'}">Mis progresiones</button>${lists.map(l=>`<button data-filter="${l.id}" aria-pressed="${sheet.filter===l.id}">${esc(l.name)}</button>`).join('')}</div>
-      ${sheet.filter==='solos'?'<p class="p"><b>Solos históricos.</b> Rasgueas el pulso y el solo sale a tu tiempo. Los de la lista son solos de práctica originales con el estilo de cada canción. Para tocar un solo tal como es, cárgalo tú desde una tablatura.</p><div class="inline"><button class="btn big" data-sheet="folder" style="flex:1">📁 Mis tablaturas: subir PDF</button><button class="btn quiet" data-sheet="import">Pegar una tablatura</button></div>':''}<div class="cards">${(()=>{if(!songs.length)return '<div class="empty">No hay canciones con ese filtro.</div>';if(sheet.q)return songs.map(songCard).join('');
-        const by=new Map();songs.forEach(x=>{const k=gpNorm(x.artist||'');if(!by.has(k))by.set(k,[]);by.get(k).push(x)});const done=new Set();let h='';
-        songs.forEach(x=>{const k=gpNorm(x.artist||''),L=by.get(k);if(done.has(k))return;done.add(k);
-          if(L.length<2||!k){h+=L.map(songCard).join('');return}
-          h+=`<details class="folder" data-art="${esc(k)}" ${(sheet.openArt||{})[k]?'open':''}><summary>📁 ${esc(x.artist)} <small>(${L.length})</small></summary><div class="cards">${L.map(songCard).join('')}</div></details>`});return h})()}</div>
-      <button class="btn quiet" data-sheet="folder">📁 Mis tablaturas: subir PDF de tablaturas</button>
-      <div class="group"><span class="eyebrow">Mis listas</span><div class="save"><input id="listName" class="field" placeholder="Nombre de una nueva lista"><button class="btn quiet" data-act="newlist">Crear lista</button></div></div>
-      <p class="p">Las canciones traen sus acordes y su estructura completa, sin letra: tú la cantas. La duración de cada acorde es aproximada. Los riffs y solos son originales de práctica, no los de la grabación. Para crear tu propia progresión usa el modo Libre.</p>`;
+      <input id="songQ" class="field" placeholder="Buscar canción o artista" value="${esc(sheet.q)}" aria-label="Buscar canción">
+      <div class="seg" role="group" aria-label="Ver">${tab('todas','Canciones')}${tab('art','Artistas')}${tab('fav','★ Favoritas')}${tab('solos','Solos')}${lists.map(l=>tab(l.id,esc(l.name))).join('')}</div>
+      <div class="slist">${sheet.filter==='art'&&!q?artists():songs.length?songs.map(songCard).join(''):`<div class="empty">${sheet.filter==='fav'?'Toca la ★ de una canción para tenerla aquí.':'No hay canciones con ese nombre.'}</div>`}</div>
+      <button class="btn quiet" data-sheet="folder" style="width:100%">📁 Cargar más canciones</button>`;
     if(hadFocus){const q=$('#songQ');q.focus();q.setSelectionRange(q.value.length,q.value.length)}
   }
   else if(sheet.kind==='orig'){
@@ -3182,14 +3275,15 @@ async function renderSheet(){
       <small class="p" style="margin:0">¿No tienes ese archivo? Pídeselo a Claude, o carga tus Guitar Pro en 📁 Tablaturas.</small></div>`}
   else if(sheet.kind==='more'){
     const row=(k,t,d)=>`<button class="item" data-sheet="${k}"><span class="main"><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
-    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 110</div><div class="list">${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g')+' · invita amigos a tocar')}${row('songs','Cancionero','Elegir la canción que vas a tocar')}${row('band','Banda de acompañamiento','Batería, bajo, teclado y guitarra guía')}${row('fx','Efectos',fxLabel())}${row('inst','Guitarras',inst().name)}${row('folder','Mis tablaturas','Sube tus PDF de tablaturas y la app los carga sola')}${row('recs','Grabaciones','Escuchar lo que grabaste')}${row('settings','Ajustes','Mano, volumen, resonancia y latencia')}</div>
-      <div class="group"><span class="eyebrow">🎸 Sonido de la guitarra (partitura)</span><div class="seg" style="flex-wrap:wrap">${[['orig',{n:'⭐ Como en el disco'}]].concat(Object.entries(GTS),Object.entries(GPSND).map(([k,v])=>[k,{n:v.n+' (antigua)'}])).map(([k,v])=>`<button data-gpsnd="${k}" aria-pressed="${(S.gpSnd||'orig')===k}">${v.n}</button>`).join('')}</div><small class="p" style="margin:0">"Como en el disco": cada guitarra de la partitura suena con la guitarra que se usó en la grabación original. Las demás ponen esa guitarra en todas las pistas.</small></div>
-      <button class="btn quiet" data-act="diag" style="width:100%;margin-top:10px">🎙 Grabar una prueba de 30 s para Claude</button>
+    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 111</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
+      <div class="group"><span class="eyebrow">Sonido de la guitarra</span><div class="seg" style="flex-wrap:wrap">${[['orig',{n:'⭐ Como en el disco'}]].concat(Object.entries(GTS)).map(([k,v])=>`<button data-gpsnd="${k}" aria-pressed="${(GTS[S.gpSnd]?S.gpSnd:'orig')===k}">${v.n}</button>`).join('')}</div><small class="p" style="margin:0">"Como en el disco": cada guitarra suena como la de la grabación original.</small></div>
       <div class="group"><span class="eyebrow">Modo</span><div class="seg">${MODES.map(([m,l])=>`<button data-setmode="${m}" aria-pressed="${S.mode===m}">${l}</button>`).join('')}</div></div>`;
   }
   else if(sheet.kind==='settings'){
     const bl=ctx?((ctx.baseLatency||0)*1000).toFixed(1):'—',ol=ctx&&ctx.outputLatency?(ctx.outputLatency*1000).toFixed(1):'—';
-    body.innerHTML=`<div class="group"><span class="eyebrow">Mano</span><div class="seg"><button data-hand="auto" aria-pressed="${S.hand==='auto'}">Automático<small>Según cómo gires el teléfono</small></button><button data-hand="right" aria-pressed="${S.hand==='right'}">Teclas a la derecha</button><button data-hand="left" aria-pressed="${S.hand==='left'}">Teclas a la izquierda</button></div>
+    body.innerHTML=`<div class="group"><span class="eyebrow">Forma de tocar</span><div class="seg"><button data-motor="new" aria-pressed="${newEng()}">Nueva<small>La canción va a su tiempo y tu mano la hace sonar</small></button><button data-motor="old" aria-pressed="${!newEng()}">Anterior<small>Cada pasada empuja la canción</small></button></div>
+      <p class="p">Nueva: mientras rasguees, la guitarra suena a su tiempo y con tu fuerza; si te vuelves loco tocando, se apura un poco; si paras, te espera. Si no te gusta, vuelve a la anterior aquí.</p></div>
+    <div class="group"><span class="eyebrow">Mano</span><div class="seg"><button data-hand="auto" aria-pressed="${S.hand==='auto'}">Automático<small>Según cómo gires el teléfono</small></button><button data-hand="right" aria-pressed="${S.hand==='right'}">Teclas a la derecha</button><button data-hand="left" aria-pressed="${S.hand==='left'}">Teclas a la izquierda</button></div>
       <p class="p">En automático, al dar vuelta el teléfono las teclas de acorde y el diapasón se pasan al otro costado. Ahora están a la ${isLefty()?'izquierda':'derecha'}.</p></div>
     <div class="group"><span class="eyebrow">Sonido</span><div class="seg"><button data-samples="1" aria-pressed="${S.samples!==false}">Guitarra grabada<small>${(()=>{const B=banks[bankKind(inst())];return S.samples===false?'Apagada':!B?'Se carga al tocar':B.ready?'Lista':B.fail>10?'No se pudo descargar':'Descargando…'})()}</small></button><button data-samples="0" aria-pressed="${S.samples===false}">Sintetizada<small>No necesita internet</small></button></div>
       <p class="p">Notas: Basic Pitch de Spotify (Apache-2.0). Muestras de guitarra: Musyng Kite y FatBoy (CC BY-SA 3.0) y FluidR3 GM (CC BY 3.0), vía midi-js-soundfonts de Benjamin Gleitzman. Batería SM Drums (dominio público), bajo Growlybass de Karoryfer (CC0), piano Splendid Grand de Akai (dominio público). Guitarras grabadas (CC0, dominio público): Shinyguitar y Black And Green Guitars de Karoryfer Lecolds (D. Smolken, Brian Wood), FreePats FSBS Electric Guitar y FreePats Spanish Classical Guitar; la guitarra flamenca (rumba), sus apagados y el golpe de caja están hechos a partir de esa misma guitarra (CC0).</p></div>
@@ -3201,7 +3295,8 @@ async function renderSheet(){
       <span>Proceso del último toque</span><b>${lastLat?lastLat.proc.toFixed(1)+' ms':'toca las cuerdas'}</b>
       <span>Total estimado</span><b>${lastLat?(lastLat.proc+lastLat.out).toFixed(1)+' ms':'—'}</b></div>
       <p class="p">El objetivo es quedar bajo 20 ms. Los audífonos Bluetooth suelen sumar más de 100 ms; para tocar, mejor con cable o el parlante del teléfono.</p></div>
-    <div class="group"><span class="eyebrow">Cómo se toca</span><p class="p">Las teclas grandes cambian el acorde sin sonar. Desliza sobre las cuerdas para rasguear; la velocidad del gesto marca la fuerza. Un toque corto da un golpe y dejar el dedo quieto apaga las cuerdas. En Punteo cada toque es la nota siguiente, a tu tiempo. Teclado: ← → acordes, espacio rasguea, ↑ hacia arriba, M apaga.</p><p class="p">En Punteo, <b>Auto</b> hace que el solo salga al pulso: cada golpe hacia abajo toca un tiempo completo del solo, con sus notas repartidas según tu velocidad. Con <b>Auto</b> encendido en los modos de acordes basta con rasguear hacia abajo al ritmo, o tocar la pantalla: la app toca la parte de guitarra que corresponde (rasgueo completo, solo algunas cuerdas, arpegio o bajo, y en las partes de solo, únicamente las notas del solo) repartida según tu velocidad, y cambia de acorde sola. Sin Auto, suenan exactamente las cuerdas que cruzas. Detalle del conteo: cada golpe hacia abajo que cruza al menos tres cuerdas cuenta un tiempo, y al completar los tiempos del acorde el siguiente golpe ya suena con el acorde nuevo. Tú pones la velocidad; si paras, la canción espera. Al final se detiene.</p></div>
+    <div class="group"><span class="eyebrow">Cómo se toca</span><p class="p">Las teclas grandes cambian el acorde sin sonar. Desliza sobre las cuerdas para rasguear; la velocidad del gesto marca la fuerza. Un toque sin deslizar no suena: hay que rasguear. En Punteo cada toque es la nota siguiente, a tu tiempo. Teclado: ← → acordes, espacio rasguea, ↑ hacia arriba, M apaga.</p><p class="p">En Punteo, <b>Auto</b> hace que el solo salga al pulso: cada golpe hacia abajo toca un tiempo completo del solo, con sus notas repartidas según tu velocidad. Con <b>Auto</b> encendido en los modos de acordes basta con rasguear hacia abajo al ritmo, o tocar la pantalla: la app toca la parte de guitarra que corresponde (rasgueo completo, solo algunas cuerdas, arpegio o bajo, y en las partes de solo, únicamente las notas del solo) repartida según tu velocidad, y cambia de acorde sola. Sin Auto, suenan exactamente las cuerdas que cruzas. Detalle del conteo: cada golpe hacia abajo que cruza al menos tres cuerdas cuenta un tiempo, y al completar los tiempos del acorde el siguiente golpe ya suena con el acorde nuevo. Tú pones la velocidad; si paras, la canción espera. Al final se detiene.</p></div>
+    <button class="btn quiet" data-sheet="hrec">✋ Grabar mi mano (para mandarle a Claude)</button>
     <button class="btn quiet" data-act="reset">Borrar mis datos guardados</button>`;
   }
 }
@@ -3222,6 +3317,7 @@ $('#sheetBody').addEventListener('click',e=>{
   if(d.resume){loadSong(d.resume,false);closeSheet();return}
   if(d.sheet){openSheet(d.sheet);return}
   if(d.setmode){setMode(d.setmode);renderSheet();return}
+  if(d.motor){S.motor=d.motor==='old'?'old':'new';persist();try{vampStop()}catch(_){}MB.on=false;clearInterval(MB.timer);try{clStopTicker()}catch(_){}MB.hold=false;MB.go=false;MB.passes=[];MB.last=0;MB.idx=-1;CL.push=1;CL.base=0;flashMsg(S.motor==='old'?'Forma anterior':'Forma nueva');renderSheet();return}
   if(d.fav){favs.has(d.fav)?favs.delete(d.fav):favs.add(d.fav);store.set('favs',[...favs]);render();renderSheet();return}
   if(d.filter){sheet.filter=d.filter;renderSheet();return}
   if(d.jump){jumpTo(+d.jump);renderSheet();return}
@@ -3578,7 +3674,7 @@ function hrecEv(e,t,kind){if(!ctx)return;const at=Math.round((t-ctx.currentTime)
 function hrecScore(){stepBuild();const out=[];for(const e of STEP.ev){if(e.band)continue;if(out.length>8000)break;
     if(e.gp){const G=e.gp;out.push([+e.b.toFixed(3),G.ns.length,G.brush||'',G.role||'',G.tr,+(G.dur||0).toFixed(3),G.gh?1:0,G.ns.map(n=>n.midi)])}else out.push([+e.b.toFixed(3),e.notes?e.notes.length:1,'','',null,0,0,[]])}
   const G=gpOn();return{ev:out,bars:G?G.bars.map(x=>x.start):[],units:UN().map(u=>({a:u.a,b:u.b,name:u.name})),tracks:G&&G.tracks?G.tracks.map((tr,i)=>({i,name:tr.name||'',role:tr.role||''})):[]}}
-function hrecBtn(){const b=$('#hrecBtn');if(!b)return;if(HREC.on){const s=Math.floor(hrT()/1000);b.textContent='⏹ Terminar '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0');b.classList.add('on')}else{b.textContent='⏺ Grabar mano';b.classList.remove('on')}}
+function hrecBtn(){const b=$('#hrecBtn');if(!b)return;b.hidden=!HREC.on;if(HREC.on){const s=Math.floor(hrT()/1000);b.textContent='⏹ Terminar '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0');b.classList.add('on')}else{b.textContent='⏺ Grabar mano';b.classList.remove('on')}}
 function hrecStart(mode){ensureAudio();if(!stepOn()){flashMsg('Elige una canción con partitura primero');return}closeSheet();
   if(DEMO.on)demoStop();vampStop();MB.on=false;clearInterval(MB.timer);MB.hold=false;MB.go=false;MB.passes=[];MB.last=0;MB.np=0;MB.base=0;mbSeek(0);MB.limit=0;idx=0;MB.idx=-1;MB.seekB=null;MB.sec=0;render();
   Object.assign(HREC,{on:true,mode,t0:performance.now(),st:[],pt:[],ev:[],g:null,last:null,msg:'',
@@ -3591,7 +3687,7 @@ function hrecStart(mode){ensureAudio();if(!stepOn()){flashMsg('Elige una canció
   if(mode==='sigue'){let n=3;const cd=()=>{if(!HREC.on)return;if(n>0){flashMsg(String(n));n--;setTimeout(cd,800)}else{demoStart();HREC.started=true;flashMsg('Acompaña con la mano como si la tocaras')}};cd()}
   else flashMsg('Grabando: toca como siempre, desde el principio');
 }
-function hrecData(){let ps=null;try{const q=ctx&&ctx.playbackStats;if(q)ps={under:q.underrunEvents,underDur:q.underrunDuration,tot:q.totalDuration}}catch(e){}return Object.assign({},HREC.meta,{prueba:window.ROCK_PRUEBA?(S.clMode||'A'):null,stats:ps,base:ctx?ctx.baseLatency:null,dur:hrT(),strokes_cols:['t_ms','dir','vel','gap','beat','esperando','vel_cancion','dy_px','dt_ms','item'],strokes:HREC.st,
+function hrecData(){let ps=null;try{const q=ctx&&ctx.playbackStats;if(q)ps={under:q.underrunEvents,underDur:q.underrunDuration,tot:q.totalDuration}}catch(e){}return Object.assign({},HREC.meta,{motor:newEng()?'nuevo':'anterior',stats:ps,base:ctx?ctx.baseLatency:null,dur:hrT(),strokes_cols:['t_ms','dir','vel','gap','beat','esperando','vel_cancion','dy_px','dt_ms','item'],strokes:HREC.st,
   sound_cols:['t_ms','beat','tipo','n_notas','rasgueo','rol','pista','midi'],sound:HREC.ev,finger_cols:['t_ms','y_0a1000','x_0a1000','tipo(0=baja,1=mueve,2=sube)','dedo'],finger:HREC.pt})}
 async function hrecSave(){const L=HREC.last;if(!L)return;const fn='rockstar-mano-'+String(L.song).replace(/[^\w-]/g,'').slice(0,30)+'-'+L.mode+'-'+new Date().toTimeString().slice(0,5).replace(':','')+'.json';
   const blob=new Blob([JSON.stringify(L)],{type:'application/json'});
@@ -3608,7 +3704,7 @@ function hrecSheet(body){const sg=song()||{};
     <small class="p" style="margin:0;font-size:15px">No se graba sonido: solo tus movimientos y lo que suena de la partitura. Graba 2 minutos o más. Elige la canción antes de empezar.</small>
     <button class="btn big" data-hrec="sigue" style="text-align:left;white-space:normal">🎧 <b>1 · La canción suena sola</b><br><small>Va a su velocidad real y tú la acompañas con la mano como si la tocaras. Tu mano no la manda.</small></button>
     <button class="btn big" data-hrec="mano" style="text-align:left;white-space:normal">🎸 <b>2 · Como siempre</b><br><small>Tu mano manda, igual que cuando tocas normalmente.</small></button>
-    <small class="p" style="margin:0">Para terminar toca «⏹ Terminar» arriba a la izquierda. Ideal: haz las dos en Bamboleo, Nothing Else Matters y una de Prisioneros o Soda.</small></div>`}
+    <small class="p" style="margin:0">Mientras grabas aparece «⏹ Terminar» arriba a la izquierda de las cuerdas. Ideal: haz las dos en Bamboleo, Nothing Else Matters y una de Prisioneros o Soda.</small></div>`}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-hrec]');if(!b)return;const a=b.dataset.hrec;if(a==='save')hrecSave();else hrecStart(a)});
 (function(){const add=(e,ty)=>{if(!HREC.on)return;const r=boardEl.getBoundingClientRect();(ty===1&&e.getCoalescedEvents?e.getCoalescedEvents():[e]).forEach(ev=>{
     HREC.pt.push([Math.round(ev.timeStamp-HREC.t0),Math.round((ev.clientY-r.top)/r.height*1000),Math.round((ev.clientX-r.left)/r.width*1000),ty,e.pointerId%100])})};
