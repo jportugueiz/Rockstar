@@ -736,7 +736,7 @@ const SONG_GEAR={
   'no-podras':{def:'cho',rules:[[/guitarra 2|dist|power/i,'dist'],[/ac[uú]st/i,'acu']]},   // pop-rock 1992: limpia con chorus y eco; coros con distorsión
   'november-rain':{def:'neck',rules:[[/solo|fills/i,'crunch'],[/ac[uú]st/i,'acu']],fill:'neck',mel:'neck'},   // Slash: Les Paul (Derrig) a Marshall, poco efecto, algo de eco
   'rayando-el-sol':{def:'cho',rules:[[/acompa|ac[uú]st/i,'acu'],[/solo/i,'crunch']]},   // Ulises Calleros: eléctrica limpia con chorus y eco + acústicas
-  'tren-al-sur':{def:'acu',rules:[[/charango/i,'charango']],fill:'acu',mel:'cho',nofill:1},   // no tiene guitarra rasgueada: charango y sintetizadores (Wikipedia; 178 bpm)
+  'tren-al-sur':{def:'acu',rules:[[/charango/i,'charango']],fill:'acu',mel:'cho',nofill:1,band:2},   // no tiene guitarra rasgueada: charango y sintetizadores (Wikipedia; 178 bpm)
          // charango de Santaolalla (brillante, cuerdas dobles)
   'persiana-americana':{def:'cho',rules:[[/solo|lead/i,'crunch']]},                   // Cerati 1986: Jackson, chorus de los 80 y eco de corchea con puntillo
   'sweet-child':{def:'crunch'},                                                       // Slash: Les Paul, pastilla del mástil, Marshall alquilado, casi sin efectos
@@ -1237,7 +1237,7 @@ if(m.want==null||Math.abs(Math.log(w/m.want))>.02){m.want=w;m.fd.gain.setTargetA
   if(A.gpMeter&&A.bandMeter&&band.on){const rm=an=>{an.getFloatTimeDomainData(buf);let e=0;for(let i=0;i<buf.length;i++)e+=buf[i]*buf[i];return Math.sqrt(e/buf.length)};
     const gr=rm(A.gpMeter),br=rm(A.bandMeter);
     if(gr>4e-4)MIX.gL=MIX.gL==null?Math.log(gr):MIX.gL+(Math.log(gr)-MIX.gL)*.04;if(br>4e-4)MIX.bL=MIX.bL==null?Math.log(br):MIX.bL+(Math.log(br)-MIX.bL)*.04;
-    if(MIX.gL!=null&&MIX.bL!=null){const w=clamp(Math.exp(MIX.gL-MIX.bL)*.56*(leadOn?.7:1),.3,1.6);if(MIX.bw==null||Math.abs(Math.log(w/MIX.bw))>.03){MIX.bw=w;A.bandAuto.gain.setTargetAtTime(w,now,1.2)}}}
+    if(MIX.gL!=null&&MIX.bL!=null){const w=clamp(Math.exp(MIX.gL-MIX.bL)*.56*(leadOn?.7:1)*(gpGear().band||1),.3,2.4);if(MIX.bw==null||Math.abs(Math.log(w/MIX.bw))>.03){MIX.bw=w;A.bandAuto.gain.setTargetAtTime(w,now,1.2)}}}
   // lo aprendido queda guardado para esta canción
   if(now-MIX.saved>6){MIX.saved=now;const o={};for(const tr in T)if(T[tr].lg!=null&&T[tr].n>=12)o[tr]={lg:+T[tr].lg.toFixed(3),n:Math.min(T[tr].n,40),role:T[tr].role};if(Object.keys(o).length)store.set('mix|'+S.songId,o)}}
 
@@ -3350,7 +3350,7 @@ async function renderSheet(){
       <small class="p" style="margin:0">¿No tienes ese archivo? Pídeselo a Claude, o carga tus Guitar Pro en 📁 Tablaturas.</small></div>`}
   else if(sheet.kind==='more'){
     const row=(k,t,d)=>`<button class="item" data-sheet="${k}"><span class="main"><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
-    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 122</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
+    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 123</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
       <div class="group"><span class="eyebrow">Sonido de la guitarra</span><div class="seg" style="flex-wrap:wrap">${[['orig',{n:'⭐ Como en el disco'}]].concat(Object.entries(GTS)).map(([k,v])=>`<button data-gpsnd="${k}" aria-pressed="${(GTS[S.gpSnd]?S.gpSnd:'orig')===k}">${v.n}</button>`).join('')}</div><small class="p" style="margin:0">"Como en el disco": cada guitarra suena como la de la grabación original.</small></div>
       <div class="group"><span class="eyebrow">Modo</span><div class="seg">${MODES.map(([m,l])=>`<button data-setmode="${m}" aria-pressed="${S.mode===m}">${l}</button>`).join('')}</div></div>`;
   }
