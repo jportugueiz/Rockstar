@@ -2994,7 +2994,7 @@ async function origImport(files,target,part){
 
 /* ───────── Hojas ───────── */
 const sheet={kind:null,filter:'todas',q:'',imp:{title:'',artist:'',txt:'',upb:'auto',inst:'lespaul',bpm:100,target:'solo'}};
-const TITLES={install:'Instalar en mi teléfono',mic:'Micrófono',ses:'Tocar con amigos',orig:'Canción original',folder:'Mis tablaturas',import:'Importar un solo',songs:'Cancionero',chords:'Acordes',inst:'Guitarras',fx:'Efectos',recs:'Grabaciones',settings:'Ajustes',band:'Banda',more:'Más'};
+const TITLES={welcomeLib:'Tus canciones',install:'Instalar en mi teléfono',mic:'Micrófono',ses:'Tocar con amigos',orig:'Canción original',folder:'Mis tablaturas',import:'Importar un solo',songs:'Cancionero',chords:'Acordes',inst:'Guitarras',fx:'Efectos',recs:'Grabaciones',settings:'Ajustes',band:'Banda',more:'Más'};
 function openSheet(k){sheet.kind=k;$('#sheetWrap').hidden=false;renderSheet();$('#sheetBody').scrollTop=0}
 function closeSheet(){sheet.kind=null;$('#sheetWrap').hidden=true;document.querySelectorAll('#sheetBody audio').forEach(a=>a.pause())}
 function renderSheetIfOpen(){if(sheet.kind)renderSheet()}
@@ -3171,9 +3171,14 @@ async function renderSheet(){
   else if(sheet.kind==='ses'){sesSheet(body)}
   else if(sheet.kind==='mic'){micSheet(body)}
   else if(sheet.kind==='install'){installSheet(body)}
+  else if(sheet.kind==='welcomeLib'){body.innerHTML=`<div class="group"><b style="font-size:19px">Carga tus canciones (una sola vez)</b>
+      <small class="p" style="margin:0;font-size:15px">Toca el botón y elige el archivo <b>rockstar-mis-canciones.json</b> (está en tus Descargas). Quedan todas tus canciones con su partitura en este teléfono.</small>
+      <label class="btn big" style="display:flex;justify-content:center;cursor:pointer;font-size:18px">🎸 Cargar mis canciones<input id="libFile" type="file" accept=".json,application/json" style="display:none"></label>
+      ${sheet.libMsg?`<div class="prev">${esc(sheet.libMsg)}</div>${/Listo/.test(sheet.libMsg)?'<button class="btn big" data-sheet="songs">Ir al Cancionero</button>':''}`:''}
+      <small class="p" style="margin:0">¿No tienes ese archivo? Pídeselo a Claude, o carga tus Guitar Pro en 📁 Tablaturas.</small></div>`}
   else if(sheet.kind==='more'){
     const row=(k,t,d)=>`<button class="item" data-sheet="${k}"><span class="main"><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
-    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 105</div><div class="list">${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g')+' · invita amigos a tocar')}${row('songs','Cancionero','Elegir la canción que vas a tocar')}${row('band','Banda de acompañamiento','Batería, bajo, teclado y guitarra guía')}${row('fx','Efectos',fxLabel())}${row('inst','Guitarras',inst().name)}${row('folder','Mis tablaturas','Sube tus PDF de tablaturas y la app los carga sola')}${row('recs','Grabaciones','Escuchar lo que grabaste')}${row('settings','Ajustes','Mano, volumen, resonancia y latencia')}</div>
+    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 106</div><div class="list">${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g')+' · invita amigos a tocar')}${row('songs','Cancionero','Elegir la canción que vas a tocar')}${row('band','Banda de acompañamiento','Batería, bajo, teclado y guitarra guía')}${row('fx','Efectos',fxLabel())}${row('inst','Guitarras',inst().name)}${row('folder','Mis tablaturas','Sube tus PDF de tablaturas y la app los carga sola')}${row('recs','Grabaciones','Escuchar lo que grabaste')}${row('settings','Ajustes','Mano, volumen, resonancia y latencia')}</div>
       <div class="group"><span class="eyebrow">🎸 Sonido de la guitarra (partitura)</span><div class="seg" style="flex-wrap:wrap">${[['orig',{n:'⭐ Como en el disco'}]].concat(Object.entries(GTS),Object.entries(GPSND).map(([k,v])=>[k,{n:v.n+' (antigua)'}])).map(([k,v])=>`<button data-gpsnd="${k}" aria-pressed="${(S.gpSnd||'orig')===k}">${v.n}</button>`).join('')}</div><small class="p" style="margin:0">"Como en el disco": cada guitarra de la partitura suena con la guitarra que se usó en la grabación original. Las demás ponen esa guitarra en todas las pistas.</small></div>
       <button class="btn quiet" data-act="diag" style="width:100%;margin-top:10px">🎙 Grabar una prueba de 30 s para Claude</button>
       <div class="group"><span class="eyebrow">Modo</span><div class="seg">${MODES.map(([m,l])=>`<button data-setmode="${m}" aria-pressed="${S.mode===m}">${l}</button>`).join('')}</div></div>`;
@@ -3555,6 +3560,8 @@ async function libImport(file){try{const L=JSON.parse(await file.text());if(L.ap
     store.set('songs',userSongs);store.set('gpHave',[...GPHAVE]);sheet.libMsg='✅ Listo: '+n+' canciones cargadas. Búscalas en el Cancionero.';await gpLoad(S.songId);buildSeq();render();renderSheetIfOpen()}catch(e){sheet.libMsg='No se pudo cargar: '+(e&&e.message||'error');renderSheetIfOpen()}}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-lib]');if(b&&b.dataset.lib==='out')libExport()});
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.id==='libFile'&&t.files&&t.files[0])libImport(t.files[0])});
+// primera vez en la app instalada (fuera de Claude) y sin partituras: se ofrece cargar la biblioteca
+setTimeout(()=>{try{if(!inFrame()&&!GPHAVE.size){openSheet('welcomeLib')}}catch(e){}},1500);
 /* La pantalla no se apaga mientras usas la app: bloqueo de pantalla del navegador y, si no lo deja, un video mudo diminuto en bucle (como NoSleep) */
 const WAKE={lock:null,vid:null};
 async function wakeOn(){try{if(navigator.wakeLock&&!WAKE.lock&&document.visibilityState==='visible'){WAKE.lock=await navigator.wakeLock.request('screen');WAKE.lock.addEventListener('release',()=>{WAKE.lock=null});return}}catch(e){}
