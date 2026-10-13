@@ -81,7 +81,8 @@ body.lefty #app{grid-template-columns:var(--keysw) minmax(0,1fr);grid-template-a
 .bandPill[aria-pressed="true"]{background:linear-gradient(135deg,#ffb347,#ff6a3d 55%,#e0475e);animation:bpGlow 1.6s ease-in-out infinite}.bandPill[aria-pressed="true"] .bpDot{background:#5cff8a;box-shadow:0 0 8px #5cff8a}
 @keyframes bpGlow{50%{box-shadow:0 4px 24px rgba(255,140,60,.8)}}
 #bandBtn.bandPill[aria-pressed="true"]{background:linear-gradient(135deg,#ffb347,#ff6a3d 55%,#e0475e)}
-.slist{display:flex;flex-direction:column;gap:6px}.slist .folder .slist{margin-top:6px}.card.scard{flex-direction:row;align-items:center;gap:6px;padding:0;border-radius:12px}.card.scard[aria-current="true"]{border-color:var(--gold)}.scard .sopen{flex:1;min-width:0;text-align:left;background:none;border:0;color:inherit;padding:12px 4px 12px 14px;display:flex;flex-direction:column;gap:2px;font:inherit;cursor:pointer}.scard .sopen b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scard .sopen small{opacity:.75}.card.scard .star{position:static;flex:none;padding:10px 12px}.scard .sdel{flex:none;margin-right:8px;padding:6px 10px}
+.mbtn{border:0;height:40px;padding:0 11px;font:800 13px system-ui,sans-serif;background:#1c1714;color:#cfc6b8;white-space:nowrap}.mbtn[aria-pressed="true"]{background:var(--gold,#e3b86e);color:#1a1206}
+.slist{display:flex;flex-direction:column;gap:6px}.slist .folder .slist{margin-top:6px}.card.scard{flex-direction:row;align-items:center;gap:6px;padding:0;border-radius:12px}.card.scard[aria-current="true"]{border-color:var(--gold)}.scard .sopen{flex:1;min-width:0;text-align:left;background:none;border:0;color:inherit;padding:12px 4px 12px 14px;display:flex;flex-direction:column;gap:2px;font:inherit;cursor:pointer}.scard .sopen b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scard .sopen small{opacity:.75}.card.scard .star{position:static;flex:none;padding:10px 12px}.scard .smode{flex:none;display:inline-flex;border-radius:999px;overflow:hidden;border:1px solid rgba(227,184,110,.5)}.scard .smode .mbtn{padding:9px 11px;font-size:13px;white-space:nowrap}.scard .sdel{flex:none;margin-right:8px;padding:6px 10px}
 #hrecBtn[hidden]{display:none!important}#hrecBtn.on{background:#d8324a!important;animation:hrp 1.2s infinite}@keyframes hrp{50%{opacity:.7}}
 .sectoast{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);font-size:clamp(30px,10vh,64px);font-weight:700;color:#f4f1ec;text-shadow:0 2px 14px #000,0 0 4px #000;pointer-events:none;opacity:0;transition:opacity .7s;white-space:nowrap;z-index:2}
 .sectoast.show{opacity:.95;transition:opacity .08s}
@@ -514,9 +515,11 @@ const INSTRUMENTS=[
  {id:'prs',group:'Eléctricas',kind:'electric',name:'Escala 24 trastes',ref:'PRS Custom 24',board:RW,ks:{t60:6,bright:.62,loop:.78,pick:.18,dur:6},eq:[['highpass',80],['peaking',250,1,1.5],['peaking',2200,1,2]]},
  {id:'ibanez',group:'Eléctricas',kind:'electric',name:'Superstrat moderna',ref:'Ibanez RG',board:EB,ks:{t60:6,bright:.68,loop:.82,pick:.15,dur:6},eq:[['highpass',120],['peaking',800,1,-3],['peaking',3500,1,3]]},
 ];
-const BODY={dread:['#f0cf8e','#d9a85a','#8c5424'],grand:['#f6dfab','#e4bb78','#a86c33'],round:['#efb65c','#8f4a1b','#2a1209'],ea214:['#ecc890','#cb9655','#7a4a22'],gpc:['#3b2c25','#241a15','#100b09'],jumbo:['#f3cb7c','#c27d35','#3e1d0c'],
+const BODY={fogata:['#d79c52','#a5612a','#4e2510'],dread:['#f0cf8e','#d9a85a','#8c5424'],grand:['#f6dfab','#e4bb78','#a86c33'],round:['#efb65c','#8f4a1b','#2a1209'],ea214:['#ecc890','#cb9655','#7a4a22'],gpc:['#3b2c25','#241a15','#100b09'],jumbo:['#f3cb7c','#c27d35','#3e1d0c'],
  strat:['#f2b84d','#b4471c','#1d0d08','#efe9df','s'],tele:['#f3d18a','#e2ad58','#b0752e','#141010','s'],lespaul:['#ffd56f','#d9821f','#5a1a08','#efe3c6','h'],sg:['#b2241f','#741411','#3a0806','#121010','h'],prs:['#4097cc','#1e5f8e','#0b2338',null,'h'],ibanez:['#34343a','#161618','#060607',null,'h']};
-const KIND_LABEL={acoustic:'Acústica',electro:'Electroacústica',electric:'Eléctrica'};
+const KIND_LABEL={acoustic:'Acústica',electro:'Electroacústica',electric:'Eléctrica',classical:'Acústica de nylon'};
+// la guitarra de la fogata: siempre la misma, una clásica de nylon vieja y gastada (la típica del asado)
+const FOG_INST={id:'fogata',group:'Fogata',kind:'classical',name:'Guitarra de fogata',ref:'Clásica de nylon, vieja y querida',board:'RWOLD',worn:1,ks:{t60:3,bright:.4,loop:.2,pick:.18,dur:4},eq:[['highpass',75],['peaking',220,1,2],['highshelf',5000,0,-3]]};
 const PICKUPS={mastil:[['lowpass',3000],['peaking',300,1,2]],medio:[],puente:[['highpass',200],['peaking',2800,1,3]]};
 
 /* ───────── Efectos y presets ───────── */
@@ -579,7 +582,7 @@ const allSongs=()=>DEMOS.concat(userSongs);
 const LEARNED={},LNOTES={},LCACHE=new WeakMap();
 // si la app ya aprendió la canción, los acordes y su duración salen de la grabación real (no de la ficha escrita a mano)
 const song=()=>{const b=allSongs().find(s=>s.id===S.songId)||DEMOS[0],G=GPS[b.id],L=G?G.secs:S.origOn===false&&LEARNED[b.id];if(!L)return b;let c=LCACHE.get(b);if(!c||c.sections!==L){c=Object.assign({},b,{sections:L,learnedChart:!G,gpChart:!!G,bpm:G?Math.round(G.bpm):b.bpm});LCACHE.set(b,c)}return c};
-const inst=()=>INSTRUMENTS.find(i=>i.id===S.inst)||INSTRUMENTS[0];
+const inst=()=>{try{if(fogOn())return FOG_INST}catch(_){}return INSTRUMENTS.find(i=>i.id===S.inst)||INSTRUMENTS[0]};
 
 /* ───────── Motor de audio ───────── */
 let ctx=null;const A={};
@@ -1850,6 +1853,7 @@ function drawStatic(start,lf){
   const wg=g.createLinearGradient(0,0,0,H);
   if(maple){wg.addColorStop(0,'#b88a52');wg.addColorStop(.5,'#d0a36a');wg.addColorStop(1,'#b0824b')}
   else if(board===EB){wg.addColorStop(0,'#17110f');wg.addColorStop(.5,'#211814');wg.addColorStop(1,'#15100e')}
+  else if(board==='RWOLD'){wg.addColorStop(0,'#4a2c1a');wg.addColorStop(.5,'#5a3622');wg.addColorStop(1,'#3e2415')}   // palisandro reseco, sin aceite
   else{wg.addColorStop(0,'#2c1a12');wg.addColorStop(.5,'#3a2318');wg.addColorStop(1,'#28170f')}
   g.fillStyle=wg;g.fillRect(0,0,W,H);
   // veta
@@ -1858,12 +1862,16 @@ function drawStatic(start,lf){
   for(let y=0;y<H;y+=1.6+rnd()*2.4){g.strokeStyle=`rgba(${maple?'90,50,20':'0,0,0'},${(maple?.12:.22)*rnd()+.04})`;g.beginPath();g.moveTo(0,y);
     for(let x=0;x<=W;x+=W/6)g.lineTo(x,y+Math.sin(x*.004+y*.3)*1.6+(rnd()-.5)*.8);g.stroke()}
   for(let i=0;i<14;i++){g.fillStyle=`rgba(255,220,180,${maple?.05:.025})`;g.fillRect(rnd()*W,rnd()*H,40+rnd()*160,1+rnd()*2)}
+  // guitarra de fogata: el diapasón gastado donde más se toca (primeros trastes), rayas y una mancha
+  if(I.worn){for(let k=0;k<5;k++){const xa=fretX(k),xb=fretX(k+1),wg2=g.createRadialGradient((xa+xb)/2,H*.5,4,(xa+xb)/2,H*.5,H*.55);wg2.addColorStop(0,'rgba(170,120,80,.32)');wg2.addColorStop(1,'rgba(170,120,80,0)');g.fillStyle=wg2;g.fillRect(xa,0,xb-xa,H)}
+    for(let i=0;i<26;i++){g.strokeStyle=`rgba(230,200,160,${.06+rnd()*.12})`;g.lineWidth=.6+rnd();const x=rnd()*W,y=rnd()*H;g.beginPath();g.moveTo(x,y);g.lineTo(x+20+rnd()*60,y+(rnd()-.5)*8);g.stroke()}
+    g.fillStyle='rgba(20,10,5,.25)';g.beginPath();g.ellipse(W*.32,H*.7,26,11,.3,0,7);g.fill()}
   // filetes
   g.fillStyle=maple?'rgba(60,30,10,.35)':'rgba(255,230,200,.10)';g.fillRect(0,0,W,3);g.fillRect(0,H-3,W,3);
   // clavijero
   const hg=g.createLinearGradient(0,0,L.nut,0);hg.addColorStop(0,'#050404');hg.addColorStop(1,'#1a1210');g.fillStyle=hg;g.fillRect(0,0,L.nut-9,H);
   // trastes
-  const nb=board===EB?'#e8e6e2':'#d9d6d0';
+  const nb=I.worn?'#b8ab92':board===EB?'#e8e6e2':'#d9d6d0';   // trastes opacos, con años
   for(let k=1;k<=FRETS;k++){const x=fretX(k);
     const fg=g.createLinearGradient(x-2.5,0,x+2.5,0);fg.addColorStop(0,'#77736d');fg.addColorStop(.45,nb);fg.addColorStop(1,'#5c5853');
     g.fillStyle=fg;g.fillRect(x-2.2,0,4.4,H);g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x+2.2,0,2,H)}
@@ -1896,6 +1904,14 @@ function drawBody(g,I){
     const kx=x0+bw*.82;for(let i=0;i<2;i++){const ky=H*(.78+i*.12);g.fillStyle='#e9e3d6';g.beginPath();g.arc(kx+i*bw*.06,ky,clamp(H*.035,6,11),0,7);g.fill();g.strokeStyle='rgba(0,0,0,.4)';g.stroke()}
   }else{
     const r=Math.min(H*.36,bw*.34);
+    if(I.worn){// tapa de abeto amarillenta con raspones de uña, una trizadura, un parche de cinta y una calcomanía vieja
+      let s2=11;const rr=()=>(s2=(s2*16807)%2147483647)/2147483647;
+      for(let i=0;i<40;i++){const a0=rr()*Math.PI*2,d0=r*(1.3+rr()*.9),x1=cx+Math.cos(a0)*d0,y1=cy+Math.sin(a0)*d0;g.strokeStyle=`rgba(255,240,210,${.08+rr()*.18})`;g.lineWidth=.6+rr()*.8;g.beginPath();g.moveTo(x1,y1);g.lineTo(x1+(rr()-.5)*30,y1+(rr()-.5)*18);g.stroke()}
+      const wp=g.createRadialGradient(cx+r*1.2,cy+r*.9,2,cx+r*1.2,cy+r*.9,r*1.1);wp.addColorStop(0,'rgba(90,50,20,.45)');wp.addColorStop(1,'rgba(90,50,20,0)');g.fillStyle=wp;g.fillRect(x0,0,bw,H);
+      g.strokeStyle='rgba(30,15,5,.75)';g.lineWidth=1.3;g.beginPath();g.moveTo(cx+r*1.25,H+2);g.lineTo(cx+r*1.18,H*.82);g.lineTo(cx+r*1.3,H*.66);g.lineTo(cx+r*1.22,H*.55);g.stroke();
+      g.save();g.translate(cx+r*1.27,H*.74);g.rotate(-.12);g.fillStyle='rgba(225,210,170,.85)';g.fillRect(-r*.18,-r*.09,r*.36,r*.18);g.strokeStyle='rgba(120,100,60,.5)';g.strokeRect(-r*.18,-r*.09,r*.36,r*.18);g.restore();
+      g.save();g.translate(cx-r*1.5,cy-r*.95);g.rotate(.25);g.fillStyle='rgba(200,40,40,.55)';g.beginPath();g.arc(0,0,r*.24,0,7);g.fill();g.fillStyle='rgba(255,235,180,.7)';g.font=`bold ${Math.round(r*.16)}px system-ui`;g.textAlign='center';g.fillText('★',0,r*.06);g.restore()}
+
     g.strokeStyle='rgba(40,18,8,.85)';g.lineWidth=r*.17;g.beginPath();g.arc(cx,cy,r*1.17,0,7);g.stroke();
     g.strokeStyle='rgba(245,236,214,.85)';g.lineWidth=1.4;[1.05,1.3].forEach(k=>{g.beginPath();g.arc(cx,cy,r*k,0,7);g.stroke()});
     const hg=g.createRadialGradient(cx,cy,0,cx,cy,r);hg.addColorStop(0,'#000');hg.addColorStop(1,'#1c0e07');g.fillStyle=hg;g.beginPath();g.arc(cx,cy,r,0,7);g.fill();
@@ -1919,7 +1935,7 @@ function frame(){
   for(let i=0;i<6;i++){
     const y=ys[i],muteS=!notes&&mids[i]==null,a=anim.amp[i];anim.amp[i]*=.955;anim.ph[i]+=.9+i*.22;
     const xs=fingerX[i],xe=W,lw=STRW[i]*sc,wound=i<3;
-    const col=I.kind==='electric'?(wound?'#b9b5ae':'#e8e6e2'):(wound?'#c8894a':'#e2e0dc'),hi=I.kind==='electric'?'#ffffff':(wound?'#f4c98f':'#ffffff');
+    const col=I.kind==='classical'?(wound?'#cfc8bb':'#efe6d2'):I.kind==='electric'?(wound?'#b9b5ae':'#e8e6e2'):(wound?'#c8894a':'#e2e0dc'),hi=I.kind==='classical'?(wound?'#ffffff':'#fffaf0'):I.kind==='electric'?'#ffffff':(wound?'#f4c98f':'#ffffff');
     g2.globalAlpha=muteS?.38:1;
     g2.strokeStyle='rgba(0,0,0,.5)';g2.lineWidth=lw;g2.beginPath();g2.moveTo(0,y+lw*.9+1);g2.lineTo(xe,y+lw*.9+1);g2.stroke();
     const path=()=>{g2.beginPath();g2.moveTo(0,y);if(a>.01){g2.lineTo(xs,y);for(let s=1;s<=48;s++){const x=xs+(xe-xs)*s/48,e=Math.sin(Math.PI*s/48);g2.lineTo(x,y+Math.sin(anim.ph[i]+s*.9)*a*amax*e)}}else g2.lineTo(xe,y)};
@@ -2091,7 +2107,7 @@ function renderSongbar(){
   if(lastSecKey&&key!==lastSecKey&&key.split('|')[0]===lastSecKey.split('|')[0]){const t=$('#sectoast');t.textContent=sec.name;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1100)}
   lastSecKey=key;
 }
-function guitarIcon(kind){return kind==='electric'
+function guitarIcon(kind){if(kind==='classical')kind='acoustic';return kind==='electric'
   ?'<svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M16 4.5l5-1.5-1.5 5-4 4c.6 1.6.2 3.3-1 4.5l-.5.5c-.3 2-2 3.6-4 3.8-2.7.3-5.1-2-5.2-4.7 0-1.9 1-3.5 2.6-4.2l1.4-1.4c1.2-1.2 3-1.6 4.6-1z"/><path d="M8.5 15.5l3 3M10 13l3 3"/></svg>'
   :'<svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M20.5 3l2.5 2.5-5.6 5.6c1 1.7.7 3.9-.7 5.3-.3.3-.6.5-1 .7.5 2.3-1 4.9-3.8 5.5-3.2.7-6.9-2.1-7.1-5.8-.2-2.7 1.7-4.9 4.1-5.2.2-.4.4-.7.7-1 1.4-1.4 3.6-1.7 5.3-.7z"/><circle cx="10.5" cy="15.5" r="1.8"/><path d="M8 18l2.5-2.5"/></svg>'}
 function fxLabel(){if(S.preset==='custom')return 'Personalizado';const m=mySounds.find(x=>x.id===S.preset);if(m)return m.name;return (PRESETS.find(p=>p.id===S.preset)||{}).name||'Efectos'}
@@ -2161,7 +2177,7 @@ $('#favBtn').onclick=()=>{if(S.mode==='libre')return;const id=song().id;favs.has
 function loadSong(id,fromStart){if(OR.els&&OR.id!==id)origRelease();
   const s=allSongs().find(x=>x.id===id);if(!s)return;
   if(fromStart){resume[id]={};store.set('resume',resume)}
-  S.songId=id;S.transpose=0;S.gpSnd=(S.gpSndBy||{})[id]||'orig';MB.sec=null;MB.go=false;MB.hold=false;
+  S.songId=id;S.fogata=!!(S.fogBy||{})[id];staticKey='';S.transpose=0;S.gpSnd=(S.gpSndBy||{})[id]||'orig';MB.sec=null;MB.go=false;MB.hold=false;
   {const G=GPS[id];if(G&&G.cover<.5)setTimeout(()=>flashMsg('Ojo: este archivo trae la guitarra solo en '+Math.round(G.cover*100)+' % de la canción; donde falta, rasgueo los acordes. Si encuentras otra versión con la guitarra completa, cárgala y suena como el disco.'),900)}
   const myInst=(S.songInst||{})[id];if(myInst||s.inst){S.inst=myInst||s.inst;buildInstBus()}   // la guitarra que elegiste para esta canción se recuerda
   if(s.preset&&s.preset!==S.preset)usePreset(s.preset);
@@ -3217,6 +3233,7 @@ async function renderSheet(){
     const ready=x=>gpHas(x.id)||x.gp&&!x.needGp;
     const songCard=x=>`<div class="card scard" aria-current="${x.id===S.songId&&S.mode!=='libre'}">
         <button class="sopen" data-open="${x.id}"><b>${esc(x.title)}</b><small>${esc(x.artist||'')}${store.get('thin|'+x.id,false)?' · <span style="color:#ff8a70">⚠ archivo incompleto</span>':ready(x)?' · <span style="color:var(--gold)">✓ partitura</span>':x.needGp?' · falta su archivo':''}</small></button>
+        ${ready(x)?`<span class="smode"><button class="mbtn" data-open="${x.id}" data-fog="0" aria-pressed="${!(S.fogBy||{})[x.id]}">💿 Original</button><button class="mbtn" data-open="${x.id}" data-fog="1" aria-pressed="${!!(S.fogBy||{})[x.id]}">🔥 Fogata</button></span>`:''}
         <button class="star" data-fav="${x.id}" aria-pressed="${favs.has(x.id)}" aria-label="Favorita">★</button>
         ${x.custom?`<button class="btn quiet sdel" data-delsong="${x.id}" aria-label="Borrar">Borrar</button>`:''}</div>`;
     // carpetas por artista: la app las arma sola cuando un artista tiene 2 canciones o más
@@ -3371,7 +3388,7 @@ async function renderSheet(){
       <small class="p" style="margin:0">¿No tienes ese archivo? Pídeselo a Claude, o carga tus Guitar Pro en 📁 Tablaturas.</small></div>`}
   else if(sheet.kind==='more'){
     const row=(k,t,d)=>`<button class="item" data-sheet="${k}"><span class="main"><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
-    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 128</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
+    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 129</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
       <div class="group"><span class="eyebrow">Sonido de la guitarra</span><div class="seg" style="flex-wrap:wrap">${[['orig',{n:'⭐ Como en el disco'}]].concat(Object.entries(GTS)).map(([k,v])=>`<button data-gpsnd="${k}" aria-pressed="${(GTS[S.gpSnd]?S.gpSnd:'orig')===k}">${v.n}</button>`).join('')}</div><small class="p" style="margin:0">"Como en el disco": cada guitarra suena como la de la grabación original.</small></div>
       <div class="group"><span class="eyebrow">Modo</span><div class="seg">${MODES.map(([m,l])=>`<button data-setmode="${m}" aria-pressed="${S.mode===m}">${l}</button>`).join('')}</div></div>`;
   }
@@ -3400,7 +3417,7 @@ async function renderSheet(){
 }
 $('#sheetBody').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;
-  if(d.open){loadSong(d.open,true);const so=allSongs().find(x=>x.id===d.open);if(so&&so.needGp&&!gpHas(d.open)){sheet.gpSong=d.open;sheet.gpPick=false;sheet.gpMsg='Falta el archivo Guitar Pro de '+so.title+'. Elígelo aquí abajo (en Ultimate Guitar: tipo "Guitar Pro").';openSheet('folder');return}closeSheet();return}
+  if(d.open){if(d.fog!=null){(S.fogBy=S.fogBy||{})[d.open]=d.fog==='1';if(d.fog==='1'&&band.on)stopBand();STEP.key=null;RIG.key=null;staticKey=''}loadSong(d.open,true);if(d.fog!=null){persist();flashMsg(d.fog==='1'?'🔥 Fogata: la guitarra del asado':'💿 Original: como en el disco')}const so=allSongs().find(x=>x.id===d.open);if(so&&so.needGp&&!gpHas(d.open)){sheet.gpSong=d.open;sheet.gpPick=false;sheet.gpMsg='Falta el archivo Guitar Pro de '+so.title+'. Elígelo aquí abajo (en Ultimate Guitar: tipo "Guitar Pro").';openSheet('folder');return}closeSheet();return}
   if(d.delsong){userSongs=userSongs.filter(x=>x.id!==d.delsong);store.set('songs',userSongs);if(S.songId===d.delsong){S.songId='musica-ligera';buildSeq();render()}renderSheet();return}
   if(d.upb){sheet.imp.upb=d.upb;renderSheet();return}
   if(d.impinst){sheet.imp.inst=d.impinst;renderSheet();return}
@@ -3890,11 +3907,16 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.id==='libFile'&&t.files&&t.files[0])libImport(t.files[0])});
 // primera vez en la app instalada (fuera de Claude) y sin partituras: se ofrece cargar la biblioteca
 
+
+/* cada canción tiene dos versiones: 💿 Original (la del disco) y 🔥 Fogata (una guitarra de nylon vieja, solo lo importante); se recuerda por canción */
+function modeSync(){const sg=$('#modeSeg');if(!sg)return;sg.style.display=gpOn()?'inline-flex':'none';$('#modeOrig').setAttribute('aria-pressed',!S.fogata);$('#modeFog').setAttribute('aria-pressed',!!S.fogata)}
+function setFogata(on){ensureAudio();if(DEMO.on)demoStop();S.fogata=!!on;(S.fogBy=S.fogBy||{})[S.songId]=S.fogata;if(S.fogata&&band.on)stopBand();
+  STEP.key=null;RIG.key=null;staticKey='';try{gpBanks(GPS[S.songId])}catch(_){}persist();restartSong();modeSync();flashMsg(S.fogata?'🔥 Fogata: la guitarra del asado':'💿 Original: como en el disco')}
+try{S.fogata=!!(S.fogBy||{})[S.songId]}catch(_){}
 /* empezar la canción de nuevo */
 function restartSong(){ensureAudio();if(DEMO.on)demoStop();try{vampStop()}catch(_){}MB.on=false;clearInterval(MB.timer);try{clStopTicker()}catch(_){}MB.hold=false;MB.go=false;MB.passes=[];MB.last=0;MB.np=0;MB.base=0;
   stepBuild();mbSeek(0);MB.limit=0;idx=0;MB.idx=-1;MB.seekB=null;MB.sec=0;try{CL.push=1;CL.pend=null}catch(_){}if(band.on){band.idx=0;band.step=0}saveResume();render();flashMsg('⟲ Desde el principio')}
 $('#restartBtn').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();restartSong()});
-if(!window.ROCK_FOGATA_DEMO)S.fogata=false;   // la fogata por ahora solo existe en la página de prueba
 /* canciones sacadas de la app: se borran también de este teléfono */
 const REMOVED=['bamboleo'];setTimeout(async()=>{for(const id of REMOVED){try{if(GPHAVE.has(id)){GPHAVE.delete(id);store.set('gpHave',[...GPHAVE]);await odbDel('gp|'+id)}
   if(userSongs.some(x=>x.id===id)){userSongs=userSongs.filter(x=>x.id!==id);store.set('songs',userSongs)}favs.delete(id);
