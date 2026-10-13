@@ -3182,7 +3182,7 @@ async function renderSheet(){
       <small class="p" style="margin:0">¿No tienes ese archivo? Pídeselo a Claude, o carga tus Guitar Pro en 📁 Tablaturas.</small></div>`}
   else if(sheet.kind==='more'){
     const row=(k,t,d)=>`<button class="item" data-sheet="${k}"><span class="main"><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
-    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 108</div><div class="list">${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g')+' · invita amigos a tocar')}${row('songs','Cancionero','Elegir la canción que vas a tocar')}${row('band','Banda de acompañamiento','Batería, bajo, teclado y guitarra guía')}${row('fx','Efectos',fxLabel())}${row('inst','Guitarras',inst().name)}${row('folder','Mis tablaturas','Sube tus PDF de tablaturas y la app los carga sola')}${row('recs','Grabaciones','Escuchar lo que grabaste')}${row('settings','Ajustes','Mano, volumen, resonancia y latencia')}</div>
+    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 109</div><div class="list">${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g')+' · invita amigos a tocar')}${row('songs','Cancionero','Elegir la canción que vas a tocar')}${row('band','Banda de acompañamiento','Batería, bajo, teclado y guitarra guía')}${row('fx','Efectos',fxLabel())}${row('inst','Guitarras',inst().name)}${row('folder','Mis tablaturas','Sube tus PDF de tablaturas y la app los carga sola')}${row('recs','Grabaciones','Escuchar lo que grabaste')}${row('settings','Ajustes','Mano, volumen, resonancia y latencia')}</div>
       <div class="group"><span class="eyebrow">🎸 Sonido de la guitarra (partitura)</span><div class="seg" style="flex-wrap:wrap">${[['orig',{n:'⭐ Como en el disco'}]].concat(Object.entries(GTS),Object.entries(GPSND).map(([k,v])=>[k,{n:v.n+' (antigua)'}])).map(([k,v])=>`<button data-gpsnd="${k}" aria-pressed="${(S.gpSnd||'orig')===k}">${v.n}</button>`).join('')}</div><small class="p" style="margin:0">"Como en el disco": cada guitarra de la partitura suena con la guitarra que se usó en la grabación original. Las demás ponen esa guitarra en todas las pistas.</small></div>
       <button class="btn quiet" data-act="diag" style="width:100%;margin-top:10px">🎙 Grabar una prueba de 30 s para Claude</button>
       <div class="group"><span class="eyebrow">Modo</span><div class="seg">${MODES.map(([m,l])=>`<button data-setmode="${m}" aria-pressed="${S.mode===m}">${l}</button>`).join('')}</div></div>`;
@@ -3621,7 +3621,7 @@ setTimeout(()=>{try{if(!inFrame()&&!GPHAVE.size){openSheet('welcomeLib')}}catch(
 /* Sin Auto: el botón Siguiente se enciende en rojo cuando se acerca el final de la parte (y late más rápido cuando la canción ya te espera) */
 setInterval(()=>{try{const b=$('#nextBtn');if(!b)return;let on=false,wait=false;
   if(!S.auto&&stepOn()&&loopOn()&&!MB.go&&ctx){const U=UN(),k=MB.sec!=null?MB.sec:unIdx(idx),u=U[k];
-    if(u&&k<U.length-1){const pos=MB.on?mbPosAt(ctx.currentTime):MB.pos;wait=!!MB.hold;on=wait||(MB.on&&u.b-pos<=Math.min(4,(u.b-u.a)/2)&&pos>=u.a-1e-6)}}
+    if(u&&k<U.length-1){const pos=MB.on?mbPosAt(ctx.currentTime):MB.pos,act=MB.on||ctx.currentTime-MB.last<2.5;wait=!!MB.hold&&ctx.currentTime-MB.last<30;on=wait||(act&&u.b-pos<=Math.min(4,(u.b-u.a)/2)&&pos>=u.a-1e-6)}}
   b.classList.toggle('goNow',on);b.classList.toggle('wait',on&&wait)}catch(e){}},120);
 
 /* La pantalla no se apaga mientras usas la app: bloqueo de pantalla del navegador y, si no lo deja, un video mudo diminuto en bucle (como NoSleep) */
@@ -3661,7 +3661,7 @@ learnedLoad(S.songId);
        Pasadas extra: un roce apagado de cuerdas (sin cortar lo que suena).
    Sonido: ataques con rampa corta (sin clics), el roce nunca corta las cuerdas que suenan, el límite de voces
    apaga primero las que ya se están apagando, y el reloj corre en un hilo aparte (no se atrasa si el teléfono se ocupa). */
-const CL={st:[],pend:null,dead:0,run:{},worker:null,ticker:null};
+const CL={st:[],sv:[],base:0,push:1,pend:null,dead:0,run:{},worker:null,ticker:null};
 function clMode(){return S.clMode==='B'?'B':'A'}
 function clSpeed(){return S.clSpeed||1}
 function clTe(e){return MB.t0+(e.b-MB.p0)/MB.rate}
@@ -3688,8 +3688,14 @@ function clPass(vel,dir){
   if(idx!==MB.idx){MB.hold=false;MB.on=false;clStopTicker();const e0=STEP.ev[STEP.st[idx]];mbSeek(MB.seekB!=null?MB.seekB:STEP.cum&&STEP.cum[idx]!=null?STEP.cum[idx]:e0?Math.floor(e0.b):0);MB.limit=MB.pos;MB.idx=idx;MB.sec=MB.seekB!=null?MB.sec:unIdx(idx);MB.seekB=null;MB.go=false}
   if(MB.sec==null)MB.sec=unIdx(idx);
   MB.last=now;const v=vel==null?.7:vel;MB.vel=MB.vel*.5+v*.5;curVel=clamp(.45+.6*v,.4,1);
-  CL.st.push(now);if(CL.st.length>40)CL.st.shift();
-  const rate=mbOrig()*clSpeed();
+  CL.st.push(now);CL.sv.push(v);if(CL.st.length>40){CL.st.shift();CL.sv.shift()}
+  // «te vuelves loco tocando»: si tu mano va bastante más rápida y fuerte que tu ritmo normal, la canción se apura un poco (hasta +12 %);
+  // si te calmas, vuelve sola a su velocidad. Tu ritmo normal se aprende despacio (unos 15 s).
+  {const a=CL.st,n=a.length;if(n>=2){const d=a[n-1]-a[n-2];if(d<.6){const al=1-Math.exp(-d/15);CL.base=CL.base?CL.base*(1-al)+d*al:d}}
+    if(n>=7&&CL.base){const ds=[];for(let i=n-6;i<n;i++){const x=a[i]-a[i-1];if(x<.6)ds.push(x)}
+      if(ds.length>=4){ds.sort((x,y)=>x-y);const sh=ds[ds.length>>1],vr=CL.sv.slice(-6).reduce((x,y)=>x+y,0)/6,vb=CL.sv.reduce((x,y)=>x+y,0)/CL.sv.length,
+        en=(CL.base/sh)*Math.sqrt(Math.max(.5,vr/Math.max(.2,vb))),tg=1+(en>1.12?Math.min(.12,(en-1.12)*.4):en<.8?Math.max(-.05,(en-.8)*.3):0);CL.push=CL.push*.9+tg*.1}}}
+  const rate=mbOrig()*clSpeed()*CL.push;
   if(!MB.on){// el reloj estaba detenido: parte aquí; si viene un silencio corto, salta a la próxima nota para que tu pasada suene al tiro
     let j=MB.ei;while(j<E.length&&E[j].band)j++;const nx=E[j],L=mbLoop();
     if(nx&&nx.b>MB.pos&&nx.b-MB.pos<4&&!(L&&nx.b>=L.b-1e-6)){MB.pos=nx.b;mbSeek0(nx.b)}
@@ -3717,8 +3723,9 @@ function clTick(){
     if(e.band){clPlay(e,t,.8+.3*MB.vel);continue}
     const near=CL.st.some(s=>s>=te-.17&&s<=te+.012),tr=e.gp?e.gp.tr:'x',r=CL.run[tr],cont=r&&e.b-r.b<.354;   // .354 tiempo = 170/480 (umbral de ligado de Rock Band)
     if(mode==='A'){
+      let sv=MB.vel;for(let k=CL.st.length-1;k>=0;k--){if(CL.st[k]<=te+.012&&CL.st[k]>=te-.17){sv=CL.sv[k];break}if(CL.st[k]<te-.17)break}
       const hit=near||(cont&&r.hit)||moving;if(!cont||!r)CL.run[tr]={b:e.b,t:te,hit};else{r.b=e.b;r.t=te;if(hit)r.hit=true}
-      clPlay(e,t,hit?.8+.3*MB.vel:.34)}
+      clPlay(e,t,hit?.72+.42*sv:.34)}
     else{// B · Wii: espacio = de esta nota a la siguiente
       const area=e.b;if(cont&&r&&r.hit){r.b=e.b;clPlay(e,t,.8+.3*MB.vel)}           // ligado dentro de una frase que tocaste: sigue
       else if(near&&CL.used!==area){CL.used=area;CL.run[tr]={b:e.b,hit:true};clPlay(e,t,.8+.3*MB.vel)}
