@@ -569,7 +569,7 @@ let leadVoices=[];
 function ensureAudio(){
   if(ctx){if(ctx.state!=='running')ctx.resume();return}
   const AC=window.AudioContext||window.webkitAudioContext;
-  try{ctx=new AC({latencyHint:'interactive'})}catch(e){ctx=new AC()}setTimeout(()=>{try{ensureBank(bankKind(inst()))}catch(_){}},0);
+  try{ctx=new AC({latencyHint:window.ROCK_PRUEBA?'balanced':'interactive'})}catch(e){ctx=new AC()}setTimeout(()=>{try{ensureBank(bankKind(inst()))}catch(_){}},0);
   buildGraph();buildInstBus();applyFx();setVol();applyBandMix();try{gpBanks(GPS[S.songId])}catch(e){}
   if(ctx.resume)ctx.resume();
   prefetch();
@@ -763,7 +763,7 @@ const LIVE=new Set(),MAXV=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent
 function voice(midi,{when,vel,dir='down',pan=0,mul=1,damp=false,detune=0,dest=null,bank=null,soft=0}){
   const sm=sampleFor(midi,bank,vel),b=sm?sm.b:getBuf(midi),src=ctx.createBufferSource();src.buffer=b;if(sm)src.playbackRate.value=sm.rate;src.detune.value=detune;
   const f=ctx.createBiquadFilter();f.type='lowpass';f.Q.value=.4;f.frequency.value=sm&&sm.real?Math.min(20000,(5000+15000*vel)*(dir==='up'?1.15:1)):(1400+9500*Math.pow(vel,1.5))*(dir==='up'?1.3:1);
-  const g=ctx.createGain(),peak=(.12+.3*vel)*mul*(sm&&sm.gain||1);if(soft){g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(peak,when+.006)}else g.gain.setValueAtTime(peak,when);
+  const g=ctx.createGain(),peak=(.12+.3*vel)*mul*(sm&&sm.gain||1);if(soft){g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(peak,when+.006)}else if(window.ROCK_PRUEBA){g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(peak,when+.002)}else g.gain.setValueAtTime(peak,when);
   if(damp)g.gain.setTargetAtTime(0,when+.004,.012);
   else if(S.res<.98)g.gain.setTargetAtTime(0,when+.06,.18+S.res*3.2);
   let out=g;if(ctx.createStereoPanner){const pn=ctx.createStereoPanner();pn.pan.value=pan;g.connect(pn);out=pn}
@@ -772,10 +772,10 @@ function voice(midi,{when,vel,dir='down',pan=0,mul=1,damp=false,detune=0,dest=nu
   const off=soft?Math.min(soft,b.duration*.1):0;src.start(when,off);src.stop(when+(b.duration-off)/(sm?sm.rate:1));
   const v={src,g,f,out,midi,t:when};src.onended=()=>{try{out.disconnect();g.disconnect()}catch(e){}LIVE.delete(v)};
   // límite de voces: un teléfono se ahoga (cortes, ruidos raros, se cuelga) si suenan cientos a la vez; la más antigua se apaga suave
-  LIVE.add(v);if(LIVE.size>MAXV){let old=null;for(const x of LIVE){if(x!==v&&!x.cut){old=x;break}}if(old){old.cut=1;stopVoice(old,Math.max(ctx.currentTime,old.t)+.005,.03);LIVE.delete(old)}}
+  LIVE.add(v);if(LIVE.size>MAXV){let old=null;if(window.ROCK_PRUEBA){const nw=ctx.currentTime;for(const x of LIVE){if(x!==v&&!x.cut&&x.rel!=null&&x.rel<=nw+.01){old=x;break}}}if(!old)for(const x of LIVE){if(x!==v&&!x.cut&&!(window.ROCK_PRUEBA&&x.t>ctx.currentTime)){old=x;break}}if(old){old.cut=1;stopVoice(old,Math.max(ctx.currentTime,old.t)+.005,.03);LIVE.delete(old)}}
   return v;
 }
-function stopVoice(v,when,tc=.02){if(!v)return;const p=v.g.gain;if(p.cancelAndHoldAtTime)p.cancelAndHoldAtTime(when);else p.cancelScheduledValues(when);p.setTargetAtTime(0,when,tc);try{v.src.stop(when+tc*10)}catch(e){}}
+function stopVoice(v,when,tc=.02){if(!v)return;v.rel=when;const p=v.g.gain;if(p.cancelAndHoldAtTime)p.cancelAndHoldAtTime(when);else p.cancelScheduledValues(when);p.setTargetAtTime(0,when,tc);try{v.src.stop(when+tc*10)}catch(e){}}
 
 /* ───────── Interpretación ───────── */
 let lastLat=null;
@@ -3590,7 +3590,7 @@ function hrecStart(mode){ensureAudio();if(!stepOn()){flashMsg('Elige una canció
   if(mode==='sigue'){let n=3;const cd=()=>{if(!HREC.on)return;if(n>0){flashMsg(String(n));n--;setTimeout(cd,800)}else{demoStart();HREC.started=true;flashMsg('Acompaña con la mano como si la tocaras')}};cd()}
   else flashMsg('Grabando: toca como siempre, desde el principio');
 }
-function hrecData(){return Object.assign({},HREC.meta,{dur:hrT(),strokes_cols:['t_ms','dir','vel','gap','beat','esperando','vel_cancion','dy_px','dt_ms','item'],strokes:HREC.st,
+function hrecData(){let ps=null;try{const q=ctx&&ctx.playbackStats;if(q)ps={under:q.underrunEvents,underDur:q.underrunDuration,tot:q.totalDuration}}catch(e){}return Object.assign({},HREC.meta,{prueba:window.ROCK_PRUEBA?(S.clMode||'A'):null,stats:ps,base:ctx?ctx.baseLatency:null,dur:hrT(),strokes_cols:['t_ms','dir','vel','gap','beat','esperando','vel_cancion','dy_px','dt_ms','item'],strokes:HREC.st,
   sound_cols:['t_ms','beat','tipo','n_notas','rasgueo','rol','pista','midi'],sound:HREC.ev,finger_cols:['t_ms','y_0a1000','x_0a1000','tipo(0=baja,1=mueve,2=sube)','dedo'],finger:HREC.pt})}
 async function hrecSave(){const L=HREC.last;if(!L)return;const fn='rockstar-mano-'+String(L.song).replace(/[^\w-]/g,'').slice(0,30)+'-'+L.mode+'-'+new Date().toTimeString().slice(0,5).replace(':','')+'.json';
   const blob=new Blob([JSON.stringify(L)],{type:'application/json'});

@@ -569,7 +569,7 @@ let leadVoices=[];
 function ensureAudio(){
   if(ctx){if(ctx.state!=='running')ctx.resume();return}
   const AC=window.AudioContext||window.webkitAudioContext;
-  try{ctx=new AC({latencyHint:'interactive'})}catch(e){ctx=new AC()}setTimeout(()=>{try{ensureBank(bankKind(inst()))}catch(_){}},0);
+  try{ctx=new AC({latencyHint:window.ROCK_PRUEBA?'balanced':'interactive'})}catch(e){ctx=new AC()}setTimeout(()=>{try{ensureBank(bankKind(inst()))}catch(_){}},0);
   buildGraph();buildInstBus();applyFx();setVol();applyBandMix();try{gpBanks(GPS[S.songId])}catch(e){}
   if(ctx.resume)ctx.resume();
   prefetch();
@@ -763,7 +763,7 @@ const LIVE=new Set(),MAXV=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent
 function voice(midi,{when,vel,dir='down',pan=0,mul=1,damp=false,detune=0,dest=null,bank=null,soft=0}){
   const sm=sampleFor(midi,bank,vel),b=sm?sm.b:getBuf(midi),src=ctx.createBufferSource();src.buffer=b;if(sm)src.playbackRate.value=sm.rate;src.detune.value=detune;
   const f=ctx.createBiquadFilter();f.type='lowpass';f.Q.value=.4;f.frequency.value=sm&&sm.real?Math.min(20000,(5000+15000*vel)*(dir==='up'?1.15:1)):(1400+9500*Math.pow(vel,1.5))*(dir==='up'?1.3:1);
-  const g=ctx.createGain(),peak=(.12+.3*vel)*mul*(sm&&sm.gain||1);if(soft){g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(peak,when+.006)}else g.gain.setValueAtTime(peak,when);
+  const g=ctx.createGain(),peak=(.12+.3*vel)*mul*(sm&&sm.gain||1);if(soft){g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(peak,when+.006)}else if(window.ROCK_PRUEBA){g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(peak,when+.002)}else g.gain.setValueAtTime(peak,when);
   if(damp)g.gain.setTargetAtTime(0,when+.004,.012);
   else if(S.res<.98)g.gain.setTargetAtTime(0,when+.06,.18+S.res*3.2);
   let out=g;if(ctx.createStereoPanner){const pn=ctx.createStereoPanner();pn.pan.value=pan;g.connect(pn);out=pn}
@@ -772,10 +772,10 @@ function voice(midi,{when,vel,dir='down',pan=0,mul=1,damp=false,detune=0,dest=nu
   const off=soft?Math.min(soft,b.duration*.1):0;src.start(when,off);src.stop(when+(b.duration-off)/(sm?sm.rate:1));
   const v={src,g,f,out,midi,t:when};src.onended=()=>{try{out.disconnect();g.disconnect()}catch(e){}LIVE.delete(v)};
   // límite de voces: un teléfono se ahoga (cortes, ruidos raros, se cuelga) si suenan cientos a la vez; la más antigua se apaga suave
-  LIVE.add(v);if(LIVE.size>MAXV){let old=null;for(const x of LIVE){if(x!==v&&!x.cut){old=x;break}}if(old){old.cut=1;stopVoice(old,Math.max(ctx.currentTime,old.t)+.005,.03);LIVE.delete(old)}}
+  LIVE.add(v);if(LIVE.size>MAXV){let old=null;if(window.ROCK_PRUEBA){const nw=ctx.currentTime;for(const x of LIVE){if(x!==v&&!x.cut&&x.rel!=null&&x.rel<=nw+.01){old=x;break}}}if(!old)for(const x of LIVE){if(x!==v&&!x.cut&&!(window.ROCK_PRUEBA&&x.t>ctx.currentTime)){old=x;break}}if(old){old.cut=1;stopVoice(old,Math.max(ctx.currentTime,old.t)+.005,.03);LIVE.delete(old)}}
   return v;
 }
-function stopVoice(v,when,tc=.02){if(!v)return;const p=v.g.gain;if(p.cancelAndHoldAtTime)p.cancelAndHoldAtTime(when);else p.cancelScheduledValues(when);p.setTargetAtTime(0,when,tc);try{v.src.stop(when+tc*10)}catch(e){}}
+function stopVoice(v,when,tc=.02){if(!v)return;v.rel=when;const p=v.g.gain;if(p.cancelAndHoldAtTime)p.cancelAndHoldAtTime(when);else p.cancelScheduledValues(when);p.setTargetAtTime(0,when,tc);try{v.src.stop(when+tc*10)}catch(e){}}
 
 /* ───────── Interpretación ───────── */
 let lastLat=null;
@@ -3590,7 +3590,7 @@ function hrecStart(mode){ensureAudio();if(!stepOn()){flashMsg('Elige una canció
   if(mode==='sigue'){let n=3;const cd=()=>{if(!HREC.on)return;if(n>0){flashMsg(String(n));n--;setTimeout(cd,800)}else{demoStart();HREC.started=true;flashMsg('Acompaña con la mano como si la tocaras')}};cd()}
   else flashMsg('Grabando: toca como siempre, desde el principio');
 }
-function hrecData(){return Object.assign({},HREC.meta,{dur:hrT(),strokes_cols:['t_ms','dir','vel','gap','beat','esperando','vel_cancion','dy_px','dt_ms','item'],strokes:HREC.st,
+function hrecData(){let ps=null;try{const q=ctx&&ctx.playbackStats;if(q)ps={under:q.underrunEvents,underDur:q.underrunDuration,tot:q.totalDuration}}catch(e){}return Object.assign({},HREC.meta,{prueba:window.ROCK_PRUEBA?(S.clMode||'A'):null,stats:ps,base:ctx?ctx.baseLatency:null,dur:hrT(),strokes_cols:['t_ms','dir','vel','gap','beat','esperando','vel_cancion','dy_px','dt_ms','item'],strokes:HREC.st,
   sound_cols:['t_ms','beat','tipo','n_notas','rasgueo','rol','pista','midi'],sound:HREC.ev,finger_cols:['t_ms','y_0a1000','x_0a1000','tipo(0=baja,1=mueve,2=sube)','dedo'],finger:HREC.pt})}
 async function hrecSave(){const L=HREC.last;if(!L)return;const fn='rockstar-mano-'+String(L.song).replace(/[^\w-]/g,'').slice(0,30)+'-'+L.mode+'-'+new Date().toTimeString().slice(0,5).replace(':','')+'.json';
   const blob=new Blob([JSON.stringify(L)],{type:'application/json'});
@@ -3644,30 +3644,41 @@ try{const h=document.head||document.documentElement,add=(t,a)=>{const e=document
   if(!document.querySelector('link[rel=manifest]'))add('link',{rel:'manifest',href:'manifest.json'});add('link',{rel:'apple-touch-icon',href:'icon192.png'});add('link',{rel:'icon',href:'icon192.png'});
   add('meta',{name:'apple-mobile-web-app-capable',content:'yes'});add('meta',{name:'mobile-web-app-capable',content:'yes'});add('meta',{name:'apple-mobile-web-app-title',content:'Rockstar'});add('meta',{name:'theme-color',content:'#0b0a0a'})}catch(e){}
 learnedLoad(S.songId);
-/* ═════════ PRUEBA · motor «reloj» ═════════
-   La canción va con su propio reloj mientras tu mano se mueva (si paras ~1 tiempo, espera).
-   Tus pasadas no adelantan la canción: cada pasada «toca» lo que cae cerca de ella.
-   - Rasgueo/acorde: suena si pasaste la mano cerca (hasta 0,12 s antes o 0,15 s después). Si no pasaste, no suena.
-   - Punteo/nota sola: si no pasaste, suena suave (la melodía no se corta).
-   - Pasada de aire en un rasgueo: roce apagado de las cuerdas, como un guitarrista de verdad. */
-const CL={st:[],pend:[],dead:0};
+/* ═════════ PRUEBA · dos formas de tocar con la mano (investigación) ═════════
+   La canción va con su reloj a su velocidad real mientras tu mano se mueva (si paras ~1,5 tiempos, espera).
+   A · Guitar Hero/Rock Band: la guitarra de la partitura SIEMPRE suena a su tiempo; tu mano la «abre».
+       Pasada cerca (hasta 0,17 s antes) = suena fuerte, con tu fuerza. Sin pasada = suena bajito.
+       Notas muy seguidas (menos de 1/3 de tiempo entre ellas, como los ligados de Rock Band) siguen a la primera: una pasada toca la frase.
+   B · Wii Music: cada nota tiene su espacio (de una nota a la siguiente). La primera pasada en ese espacio la toca:
+       a tiempo si llegaste antes, o en el momento de tu pasada si llegaste un poco tarde. Sin pasada, ese espacio queda en silencio.
+       Pasadas extra: un roce apagado de cuerdas (sin cortar lo que suena).
+   Sonido: ataques con rampa corta (sin clics), el roce nunca corta las cuerdas que suenan, el límite de voces
+   apaga primero las que ya se están apagando, y el reloj corre en un hilo aparte (no se atrasa si el teléfono se ocupa). */
+const CL={st:[],pend:null,dead:0,run:{},worker:null,ticker:null};
+function clMode(){return S.clMode==='B'?'B':'A'}
 function clSpeed(){return S.clSpeed||1}
-/* la mano «cubre» lo que viene justo después de cada pasada: hasta 1,5 veces tu ritmo de pasadas (0,15–0,45 s).
-   Si tu mano se está moviendo, todo suena a tiempo; recién cuando paras y vuelves, el acorde espera tu pasada. */
-function clWin(){const a=CL.st,d=[];for(let i=Math.max(1,a.length-9);i<a.length;i++){const x=a[i]-a[i-1];if(x<1)d.push(x)}if(!d.length)return .12;d.sort((x,y)=>x-y);return clamp(d[d.length>>1]*1.5,.15,.45)}
 function clTe(e){return MB.t0+(e.b-MB.p0)/MB.rate}
+function clIOI(){const a=CL.st,d=[];for(let i=Math.max(1,a.length-9);i<a.length;i++){const x=a[i]-a[i-1];if(x<1)d.push(x)}if(!d.length)return .25;d.sort((x,y)=>x-y);return d[d.length>>1]}
 function clSingle(e){const g=e.gp;return !!g&&(g.ns.length<=2||g.role==='solo'||g.role==='mel'||g.role==='lead')}
+// reloj en un hilo aparte: el temporizador de la página se atrasa cuando el teléfono está ocupado; el de un Worker no
+function clStartTicker(){clearInterval(MB.timer);MB.timer=null;
+  try{if(!CL.worker){const u=URL.createObjectURL(new Blob(['let t=null;onmessage=e=>{clearInterval(t);if(e.data>0)t=setInterval(()=>postMessage(0),e.data)}'],{type:'text/javascript'}));CL.worker=new Worker(u);CL.worker.onmessage=()=>clTick()}
+    CL.worker.postMessage(8);CL.ticker='w'}catch(e){CL.ticker=null;MB.timer=setInterval(clTick,8)}}
+function clStopTicker(){try{CL.worker&&CL.worker.postMessage(0)}catch(e){}clearInterval(MB.timer)}
+// roce: la mano pasa por las cuerdas agudas apagadas; voces aparte, NO corta las cuerdas que están sonando
 function clRoce(dir,vel,now){const E=STEP.ev,pos=mbPosAt(now);
   for(let j=Math.min(E.length,MB.ei)-1;j>=0&&j>MB.ei-60;j--){const x=E[j];if(x.band||!x.gp)continue;if(pos-x.b>2.5)return;if(clSingle(x))return;
-    const ns=x.gp.ns.slice().sort((a,c)=>c.midi-a.midi).slice(0,3);
-    playGp(Object.assign({},x.gp,{ns:ns.map(n=>Object.assign({},n,{dead:true,pm:false,dur:.25,letRing:false})),brush:dir==='up'?'Up':'Down',dense:false,gh:true,dur:.25}),now+.002,.28+.2*(vel==null?.6:vel),1/MB.rate,x.b);return}}
+    const g=x.gp,orig=gpOrig(),gk=GTS[S.gpSnd]?S.gpSnd:GTS[g.snd]?g.snd:'strat',GT=orig?GTS[gk]:null,mb=orig?GT.m:gpSnd().mute,dst=orig&&A.gpBus?rigIn(gk,g.tr):null;
+    const ns=g.ns.slice().sort((a,c)=>c.midi-a.midi).slice(0,3),up=dir==='up';(up?ns:ns.slice().reverse()).forEach((n,i)=>{
+      const v=voice(n.midi,{when:now+.003+i*.006,vel:clamp(.18+.22*(vel==null?.6:vel),.12,.45),dir,mul:.35,bank:mb,dest:dst,pan:g.pan||-.1,soft:.002});stopVoice(v,now+.07+i*.006,.02)});return}}
+function clPlay(e,t,v){playEv(e,t,v,1/MB.rate)}
 function clPass(vel,dir){
   ensureAudio();if(seq.type!=='chords'||!seq.items.length)return;stepBuild();const E=STEP.ev;if(!E.length)return;
   const now=ctx.currentTime;if(now-MB.last<.035)return;
   if(MB.hold&&idx===MB.idx){if(MB.go&&loopOn()&&MB.sec<UN().length-1){vampStop();MB.hold=false;MB.go=false;MB.sec++;if(S.auto)flashMsg('▶ '+UN()[MB.sec].name);render()}
     else if(loopOn()){MB.last=now;mbVamp(dir,vel);seenHint();return}else MB.hold=false}
   if(MB.key!==STEP.key){MB.key=STEP.key;mbSeek(MB.pos)}
-  if(idx!==MB.idx){MB.hold=false;MB.on=false;clearInterval(MB.timer);const e0=STEP.ev[STEP.st[idx]];mbSeek(MB.seekB!=null?MB.seekB:STEP.cum&&STEP.cum[idx]!=null?STEP.cum[idx]:e0?Math.floor(e0.b):0);MB.limit=MB.pos;MB.idx=idx;MB.sec=MB.seekB!=null?MB.sec:unIdx(idx);MB.seekB=null;MB.go=false}
+  if(idx!==MB.idx){MB.hold=false;MB.on=false;clStopTicker();const e0=STEP.ev[STEP.st[idx]];mbSeek(MB.seekB!=null?MB.seekB:STEP.cum&&STEP.cum[idx]!=null?STEP.cum[idx]:e0?Math.floor(e0.b):0);MB.limit=MB.pos;MB.idx=idx;MB.sec=MB.seekB!=null?MB.sec:unIdx(idx);MB.seekB=null;MB.go=false}
   if(MB.sec==null)MB.sec=unIdx(idx);
   MB.last=now;const v=vel==null?.7:vel;MB.vel=MB.vel*.5+v*.5;curVel=clamp(.45+.6*v,.4,1);
   CL.st.push(now);if(CL.st.length>40)CL.st.shift();
@@ -3675,44 +3686,57 @@ function clPass(vel,dir){
   if(!MB.on){// el reloj estaba detenido: parte aquí; si viene un silencio corto, salta a la próxima nota para que tu pasada suene al tiro
     let j=MB.ei;while(j<E.length&&E[j].band)j++;const nx=E[j],L=mbLoop();
     if(nx&&nx.b>MB.pos&&nx.b-MB.pos<4&&!(L&&nx.b>=L.b-1e-6)){MB.pos=nx.b;mbSeek0(nx.b)}
-    MB.on=true;MB.p0=MB.pos;MB.t0=now+.004;MB.rate=rate;CL.pend=[];clearInterval(MB.timer);MB.timer=setInterval(clTick,10)}
+    MB.on=true;MB.p0=MB.pos;MB.t0=now+.004;MB.rate=rate;CL.pend=null;CL.run={};CL.used=-1;clStartTicker()}
   else if(Math.abs(MB.rate-rate)>1e-6)mbAnchor(now,rate);
-  CL.dead=now+Math.max(.55,1.25/MB.rate);
-  // ¿esta pasada toca algo? acordes que pasaron hace poco sin que los tocaras, o notas que vienen enseguida
-  let hit=false;CL.pend=CL.pend.filter(p=>{if(now-p.te<=.15){playEv(p.e,now+.002,.8+.3*MB.vel,1/MB.rate);hit=true;return false}return true});
-  if(!hit)for(let j=MB.ei;j<E.length;j++){const e=E[j];if(e.band)continue;if(clTe(e)>now+.12)break;hit=true;break}
-  if(!hit)clRoce(dir,v,now);
+  CL.dead=now+Math.max(.6,1.5/MB.rate);
+  if(clMode()==='B'){// Wii: si hay un espacio esperando tu pasada, lo tocas ahora; si no, y este espacio ya sonó, es una pasada extra (roce)
+    if(CL.pend&&now<=CL.pend.until){CL.pend.evs.forEach(e=>clPlay(e,now+.002,.8+.3*MB.vel));CL.used=CL.pend.area;CL.pend=null}
+    else{let j=MB.ei;while(j<E.length&&E[j].band)j++;const nx=E[j];if(!(nx&&clTe(nx)<=now+.12))clRoce(dir,v,now)}}
+  else{// Guitar Hero: si la frase que suena se te pasó hace un instante, tu pasada la abre desde aquí
+    Object.values(CL.run).forEach(r=>{if(!r.hit&&now-r.t<=.12)r.hit=true})}
   clTick();seenHint();
 }
 function clTick(){
-  if(!MB.on||!ctx)return;const now=ctx.currentTime,E=STEP.ev;
-  CL.pend=CL.pend.filter(p=>now-p.te<=.15);
-  if(now>CL.dead){MB.pos=mbPosAt(now);MB.on=false;clearInterval(MB.timer);MB.limit=MB.pos;CL.pend=[];return}   // paraste la mano: la canción espera aquí
-  for(let guard=0;guard<400&&MB.ei<E.length;guard++){const e=E[MB.ei],te=clTe(e);if(te>now+.03)break;
+  if(!MB.on||!ctx)return;const now=ctx.currentTime,E=STEP.ev,mode=clMode();
+  if(now>CL.dead){MB.pos=mbPosAt(now);MB.on=false;clStopTicker();MB.limit=MB.pos;CL.pend=null;return}   // paraste la mano: la canción espera aquí
+  if(CL.pend&&now>CL.pend.until)CL.pend=null;   // B: nadie tocó ese espacio: queda en silencio
+  const ioi=clIOI(),moving=now-(CL.st[CL.st.length-1]||-9)<Math.min(.4,1.6*ioi);
+  for(let guard=0;guard<400&&MB.ei<E.length;guard++){const e=E[MB.ei],te=clTe(e);if(te>now+.012)break;
     const L=mbLoop();
     if(L&&e.b>=L.b-1e-6){
       if(MB.go&&MB.sec<UN().length-1){MB.go=false;MB.sec++;const nx=UN()[MB.sec];if(S.auto)flashMsg('▶ '+nx.name);render();continue}
-      MB.pos=L.b;MB.on=false;clearInterval(MB.timer);MB.hold=true;CL.pend=[];render();return}   // fin de la parte (sin Auto): espera con el último acorde
-    MB.ei++;const t=Math.max(now,te)+.001,spb=1/MB.rate;
-    if(e.band){playEv(e,t,.8+.3*MB.vel,spb)}
-    else{const W=clWin(),claimed=CL.st.some(s=>s>=te-W&&s<=te+.012);
-      if(claimed)playEv(e,t,.8+.3*MB.vel,spb);
-      else if(clSingle(e))playEv(e,t,.42,spb);                 // punteo sin pasada: suena suave
-      else CL.pend.push({e,te});                                 // acorde sin pasada: espera un instante por si llega tarde
-      if(STEP.ev[MB.ei]&&STEP.ev[MB.ei].ii!==e.ii)animAt(t,()=>{if(idx!==e.ii){idx=e.ii;MB.idx=idx;render()}})}}
-  if(MB.ei>=E.length&&!mbLoop()){MB.on=false;clearInterval(MB.timer);mbSeek(0);MB.limit=0;idx=0;MB.idx=0;MB.sec=0;flashMsg('¡Fin de la canción! Vuelve a empezar');render()}
+      MB.pos=L.b;MB.on=false;clStopTicker();MB.hold=true;CL.pend=null;render();return}   // fin de la parte (sin Auto): espera con el último acorde
+    MB.ei++;const t=Math.max(now,te)+.001;
+    if(e.band){clPlay(e,t,.8+.3*MB.vel);continue}
+    const near=CL.st.some(s=>s>=te-.17&&s<=te+.012),tr=e.gp?e.gp.tr:'x',r=CL.run[tr],cont=r&&e.b-r.b<.354;   // .354 tiempo = 170/480 (umbral de ligado de Rock Band)
+    if(mode==='A'){
+      const hit=near||(cont&&r.hit)||moving;if(!cont||!r)CL.run[tr]={b:e.b,t:te,hit};else{r.b=e.b;r.t=te;if(hit)r.hit=true}
+      clPlay(e,t,hit?.8+.3*MB.vel:.34)}
+    else{// B · Wii: espacio = de esta nota a la siguiente
+      const area=e.b;if(cont&&r&&r.hit){r.b=e.b;clPlay(e,t,.8+.3*MB.vel)}           // ligado dentro de una frase que tocaste: sigue
+      else if(near&&CL.used!==area){CL.used=area;CL.run[tr]={b:e.b,hit:true};clPlay(e,t,.8+.3*MB.vel)}
+      else{CL.run[tr]={b:e.b,hit:false};let nb=null;for(let j=MB.ei;j<E.length;j++)if(!E[j].band&&E[j].b>e.b+1e-6){nb=E[j].b;break}
+        const until=Math.min(te+.6,nb!=null?MB.t0+(nb-MB.p0)/MB.rate:te+.6);
+        if(CL.pend&&CL.pend.area===area)CL.pend.evs.push(e);else CL.pend={area,evs:[e],until}}}
+    if(STEP.ev[MB.ei]&&STEP.ev[MB.ei].ii!==e.ii)animAt(t,()=>{if(idx!==e.ii){idx=e.ii;MB.idx=idx;render()}})}
+  if(MB.ei>=E.length&&!mbLoop()){MB.on=false;clStopTicker();mbSeek(0);MB.limit=0;idx=0;MB.idx=0;MB.sec=0;flashMsg('¡Fin de la canción! Vuelve a empezar');render()}
 }
-/* barra de la prueba: elegir canción y velocidad */
-(function(){const SONGS=[['musica-ligera','De Música Ligera'],['sultans-swing','Sultans of Swing']];
+/* barra de la prueba: canción, forma A/B y velocidad */
+(function(){const SONGS=[['musica-ligera','Ligera'],['sultans-swing','Sultans']];
   const bar=document.createElement('div');bar.id='prBar';
-  bar.style.cssText='position:absolute;left:50%;bottom:8px;transform:translateX(-50%);z-index:50;display:flex;gap:6px;align-items:center;background:rgba(20,16,14,.92);border:1px solid #e3b86e;border-radius:999px;padding:5px 8px;font:600 13px system-ui,sans-serif;color:#f4efe6;box-shadow:0 4px 18px rgba(0,0,0,.5);white-space:nowrap';
-  const draw=()=>{const sp=Math.round(clSpeed()*100);bar.innerHTML='<span style="color:#e3b86e">🧪 PRUEBA</span>'+SONGS.map(([id,n])=>`<button data-pr="${id}" style="border:0;border-radius:999px;padding:6px 10px;font:inherit;background:${S.songId===id?'#e3b86e':'#3a322c'};color:${S.songId===id?'#1a1206':'#f4efe6'}">${n}</button>`).join('')+
-    `<button data-prs="-" style="border:0;border-radius:999px;width:30px;height:30px;font:inherit;background:#3a322c;color:#fff">−</button><span>${sp}%</span><button data-prs="+" style="border:0;border-radius:999px;width:30px;height:30px;font:inherit;background:#3a322c;color:#fff">+</button>`};
+  bar.style.cssText='position:absolute;left:0;right:0;margin:0 auto;width:max-content;bottom:8px;z-index:50;display:flex;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 16px);gap:4px;align-items:center;background:rgba(20,16,14,.92);border:1px solid #e3b86e;border-radius:18px;padding:4px 6px;font:600 12px system-ui,sans-serif;color:#f4efe6;box-shadow:0 4px 18px rgba(0,0,0,.5);white-space:nowrap;box-sizing:border-box';
+  const B=(on,attrs,txt,w)=>`<button ${attrs} style="border:0;border-radius:999px;${w?'width:30px;height:30px;':'padding:6px 9px;'}font:inherit;background:${on?'#e3b86e':'#3a322c'};color:${on?'#1a1206':'#f4efe6'}">${txt}</button>`;
+  const draw=()=>{bar.title='A = Guitar Hero (tu mano abre la guitarra) · B = Wii Music (cada pasada toca su nota)';const sp=Math.round(clSpeed()*100),m=clMode();bar.innerHTML='<span style="color:#e3b86e">🧪</span>'+SONGS.map(([id,n])=>B(S.songId===id,`data-pr="${id}"`,n)).join('')+
+    B(m==='A','data-prm="A"','A')+B(m==='B','data-prm="B"','B')+
+    B(0,'data-prs="-"','−',1)+`<span>${sp}%</span>`+B(0,'data-prs="+"','+',1)};
   bar.addEventListener('pointerdown',e=>e.stopPropagation());
   bar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;ensureAudio();
     if(b.dataset.pr){if(!GPHAVE.has(b.dataset.pr)){openSheet('welcomeLib');return}loadSong(b.dataset.pr,true);setTimeout(draw,300)}
-    else{S.clSpeed=clamp(Math.round((clSpeed()+(b.dataset.prs==='+'?.05:-.05))*100)/100,.6,1.3);persist&&persist();if(MB.on)mbAnchor(ctx.currentTime,mbOrig()*clSpeed());draw()}});
+    else if(b.dataset.prm){S.clMode=b.dataset.prm;try{persist()}catch(_){}flashMsg(S.clMode==='A'?'A · tu mano abre la guitarra':'B · cada pasada toca su nota');draw()}
+    else{S.clSpeed=clamp(Math.round((clSpeed()+(b.dataset.prs==='+'?.05:-.05))*100)/100,.6,1.3);try{persist()}catch(_){}if(MB.on)mbAnchor(ctx.currentTime,mbOrig()*clSpeed());draw()}});
   boardEl.appendChild(bar);draw();
+  // iPhone: si Safari deja el audio «interrumpido» al volver a la app, lo despierta
+  document.addEventListener('visibilitychange',()=>{try{if(document.visibilityState==='visible'&&ctx&&ctx.state!=='running'){ctx.suspend&&ctx.suspend().catch(()=>{});setTimeout(()=>ctx.resume&&ctx.resume(),60)}}catch(e){}});
   setTimeout(()=>{try{if(!SONGS.some(([id])=>id===S.songId)&&GPHAVE.has('musica-ligera')){loadSong('musica-ligera',true)}draw()}catch(e){}},1800)})();
 
 })();
