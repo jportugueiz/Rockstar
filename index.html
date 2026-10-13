@@ -1162,7 +1162,7 @@ const GPV={},DYN={PPP:.3,PP:.38,P:.48,MP:.58,MF:.68,F:.8,FF:.9,FFF:1};
    Cada sonido tiene su cadena (como el pedalero y el amplificador del guitarrista), y cada canción ajusta sus efectos
    según cómo se grabó (investigado por canción: chorus de Cerati, eco corto de rockabilly, delay de los solos de Slash…). */
 const RIGS={   // drive 0-10, hp/lp: filtros del parlante, mid: [frecuencia, dB], hi: brillo dB, cho/rev: cuánto, dbl: guitarra doblada a los lados
-  charango:{drive:0,hp:220,lp:15000,mid:[650,-2.5],pres:[3800,2.5],hi:2,rev:.14,gain:.62,dbl:1},   // charango: brillante, sin graves, cuerpo chico
+  charango:{drive:0,hp:160,lp:15000,lo:[300,2],mid:[650,-1],pres:[3800,2.5],hi:2,rev:.14,gain:.55,dbl:1,dblG:1,dblD:.026},   // doblado pesado: dos tomas iguales a los lados, con más cuerpo   // charango: brillante, sin graves, cuerpo chico
   acu:{drive:0,hp:75,lp:16000,mid:[220,-2.5],hi:2,rev:.14,dbl:1,gain:1.7},doce:{drive:0,hp:90,lp:16000,mid:[220,-3],hi:2.5,rev:.12,dbl:1,gain:1.7},nyl:{drive:0,hp:70,lp:11000,mid:[250,-1.5],hi:1,rev:.16,dbl:1,gain:1.7},fla:{drive:0,hp:95,lp:15000,lo:[180,-3],mid:[320,-2],pres:[2800,2],hi:1.5,rev:.11,dbl:1,gain:1.9},
   // Fender: ecualización ajustada midiendo el espectro de la guitarra de Sultans of Swing original contra la de la app
   strat:{drive:1.5,hp:60,lp:16000,mid:[1000,0],hi:0,rev:.12,geq:[[125,-10],[200,-5],[400,-4],[1600,-6],[2500,-6],[6300,-2],[11000,6]],gain:2},cho:{drive:1,hp:60,lp:16000,mid:[1000,0],hi:0,rev:.14,cho:.35,geq:[[125,-10],[200,-5],[400,-4],[1600,-6],[2500,-6],[6300,-2],[11000,6]],gain:2},neck:{drive:1,hp:60,lp:9000,mid:[1000,0],hi:-1,rev:.15,geq:[[125,-8],[200,-4],[1600,-4],[2500,-4]],gain:1.7},
@@ -1269,8 +1269,8 @@ function rigBuild(k){const c=ctx,G=v=>{const g=c.createGain();g.gain.value=v==nu
   // chorus: una copia apenas desafinada que se mueve
   if(P.cho){const d=c.createDelay(.05);d.delayTime.value=.012;const o=c.createOscillator();r.osc=o;o.frequency.value=.7;const od=G(.0025);o.connect(od).connect(d.delayTime);o.start();const w=G(P.cho);last.connect(d).connect(w).connect(r.out)}
   // guitarra doblada: la misma parte otra vez, al otro lado (como se graba en estudio)
-  if(P.dbl&&c.createStereoPanner){const pl=c.createStereoPanner();pl.pan.value=-.35;const pr=c.createStereoPanner();pr.pan.value=.35;const d=c.createDelay(.05);d.delayTime.value=.017;
-    last.connect(pl).connect(r.out);last.connect(d).connect(G(.75)).connect(pr).connect(r.out)}else last.connect(r.out);
+  if(P.dbl&&c.createStereoPanner){const pl=c.createStereoPanner();pl.pan.value=-.35;const pr=c.createStereoPanner();pr.pan.value=.35;const d=c.createDelay(.05);d.delayTime.value=P.dblD||.017;
+    last.connect(pl).connect(r.out);last.connect(d).connect(G(P.dblG||.75)).connect(pr).connect(r.out)}else last.connect(r.out);
   // eco corto (rockabilly) y delay de solos
   const dl=P.delay?[P.delay[0]*spb,P.delay[1],P.delay[2]]:P.delayS||(P.slap?[P.slap[0],0,P.slap[1]]:null);
   if(dl){const d=c.createDelay(2);d.delayTime.value=Math.min(1.9,dl[0]);const fb=G(dl[1]),w=G(dl[2]),f2=F('lowpass',3800,.7);last.connect(d);d.connect(f2);f2.connect(fb).connect(d);f2.connect(w).connect(r.out)}
@@ -1321,7 +1321,7 @@ function playGp(g,t,vscale,spb,b){const k=g.tr,SN=gpSnd(),gk0=gpOrig()?(GTS[S.gp
       v.slideOut=n.slide}
     let len=n.pm?Math.min(orig?.16:.2,n.dur*spb):g.dense&&chord?Math.max(1,n.dur)*spb+.08:Math.max(.06,n.dur*spb*(n.letRing?2.5:1))+.05;if(g.ring&&!n.pm&&!n.dead&&!/dist|crunch/.test(gk))len=Math.max(len,Math.min(3.2,4*spb));   // arpegio: suena hasta que esa cuerda se vuelve a tocarstopVoice(v,w+len,n.pm?.04:.07);
     // 12 cuerdas: las cuatro graves llevan su octava, las dos agudas van dobladas al unísono; chorus: una segunda guitarra apenas desafinada
-    const xs=[];if(GT&&GT.twelve)xs.push(n.str<4?[12,.42,.004]:[0,.5,.006]);if(GT&&GT.cho)xs.push([0,.45,.011]);if(GT&&GT.course)xs.push([0,.8,.007]);   // cada orden del charango son dos cuerdas: la segunda apenas después y desafinada
+    const xs=[];if(GT&&GT.twelve)xs.push(n.str<4?[12,.42,.004]:[0,.5,.006]);if(GT&&GT.cho)xs.push([0,.45,.011]);if(GT&&GT.course)xs.push([0,.9,.007],[0,.6,.013]);   // cada orden del charango son dos cuerdas: la segunda apenas después y desafinada
     xs.forEach(([tr,gm,dl],j)=>{const v2=voice(n.midi+tr,{when:w+dl,vel:vv*gm,dir:up?'up':'down',mul:g.lead?1.05:.85,pan:-pan*.6,bank:bk,dest:dst,detune:tr?0:(j?-7:7),soft:.006});
       const o2=GPV[key+'x'+j];if(o2)stopVoice(o2,w,.02);GPV[key+'x'+j]=v2;stopVoice(v2,w+len,n.pm?.04:.07)})});
   animAt(t,()=>{stage.flash=Math.min(1,stage.flash+(chord?.3:.15))})}
@@ -3350,7 +3350,7 @@ async function renderSheet(){
       <small class="p" style="margin:0">¿No tienes ese archivo? Pídeselo a Claude, o carga tus Guitar Pro en 📁 Tablaturas.</small></div>`}
   else if(sheet.kind==='more'){
     const row=(k,t,d)=>`<button class="item" data-sheet="${k}"><span class="main"><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
-    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 123</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
+    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 124</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
       <div class="group"><span class="eyebrow">Sonido de la guitarra</span><div class="seg" style="flex-wrap:wrap">${[['orig',{n:'⭐ Como en el disco'}]].concat(Object.entries(GTS)).map(([k,v])=>`<button data-gpsnd="${k}" aria-pressed="${(GTS[S.gpSnd]?S.gpSnd:'orig')===k}">${v.n}</button>`).join('')}</div><small class="p" style="margin:0">"Como en el disco": cada guitarra suena como la de la grabación original.</small></div>
       <div class="group"><span class="eyebrow">Modo</span><div class="seg">${MODES.map(([m,l])=>`<button data-setmode="${m}" aria-pressed="${S.mode===m}">${l}</button>`).join('')}</div></div>`;
   }
