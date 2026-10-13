@@ -726,7 +726,7 @@ const SONG_GEAR={
   'bamboleo':{def:'fla',capo:4,bpm:120},                                              // Gipsy Kings: guitarras flamencas Conde con cejilla en el 4 (Sol# menor), ~120
   'tu falta de querer':{def:'nyl',rules:[[/el[eé]ctric/i,'strat']]},'tu-falta':{def:'nyl',rules:[[/el[eé]ctric/i,'strat']]},   // Santiago Lara (criolla) + eléctrica con mucho reverb
   'paramar':{def:'strat',rules:[[/solo/i,'crunch']]},'voz-80':{def:'crunch'},'pa-pa-pa':{def:'strat',rules:[[/guitarra ?2/i,'crunch']]},   // Los Prisioneros: equipos baratos, sonido new wave (The Cars)
-  'he-barrido':{def:'acu'},'quien-es':{def:'acu'},'amor-violento':{def:'neck',rules:[[/ac[uú]st/i,'acu']]},             // Los Tres: Unplugged con acústicas; bolero eléctrico limpio (Sheraton)
+  'he-barrido':{def:'acu'},'quien-es':{def:'gretsch'},'amor-violento':{def:'neck',rules:[[/ac[uú]st/i,'acu']]},             // Los Tres: Unplugged con acústicas; bolero eléctrico limpio (Sheraton)
   'dejate-caer':{def:'acu',rules:[[/solo|guitarra 2|el[eé]ctric/i,'strat']]},'torre-babel':{def:'strat'},              // La Espada & la Pared: acústica + eléctrica limpia; Fome: Jaguar y Telecaster
   'cuando-pase':{def:'cho'},'profugos':{def:'cho'},                                   // Cerati 1985-86: Jackson/Strato limpia con chorus, eco y reverb de los 80
   'puente':{def:'neck',rules:[[/ac[uú]stica/i,'acu'],[/distor/i,'crunch'],[/delay/i,'cho']]}};   // Bocanada: eléctrica hueca limpia con eco estéreo
@@ -1069,7 +1069,7 @@ function stepBuild(){const key=S.songId+'|'+S.transpose+'|'+S.simple+'|'+seq.ite
     //  · donde la guitarra calla o solo deja sonar un acorde (intro de piano, interludio de teclado), para que la canción nunca quede muda
     //  · si la partitura trae una sola guitarra, también su melodía encima del rasgueo
     // una sola línea a la vez: en cada compás, la del instrumento que más toca ahí
-    const cand=GP.tracks.filter(T=>!T.drums&&!/guitar|bass/i.test(T.type)&&!/\b(voz|voces|voice|vocals?|voix|canto|coro|choir)\b/i.test(T.name)&&T.ev.length>=8);
+    const cand=GP.tracks.filter(T=>!T.drums&&!/guitar|bass/i.test(T.type)&&!/\b(voz|voces|voice|vocals?|voix|canto|coro|choir)\b/i.test(T.name)&&!/sint|synth/i.test(T.name||'')&&!(T.prog>=80&&T.prog<=103)&&T.ev.length>=8);   // los sintetizadores no se tocan en guitarra (Tren al Sur)
     const barOf=b=>{let lo=0,hi=GP.bars.length-1;while(lo<hi){const m=(lo+hi+1)>>1;if(GP.bars[m].start<=b+1e-6)lo=m;else hi=m-1}return lo};
     const gBar={};gtr.forEach(T=>T.ev.forEach(e=>{const k=barOf(e.b);gBar[k]=(gBar[k]||0)+1}));   // golpes de guitarra por compás
     const cnt=new Map();cand.forEach(T=>{const c={};T.ev.forEach(e=>{const k=barOf(e.b);c[k]=(c[k]||0)+1});cnt.set(T,c)});
@@ -1082,7 +1082,7 @@ function stepBuild(){const key=S.songId+'|'+S.transpose+'|'+S.simple+'|'+seq.ite
     const sig=T=>T.ev.map(e=>e.b.toFixed(2)+':'+e.notes.map(n=>n.midi).join(',')),seen=[],dup=new Set();
     gtr.forEach(T=>{const sg=sig(T);if(seen.some(S0=>sg.filter(x=>S0.has(x)).length>=sg.length*.8))dup.add(T);else seen.push(new Set(sg))});
     // la guitarra de cada pista (como en el disco); los rellenos usan la guitarra rítmica de la canción
-    const soloM=new Map(),soloT=T=>{if(!soloM.has(T))soloM.set(T,/solo|punteo|requinto/i.test(T.name||'')||!!T.ev.length&&new Set(T.ev.map(e=>barOf(e.b))).size<GP.bars.length*.35&&T.ev.filter(e=>e.notes.length<=2).length>T.ev.length*.7);return soloM.get(T)};
+    const soloM=new Map(),soloT=T=>{if(!soloM.has(T))soloM.set(T,/solo|punteo|requinto/i.test(T.name||'')||T.ev.length>=40&&new Set(T.ev.map(e=>barOf(e.b))).size<GP.bars.length*.35&&T.ev.filter(e=>e.notes.length<=2).length>T.ev.length*.7);return soloM.get(T)};
     // la rítmica principal: la guitarra que más rasguea (no la primera que aparece)
     const mainT=gtr.filter(T=>!dup.has(T)&&!soloT(T)&&!T.extra).sort((a,c)=>c.ev.filter(e=>e.notes.length>=3).length-a.ev.filter(e=>e.notes.length>=3).length)[0]||gtr[0];
     const gear=gpGear(),rhyT=mainT&&mainT.lead===false?mainT:gtr.find(T=>T.lead===false)||gtr[0],leadT=gtr.find(T=>T.lead)||rhyT,rhySnd=rhyT?gtSound(rhyT):gear.def||'acu',leadSnd=leadT?gtSound(leadT):rhySnd;
@@ -1203,7 +1203,8 @@ function mixTick(){if(!ctx||!MIX.key)return;const now=ctx.currentTime,spb=60/((g
   for(const tr in T){const m=T[tr];if(!m.fd)continue;let w;
     if(m.lg==null||MIX.R==null)w=m.role==='solo'?1.3:1;
     else{w=Math.exp(MIX.R-m.lg)*(MIXR[m.role]||1)*(m.role==='solo'&&!rhyOn?.92:1);if(leadOn&&m.role!=='solo'&&m.role!=='mel')w*=m.role==='lead'?.7:.5}
-    w=clamp(w,.2,4);if(m.want==null||Math.abs(Math.log(w/m.want))>.02){m.want=w;m.fd.gain.setTargetAtTime(w,now,w<m.fd.gain.value?.25:.9)}}   // baja rápido para dejar pasar el solo, vuelve despacio
+    w=m.role==='main'||m.role==='rhy2'?clamp(w,.55,2.2):clamp(w,.3,2.2);   // nunca una pista a 4x ni la rítmica tapada: un solo arriba, sí; un desastre, no
+if(m.want==null||Math.abs(Math.log(w/m.want))>.02){m.want=w;m.fd.gain.setTargetAtTime(w,now,w<m.fd.gain.value?.25:.9)}}   // baja rápido para dejar pasar el solo, vuelve despacio
   // la banda acompaña a la guitarra: queda unos 4 dB por debajo de las guitarras y baja un poco más cuando hay un solo; si la guitarra calla, la banda no sube
   if(A.gpMeter&&A.bandMeter&&band.on){const rm=an=>{an.getFloatTimeDomainData(buf);let e=0;for(let i=0;i<buf.length;i++)e+=buf[i]*buf[i];return Math.sqrt(e/buf.length)};
     const gr=rm(A.gpMeter),br=rm(A.bandMeter);
@@ -3014,7 +3015,9 @@ async function gpLoad(id){try{const r=await odbGet('gp|'+id);if(!r||!(r.xml||r.b
     {const busy=G.bars.map(()=>0),gb=G.bars.map(()=>0);let k=0;const bi=b=>{while(k<G.bars.length-1&&b>=G.bars[k+1].start-1e-6)k++;while(k>0&&b<G.bars[k].start-1e-6)k--;return k};
       G.tracks.forEach(T=>{k=0;const g=/guitar/i.test(T.type)&&!T.drums;T.ev.forEach(e=>{const j=bi(e.b);busy[j]=1;if(g)gb[j]++})});
       const nb=busy.reduce((a,v)=>a+v,0);G.cover=nb?gb.filter(v=>v>1).length/nb:1}
-    G.secs=secs;G.name=r.name;GPS[id]=G;gpBanks(G);STEP.key=null;if(S.songId===id){buildSeq();render()}renderSheetIfOpen();
+    G.secs=secs;G.name=r.name;GPS[id]=G;{const nd=G.tracks.filter(T=>!T.drums&&T.ev.length),ch=nd.reduce((x,T)=>x+T.ev.filter(e=>e.notes.length>=3).length,0),ne=nd.reduce((x,T)=>x+T.ev.length,0);
+      G.thin=nd.length<=1&&!G.tracks.some(T=>T.drums)&&ne>0&&ch/ne<.1;const was=store.get('thin|'+id,false);if(was!==G.thin)store.set('thin|'+id,G.thin);
+      if(G.thin&&S.songId===id)setTimeout(()=>flashMsg('Este archivo trae solo una melodía, no la canción completa'),900)}gpBanks(G);STEP.key=null;if(S.songId===id){buildSeq();render()}renderSheetIfOpen();
   }catch(e){console.warn('gp',e)}}
 const gpNorm=x=>(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
 // nombre del archivo de Ultimate Guitar: "artista-titulo_de_la_cancion.gp5"
@@ -3120,7 +3123,7 @@ async function renderSheet(){
     // tarjeta simple: nombre, artista, ✓ si tiene su partitura; tocar la tarjeta abre la canción
     const ready=x=>gpHas(x.id)||x.gp&&!x.needGp;
     const songCard=x=>`<div class="card scard" aria-current="${x.id===S.songId&&S.mode!=='libre'}">
-        <button class="sopen" data-open="${x.id}"><b>${esc(x.title)}</b><small>${esc(x.artist||'')}${ready(x)?' · <span style="color:var(--gold)">✓ partitura</span>':x.needGp?' · falta su archivo':''}</small></button>
+        <button class="sopen" data-open="${x.id}"><b>${esc(x.title)}</b><small>${esc(x.artist||'')}${store.get('thin|'+x.id,false)?' · <span style="color:#ff8a70">⚠ archivo incompleto</span>':ready(x)?' · <span style="color:var(--gold)">✓ partitura</span>':x.needGp?' · falta su archivo':''}</small></button>
         <button class="star" data-fav="${x.id}" aria-pressed="${favs.has(x.id)}" aria-label="Favorita">★</button>
         ${x.custom?`<button class="btn quiet sdel" data-delsong="${x.id}" aria-label="Borrar">Borrar</button>`:''}</div>`;
     // carpetas por artista: la app las arma sola cuando un artista tiene 2 canciones o más
@@ -3275,7 +3278,7 @@ async function renderSheet(){
       <small class="p" style="margin:0">¿No tienes ese archivo? Pídeselo a Claude, o carga tus Guitar Pro en 📁 Tablaturas.</small></div>`}
   else if(sheet.kind==='more'){
     const row=(k,t,d)=>`<button class="item" data-sheet="${k}"><span class="main"><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
-    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 113</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
+    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 114</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
       <div class="group"><span class="eyebrow">Sonido de la guitarra</span><div class="seg" style="flex-wrap:wrap">${[['orig',{n:'⭐ Como en el disco'}]].concat(Object.entries(GTS)).map(([k,v])=>`<button data-gpsnd="${k}" aria-pressed="${(GTS[S.gpSnd]?S.gpSnd:'orig')===k}">${v.n}</button>`).join('')}</div><small class="p" style="margin:0">"Como en el disco": cada guitarra suena como la de la grabación original.</small></div>
       <div class="group"><span class="eyebrow">Modo</span><div class="seg">${MODES.map(([m,l])=>`<button data-setmode="${m}" aria-pressed="${S.mode===m}">${l}</button>`).join('')}</div></div>`;
   }
