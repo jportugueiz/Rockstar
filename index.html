@@ -75,6 +75,7 @@ body.lefty #app{grid-template-columns:var(--keysw) minmax(0,1fr);grid-template-a
 .songbar{position:absolute;left:6px;right:6px;top:5px;height:6px;display:flex;gap:3px;pointer-events:none;z-index:2}
 .songbar i{flex:var(--w) 1 0;border-radius:3px;background:rgba(255,255,255,.16);position:relative;overflow:hidden}
 .songbar i b{position:absolute;left:0;top:0;bottom:0;width:var(--p);background:var(--gold)}
+#hrecBtn.on{background:#d8324a!important;animation:hrp 1.2s infinite}@keyframes hrp{50%{opacity:.7}}
 .sectoast{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);font-size:clamp(30px,10vh,64px);font-weight:700;color:#f4f1ec;text-shadow:0 2px 14px #000,0 0 4px #000;pointer-events:none;opacity:0;transition:opacity .7s;white-space:nowrap;z-index:2}
 .sectoast.show{opacity:.95;transition:opacity .08s}
 
@@ -249,6 +250,7 @@ select.field{flex:none;padding:7px 8px;font-size:13px}
   <div class="board" id="board" aria-label="Cuerdas: rasguea aquí">
     <canvas id="cv"></canvas>
     <button id="soloBtn" type="button" style="position:absolute;right:10px;top:10px;z-index:5;border:0;border-radius:999px;padding:9px 14px;font:700 14px system-ui,sans-serif;background:rgba(232,80,138,.92);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.4)">▶ Tocar sola</button>
+    <button id="hrecBtn" type="button" style="position:absolute;left:10px;top:10px;z-index:5;border:0;border-radius:999px;padding:9px 14px;font:700 14px system-ui,sans-serif;background:rgba(30,26,24,.88);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.4)">⏺ Grabar mano</button>
     <div class="calbar" id="calbar" hidden><span id="calTxt"></span><button data-cal="back">Deshacer</button><button data-cal="save" class="on">Guardar</button><button data-cal="cancel">Cancelar</button></div><div class="songbar" id="songbar"></div><div class="sectoast" id="sectoast"></div><div class="hint" id="hint"></div>
   </div>
 
@@ -1277,7 +1279,7 @@ function playBand(B,t,spb){const P=band.parts;
    las demás son la banda (botón Banda). Si tocas otro instrumento, la guitarra de la partitura pasa a ser parte de la banda. */
 function roleOn(k,gen,hand){const mine=(S.myInst||'g')===k||hand;if(mine)return true;const h=SES.role==='stage'?sesHeld(k):null;if(h&&h.held)return h.active;if(gen)return k==='b'&&band.on&&band.parts.bass[0];   // si el archivo no trae bajo, la banda pone uno sencillo sobre los acordes
   return k==='g'?band.on:band.on}
-function playEv(e,t,vscale,spb){const it=seq.items[e.ii];if(!it)return;
+function playEv(e,t,vscale,spb){const it=seq.items[e.ii];if(!it)return;if(HREC.on&&(!e.band||e.band.k===(S.myInst||'g')))hrecEv(e,t);
   if(e.band){if(roleOn(e.band.k,e.band.gen,e.band.hand)){const P=band.parts,mine=(S.myInst||'g')===e.band.k||e.band.hand,held=SES.role==='stage'&&sesHeld(e.band.k).held;
       if(mine||held||e.band.gen){const o={d:P.drums[0],b:P.bass[0],k:P.keys[0]};P.drums[0]=P.bass[0]=P.keys[0]=true;playBand(e.band,t,spb||.4);P.drums[0]=o.d;P.bass[0]=o.b;P.keys[0]=o.k}else playBand(e.band,t,spb||.4)}return}
   if(e.gp){if((S.myInst||'g')!=='g'&&!roleOn('g'))return;playGp(e.gp,t,vscale,spb||.4,e.b);return}
@@ -1325,7 +1327,7 @@ function stepStrum(vel){
 }
 /* ▶ Tocar sola: la guitarra toca la canción sola a su velocidad original, con el ritmo que la app tiene (el tuyo o el de fábrica).
    Si pasas la mano, tomas el control desde ahí mismo. */
-const DEMO={on:false,timer:null,t0:0,b0:0};
+const DEMO={on:false,timer:null,t0:0,b0:0};const HREC={on:false,mode:null,t0:0,st:[],pt:[],ev:[],timer:null,lim:300,g:null,last:null,msg:''};
 function demoBtn(){const b=$('#soloBtn');if(b)b.textContent=DEMO.on?'■ Parar':'▶ Tocar sola'}
 function demoStop(){DEMO.on=false;clearInterval(DEMO.timer);demoBtn()}
 function demoStart(){
@@ -1438,15 +1440,15 @@ function mbVamp(dir,vel){const L=mbLoop();if(!L)return;const E=STEP.ev,now=ctx.c
   let ch=null,one=null;for(let j=MB.ei-1;j>=0&&E[j].b>=L.a-1e-6;j--){const e=E[j];if(e.gp){if(!one)one=e;if(e.gp.ns.length>=3&&e.gp.role!=='solo'&&e.gp.role!=='mel'){ch=e;break}}else if(e.ev&&!one)one=e}
   const e=ch||one;MB.vel=MB.vel*.6+(vel==null?.7:vel)*.4;
   if(e&&e.gp){const ns=up?e.gp.ns.slice().sort((a,c)=>c.midi-a.midi).slice(0,Math.max(1,Math.min(4,e.gp.ns.length))):e.gp.ns;
-    MB.vampTr=e.gp.tr;   // suena entero, con su eco: no se corta hasta tu próxima pasada o hasta que avances
+    if(HREC.on)hrecEv(e,now,'espera');    MB.vampTr=e.gp.tr;   // suena entero, con su eco: no se corta hasta tu próxima pasada o hasta que avances
     playGp(Object.assign({},e.gp,{ns:ns.map(n=>Object.assign({},n,{dead:false,pm:false,dur:16,letRing:true})),brush:ch?(up?'Up':'Down'):null,dense:false,dur:16,dyn:'MF',gh:false}),now,.62+.5*MB.vel,1/(MB.rate||mbOrig()),Math.floor(L.b-1))}
   else{const it=seq.items[idx]||seq.items[UN()[MB.sec].end-1];if(it&&it.chord){const c=it.chord;fireEv([0,up?'TOP4':'ALL',up?'u':'d',v],c,roles(c),now)}}
   stage.flash=Math.min(1,stage.flash+.3)}
 function vampStop(){if(MB.vampTr==null||!ctx)return;const t=ctx.currentTime+.03,p=MB.vampTr+':';Object.keys(GPV).forEach(k=>{if(k.startsWith(p)&&GPV[k]){stopVoice(GPV[k],t,.12);GPV[k]=null}});MB.vampTr=null}
 function mbSeek0(beat){const E=STEP.ev;const j=E.findIndex(e=>e.b>=beat-1e-6);MB.ei=j<0?E.length:j}
-function easyStroke(dir,vel,gap){diagMark(dir);if(origActive()){origStroke(dir,vel);return}if(stepOn()){if(cond.on)condStop();if(DEMO.on)demoHand();mbPass(vel,dir);return}if(teach.on&&ctx){const t=ctx.currentTime;if(t>=teach.t0-teach.beat*.3&&t<teach.end)teach.hits.push({t,dir,vel:vel==null?.7:vel});strum(dir,vel==null?.7:vel);return}curVel=vel==null?.72:vel;curGap=gap==null?null:gap;try{navigator.vibrate&&navigator.vibrate(Math.round(6+curVel*10))}catch(_){}if(dir==='up'){playEasyUp();return}condTap()}
+function easyStroke(dir,vel,gap){diagMark(dir);if(HREC.on){hrecStroke(dir,vel,gap);if(HREC.mode==='sigue'){stage.flash=Math.min(1,stage.flash+.3);try{navigator.vibrate&&navigator.vibrate(6)}catch(_){}return}}if(origActive()){origStroke(dir,vel);return}if(stepOn()){if(cond.on)condStop();if(DEMO.on)demoHand();mbPass(vel,dir);return}if(teach.on&&ctx){const t=ctx.currentTime;if(t>=teach.t0-teach.beat*.3&&t<teach.end)teach.hits.push({t,dir,vel:vel==null?.7:vel});strum(dir,vel==null?.7:vel);return}curVel=vel==null?.72:vel;curGap=gap==null?null:gap;try{navigator.vibrate&&navigator.vibrate(Math.round(6+curVel*10))}catch(_){}if(dir==='up'){playEasyUp();return}condTap()}
 // velocidad del gesto → fuerza y separación entre cuerdas
-function strokeFeel(dy,dt){const Hh=Math.max(120,H||300),v=Math.abs(dy)/Math.max(4,dt)*1000/Hh;return{vel:clamp(.28+(v-1.2)*.075,.25,1),gap:clamp((1/6)/Math.max(.5,v),.002,.045)}}
+function strokeFeel(dy,dt){if(HREC.on)HREC.g={dy,dt};const Hh=Math.max(120,H||300),v=Math.abs(dy)/Math.max(4,dt)*1000/Hh;return{vel:clamp(.28+(v-1.2)*.075,.25,1),gap:clamp((1/6)/Math.max(.5,v),.002,.045)}}
 /* Director: tus golpes hacia abajo solo ponen en marcha la canción y le dan el tempo.
    La guitarra de la canción suena sola, pareja, a tu velocidad; si dejas de rasguear, se detiene. */
 const cond={on:false,next:0,last:0,lastTap:0,timer:null};
@@ -2994,7 +2996,7 @@ async function origImport(files,target,part){
 
 /* ───────── Hojas ───────── */
 const sheet={kind:null,filter:'todas',q:'',imp:{title:'',artist:'',txt:'',upb:'auto',inst:'lespaul',bpm:100,target:'solo'}};
-const TITLES={welcomeLib:'Tus canciones',install:'Instalar en mi teléfono',mic:'Micrófono',ses:'Tocar con amigos',orig:'Canción original',folder:'Mis tablaturas',import:'Importar un solo',songs:'Cancionero',chords:'Acordes',inst:'Guitarras',fx:'Efectos',recs:'Grabaciones',settings:'Ajustes',band:'Banda',more:'Más'};
+const TITLES={hrec:'Grabar mi mano',welcomeLib:'Tus canciones',install:'Instalar en mi teléfono',mic:'Micrófono',ses:'Tocar con amigos',orig:'Canción original',folder:'Mis tablaturas',import:'Importar un solo',songs:'Cancionero',chords:'Acordes',inst:'Guitarras',fx:'Efectos',recs:'Grabaciones',settings:'Ajustes',band:'Banda',more:'Más'};
 function openSheet(k){sheet.kind=k;$('#sheetWrap').hidden=false;renderSheet();$('#sheetBody').scrollTop=0}
 function closeSheet(){sheet.kind=null;$('#sheetWrap').hidden=true;document.querySelectorAll('#sheetBody audio').forEach(a=>a.pause())}
 function renderSheetIfOpen(){if(sheet.kind)renderSheet()}
@@ -3171,6 +3173,7 @@ async function renderSheet(){
   else if(sheet.kind==='ses'){sesSheet(body)}
   else if(sheet.kind==='mic'){micSheet(body)}
   else if(sheet.kind==='install'){installSheet(body)}
+  else if(sheet.kind==='hrec'){hrecSheet(body)}
   else if(sheet.kind==='welcomeLib'){body.innerHTML=`<div class="group"><b style="font-size:19px">Carga tus canciones (una sola vez)</b>
       <small class="p" style="margin:0;font-size:15px">Toca el botón y elige el archivo <b>rockstar-mis-canciones.json</b> (está en tus Descargas). Quedan todas tus canciones con su partitura en este teléfono.</small>
       <label class="btn big" style="display:flex;justify-content:center;cursor:pointer;font-size:18px">🎸 Cargar mis canciones<input id="libFile" type="file" accept=".json,application/json" style="display:none"></label>
@@ -3178,7 +3181,7 @@ async function renderSheet(){
       <small class="p" style="margin:0">¿No tienes ese archivo? Pídeselo a Claude, o carga tus Guitar Pro en 📁 Tablaturas.</small></div>`}
   else if(sheet.kind==='more'){
     const row=(k,t,d)=>`<button class="item" data-sheet="${k}"><span class="main"><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
-    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 106</div><div class="list">${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g')+' · invita amigos a tocar')}${row('songs','Cancionero','Elegir la canción que vas a tocar')}${row('band','Banda de acompañamiento','Batería, bajo, teclado y guitarra guía')}${row('fx','Efectos',fxLabel())}${row('inst','Guitarras',inst().name)}${row('folder','Mis tablaturas','Sube tus PDF de tablaturas y la app los carga sola')}${row('recs','Grabaciones','Escuchar lo que grabaste')}${row('settings','Ajustes','Mano, volumen, resonancia y latencia')}</div>
+    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 107</div><div class="list">${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g')+' · invita amigos a tocar')}${row('songs','Cancionero','Elegir la canción que vas a tocar')}${row('band','Banda de acompañamiento','Batería, bajo, teclado y guitarra guía')}${row('fx','Efectos',fxLabel())}${row('inst','Guitarras',inst().name)}${row('folder','Mis tablaturas','Sube tus PDF de tablaturas y la app los carga sola')}${row('recs','Grabaciones','Escuchar lo que grabaste')}${row('settings','Ajustes','Mano, volumen, resonancia y latencia')}</div>
       <div class="group"><span class="eyebrow">🎸 Sonido de la guitarra (partitura)</span><div class="seg" style="flex-wrap:wrap">${[['orig',{n:'⭐ Como en el disco'}]].concat(Object.entries(GTS),Object.entries(GPSND).map(([k,v])=>[k,{n:v.n+' (antigua)'}])).map(([k,v])=>`<button data-gpsnd="${k}" aria-pressed="${(S.gpSnd||'orig')===k}">${v.n}</button>`).join('')}</div><small class="p" style="margin:0">"Como en el disco": cada guitarra de la partitura suena con la guitarra que se usó en la grabación original. Las demás ponen esa guitarra en todas las pistas.</small></div>
       <button class="btn quiet" data-act="diag" style="width:100%;margin-top:10px">🎙 Grabar una prueba de 30 s para Claude</button>
       <div class="group"><span class="eyebrow">Modo</span><div class="seg">${MODES.map(([m,l])=>`<button data-setmode="${m}" aria-pressed="${S.mode===m}">${l}</button>`).join('')}</div></div>`;
@@ -3559,6 +3562,58 @@ async function libImport(file){try{const L=JSON.parse(await file.text());if(L.ap
     (L.songs||[]).forEach(x=>{if(x&&x.id&&!userSongs.some(y=>y.id===x.id)&&!DEMOS.some(y=>y.id===x.id))userSongs.push({id:String(x.id),title:String(x.title||''),artist:String(x.artist||''),custom:true,gp:true,gpFile:String(x.gpFile||''),inst:'gpc',preset:'vintage',mode:'rockstar',bpm:+x.bpm||100,sections:[{name:'Parte 1',chords:['C:4']}]})});
     store.set('songs',userSongs);store.set('gpHave',[...GPHAVE]);sheet.libMsg='✅ Listo: '+n+' canciones cargadas. Búscalas en el Cancionero.';await gpLoad(S.songId);buildSeq();render();renderSheetIfOpen()}catch(e){sheet.libMsg='No se pudo cargar: '+(e&&e.message||'error');renderSheetIfOpen()}}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-lib]');if(b&&b.dataset.lib==='out')libExport()});
+/* ───────── Grabar mi mano: qué hace tu mano vs. qué suena (para que Claude lo analice) ─────────
+   No graba audio: solo los movimientos del dedo (posición y tiempo), cada pasada que la app reconoce,
+   y cada nota o rasgueo de la partitura que sonó. Modo «sigue»: la canción suena sola a su velocidad
+   real y tu mano solo la acompaña (no la manda). Modo «mano»: como siempre, tu mano manda. */
+const hrT=()=>Math.round(performance.now()-HREC.t0);
+function hrecPos(){if(!ctx)return null;const now=ctx.currentTime;return +(DEMO.on?DEMO.b0+(now-DEMO.t0)*mbOrig():MB.on?mbPosAt(now):MB.pos).toFixed(3)}
+function hrecStroke(dir,vel,gap){const g=HREC.g;HREC.g=null;
+  HREC.st.push([hrT(),dir==='up'?'u':'d',vel==null?null:+(+vel).toFixed(3),gap==null?null:+(+gap).toFixed(4),hrecPos(),MB.hold?1:0,+((MB.rate||0)/mbOrig()).toFixed(3),g?Math.round(g.dy):null,g?Math.round(g.dt):null,idx])}
+function hrecEv(e,t,kind){if(!ctx)return;const at=Math.round((t-ctx.currentTime)*1000+performance.now()-HREC.t0);
+  if(e.gp){const G=e.gp;HREC.ev.push([at,+e.b.toFixed(3),kind||'gp',G.ns.length,G.brush||'',G.role||'',G.tr,G.ns.slice(0,6).map(n=>n.midi)])}
+  else if(e.band)HREC.ev.push([at,+e.b.toFixed(3),'band:'+e.band.k])
+  else HREC.ev.push([at,+e.b.toFixed(3),kind||(e.notes?'notes':'chord')])}
+function hrecScore(){stepBuild();const out=[];for(const e of STEP.ev){if(e.band)continue;if(out.length>8000)break;
+    if(e.gp){const G=e.gp;out.push([+e.b.toFixed(3),G.ns.length,G.brush||'',G.role||'',G.tr,+(G.dur||0).toFixed(3),G.gh?1:0,G.ns.map(n=>n.midi)])}else out.push([+e.b.toFixed(3),e.notes?e.notes.length:1,'','',null,0,0,[]])}
+  const G=gpOn();return{ev:out,bars:G?G.bars.map(x=>x.start):[],units:UN().map(u=>({a:u.a,b:u.b,name:u.name})),tracks:G&&G.tracks?G.tracks.map((tr,i)=>({i,name:tr.name||'',role:tr.role||''})):[]}}
+function hrecBtn(){const b=$('#hrecBtn');if(!b)return;if(HREC.on){const s=Math.floor(hrT()/1000);b.textContent='⏹ Terminar '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0');b.classList.add('on')}else{b.textContent='⏺ Grabar mano';b.classList.remove('on')}}
+function hrecStart(mode){ensureAudio();if(!stepOn()){flashMsg('Elige una canción con partitura primero');return}closeSheet();
+  if(DEMO.on)demoStop();vampStop();MB.on=false;clearInterval(MB.timer);MB.hold=false;MB.go=false;MB.passes=[];MB.last=0;MB.np=0;MB.base=0;mbSeek(0);MB.limit=0;idx=0;MB.idx=-1;MB.seekB=null;MB.sec=0;render();
+  Object.assign(HREC,{on:true,mode,t0:performance.now(),st:[],pt:[],ev:[],g:null,last:null,msg:'',
+    meta:{app:'rockstar-mano',v:1,song:S.songId,title:(song()||{}).title||'',artist:(song()||{}).artist||'',mode,auto:!!S.auto,inst:S.myInst||'g',bpm:Math.round(mbOrig()*60*10)/10,
+      start:new Date().toISOString(),ua:navigator.userAgent,scr:[screen.width,screen.height,devicePixelRatio],board:[boardEl.clientWidth,boardEl.clientHeight],lat:ctx?[ctx.baseLatency||0,ctx.outputLatency||0]:null}});
+  HREC.meta.score=hrecScore();
+  clearInterval(HREC.timer);HREC.timer=setInterval(()=>{if(!HREC.on)return;hrecBtn();if(hrT()>HREC.lim*1000)hrecStop(true);
+    if(HREC.mode==='sigue'&&HREC.started&&!DEMO.on)hrecStop(true)},500);hrecBtn();
+  HREC.started=false;
+  if(mode==='sigue'){let n=3;const cd=()=>{if(!HREC.on)return;if(n>0){flashMsg(String(n));n--;setTimeout(cd,800)}else{demoStart();HREC.started=true;flashMsg('Acompaña con la mano como si la tocaras')}};cd()}
+  else flashMsg('Grabando: toca como siempre, desde el principio');
+}
+function hrecData(){return Object.assign({},HREC.meta,{dur:hrT(),strokes_cols:['t_ms','dir','vel','gap','beat','esperando','vel_cancion','dy_px','dt_ms','item'],strokes:HREC.st,
+  sound_cols:['t_ms','beat','tipo','n_notas','rasgueo','rol','pista','midi'],sound:HREC.ev,finger_cols:['t_ms','y_0a1000','x_0a1000','tipo(0=baja,1=mueve,2=sube)','dedo'],finger:HREC.pt})}
+async function hrecSave(){const L=HREC.last;if(!L)return;const fn='rockstar-mano-'+String(L.song).replace(/[^\w-]/g,'').slice(0,30)+'-'+L.mode+'-'+new Date().toTimeString().slice(0,5).replace(':','')+'.json';
+  const blob=new Blob([JSON.stringify(L)],{type:'application/json'});
+  try{const dl=window.claude&&window.claude.use?await window.claude.use('downloads').catch(()=>null):null;
+    if(dl)await dl.save({filename:fn,data:blob});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
+    HREC.msg='✅ Guardado «'+fn+'» en tus Descargas. Mándamelo en el chat de Claude (clip 📎).'}catch(e){HREC.msg=e&&e.code==='declined'?'No se guardó. Toca «Guardar archivo» otra vez.':'No se pudo guardar ('+(e&&(e.code||e.message)||'error')+').'}
+  renderSheetIfOpen()}
+function hrecStop(auto){if(!HREC.on)return;HREC.on=false;clearInterval(HREC.timer);if(DEMO.on)demoStop();HREC.last=hrecData();hrecBtn();
+  const s=Math.round(HREC.last.dur/1000);HREC.msg=(s<60?'Grabaste solo '+s+' s (mejor 2 minutos o más). ':'Grabaste '+Math.floor(s/60)+' min '+(s%60)+' s, '+HREC.st.length+' pasadas. ')+'Ahora guarda el archivo.';
+  openSheet('hrec');if(!auto)hrecSave()}
+function hrecSheet(body){const sg=song()||{};
+  body.innerHTML=`<div class="group">${HREC.last?`<div class="prev" style="font-size:16px">${esc(HREC.msg)}</div><button class="btn big" data-hrec="save">💾 Guardar archivo para Claude</button>`:''}
+    <b style="font-size:18px">Graba cómo mueves la mano en «${esc(sg.title||'')}»</b>
+    <small class="p" style="margin:0;font-size:15px">No se graba sonido: solo tus movimientos y lo que suena de la partitura. Graba 2 minutos o más. Elige la canción antes de empezar.</small>
+    <button class="btn big" data-hrec="sigue" style="text-align:left;white-space:normal">🎧 <b>1 · La canción suena sola</b><br><small>Va a su velocidad real y tú la acompañas con la mano como si la tocaras. Tu mano no la manda.</small></button>
+    <button class="btn big" data-hrec="mano" style="text-align:left;white-space:normal">🎸 <b>2 · Como siempre</b><br><small>Tu mano manda, igual que cuando tocas normalmente.</small></button>
+    <small class="p" style="margin:0">Para terminar toca «⏹ Terminar» arriba a la izquierda. Ideal: haz las dos en Bamboleo, Nothing Else Matters y una de Prisioneros o Soda.</small></div>`}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-hrec]');if(!b)return;const a=b.dataset.hrec;if(a==='save')hrecSave();else hrecStart(a)});
+(function(){const add=(e,ty)=>{if(!HREC.on)return;const r=boardEl.getBoundingClientRect();(ty===1&&e.getCoalescedEvents?e.getCoalescedEvents():[e]).forEach(ev=>{
+    HREC.pt.push([Math.round(ev.timeStamp-HREC.t0),Math.round((ev.clientY-r.top)/r.height*1000),Math.round((ev.clientX-r.left)/r.width*1000),ty,e.pointerId%100])})};
+  boardEl.addEventListener('pointerdown',e=>add(e,0),true);boardEl.addEventListener('pointermove',e=>add(e,1),true);
+  boardEl.addEventListener('pointerup',e=>add(e,2),true);boardEl.addEventListener('pointercancel',e=>add(e,2),true);
+  const b=$('#hrecBtn');if(b)b.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(HREC.on)hrecStop(false);else openSheet('hrec')})})();
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.id==='libFile'&&t.files&&t.files[0])libImport(t.files[0])});
 // primera vez en la app instalada (fuera de Claude) y sin partituras: se ofrece cargar la biblioteca
 setTimeout(()=>{try{if(!inFrame()&&!GPHAVE.size){openSheet('welcomeLib')}}catch(e){}},1500);
