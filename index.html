@@ -126,6 +126,18 @@ body.lefty #nextBtn{order:-1}
 /* Hojas */
 #micBtn[aria-pressed="true"]{background:color-mix(in srgb,var(--stage) 30%,transparent);box-shadow:0 0 0 2px var(--stage)}
 .ivLab{position:absolute;left:10px;bottom:8px;font:600 12px var(--f-ui);color:var(--gold);background:rgba(0,0,0,.45);padding:3px 8px;border-radius:8px;pointer-events:none}.sgPad.iv{position:relative}
+.instView.full{position:fixed;inset:0;z-index:12;background:#2a1b12;touch-action:none}.instView.full .ivSvg{position:absolute;left:0;right:0;top:52px;bottom:0;width:100%;height:calc(100% - 52px)}
+.ivBar{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;gap:8px;padding:0 10px;padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right));background:linear-gradient(#0d0b0a,#16110e);border-bottom:1px solid rgba(227,184,110,.25);z-index:2}
+.ivB{flex:none;height:38px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:#2a2420;color:#f4efe6;font:700 14px system-ui,sans-serif}.ivB.ivNext{background:#3a2f22;border-color:var(--gold)}.ivB.goNow{background:#c81e32;border-color:#ff5a6a;animation:goP .8s infinite}
+.ivT{flex:1;min-width:0;font:700 15px system-ui,sans-serif;color:#f4efe6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.instView.full .ivLab{bottom:10px}
+.ivTx{font:700 13px system-ui,sans-serif;fill:#f1dfb0;letter-spacing:2px;opacity:.75}
+.ivMove{transform-box:fill-box;transform-origin:center}
+.ivCym.hit .ivMove{animation:cymW 1.25s cubic-bezier(.2,.6,.3,1)}@keyframes cymW{0%{transform:none}8%{transform:rotate(-7deg) scale(.95,1.03)}25%{transform:rotate(5deg) scale(1.03,.97)}45%{transform:rotate(-3deg) scale(.985,1.015)}65%{transform:rotate(1.5deg)}100%{transform:none}}
+.ivP.hit .ivHi{animation:ivHiF .45s ease-out}@keyframes ivHiF{0%{opacity:.5}100%{opacity:0}}
+.ivDr.hit .ivMove{animation:drH .24s}@keyframes drH{30%{transform:scale(.955)}100%{transform:none}}
+.ivKey .ivMove{transform-box:view-box;transform-origin:50% 0}.ivKey.hit .ivMove{animation:kyH .28s}@keyframes kyH{20%{transform:translateY(6px);filter:brightness(.88)}100%{transform:none}}
+.ivStr .ivMove{transform-box:fill-box;transform-origin:center}.ivStr.vib .ivMove{animation:stV .7s linear}@keyframes stV{0%{transform:none}8%{transform:translateY(3px)}16%{transform:translateY(-3px)}24%{transform:translateY(2.4px)}32%{transform:translateY(-2px)}42%{transform:translateY(1.5px)}52%{transform:translateY(-1.1px)}64%{transform:translateY(.7px)}78%{transform:translateY(-.4px)}100%{transform:none}}
 .instView{position:absolute;inset:0;z-index:3;background:#120f0e;touch-action:none;user-select:none;-webkit-user-select:none}.instView.pass{pointer-events:none}
 .ivSvg{width:100%;height:100%;display:block}.ivHi{transition:opacity .18s}.ivKey.on .ivHi{opacity:.42;transition:none}.ivDrum.on .ivHi{opacity:.45;transition:none}.ivDrum.on{transform-box:fill-box;transform-origin:center;animation:ivHit .14s}@keyframes ivHit{50%{transform:scale(.97)}}
 .instView.flash,.sgPad.flash{animation:ivFlash .16s ease-out}@keyframes ivFlash{from{filter:brightness(1.5)}to{filter:none}}
@@ -1297,7 +1309,7 @@ function nailNoise(t,dur,vel,dst,pan){if(!A.noiseBuf){const n=ctx.sampleRate,b=c
 function playBand(B,t,spb){const P=band.parts;
   if(B.k==='d'){if(!P.drums[0])return;const v=(DYN[B.dyn]||.68)/.68*.85;B.ns.forEach(m=>{const k=m===35||m===36?'k':m===37||m===38||m===39||m===40?'s':m===42||m===44?'h':m===46?'oh':m===49||m===52||m===55||m===57?'crash':m===51||m===53||m===59?'ride':m>=41&&m<=50?'tom':'h';drumHit(k,t,k==='s'&&m===37?v*.4:v,m)})}
   else if(B.k==='b'){if(!P.bass[0])return;B.ns.forEach(([m,d,mu])=>bassNote(m,t,mu?Math.min(.12,d*spb):Math.max(.08,d*spb*.95),mu))}
-  else if(P.keys[0]){const pr=banks.pn&&banks.pn.ready;B.ns.forEach(([m,d],j)=>{if(pr){const v=voice(m,{when:t+j*.004,vel:.55,bank:'pn',dest:A.keysBus,mul:.8});stopVoice(v,t+Math.max(.15,d*spb)+.25,.2)}else epNote(m,t+j*.004,Math.max(.1,d*spb),.08)})}}
+  else if(P.keys[0]){const pr=banks.pn&&banks.pn.ready;B.ns.forEach(([m,d],j)=>{try{ivKeySeen(m,t+j*.004)}catch(_){}if(pr){const v=voice(m,{when:t+j*.004,vel:.55,bank:'pn',dest:A.keysBus,mul:.8});stopVoice(v,t+Math.max(.15,d*spb)+.25,.2)}else epNote(m,t+j*.004,Math.max(.1,d*spb),.08)})}}
 /* Quién toca cada parte: la tuya suena siempre (la mueve tu mano); la de un amigo en la sesión, mientras él la toca;
    las demás son la banda (botón Banda). Si tocas otro instrumento, la guitarra de la partitura pasa a ser parte de la banda. */
 function roleOn(k,gen,hand){const mine=(S.myInst||'g')===k||hand;if(mine)return true;const h=SES.role==='stage'?sesHeld(k):null;if(h&&h.held)return h.active;if(gen)return k==='b'&&band.on&&band.parts.bass[0];   // si el archivo no trae bajo, la banda pone uno sencillo sobre los acordes
@@ -1696,7 +1708,7 @@ function drumSample(m,t,v){const B=banks.dr;if(!B||!B.ready)return false;
   const k=m===35||m===36?36:m===37?37:m===38||m===40||m===39?38:m===42?42:m===44?44:m===46?46:m===49||m===52||m===55||m===57?49:m===51||m===53||m===59?51:m===41||m===43?41:m===45?45:m===47||m===48?47:m===50?50:42;
   if(k===42||k===44){if(A.ohV){stopVoice(A.ohV,t,.03);A.ohV=null}}   // el hi-hat cerrado corta al abierto
   const vv=voice(k,{when:t,vel:clamp(v,.1,1),bank:'dr',dest:A.drumBus,mul:1.1,pan:k===42||k===44||k===46?.25:k===51?-.3:k===49?-.2:k===41?-.2:k===50?.2:0});if(k===46)A.ohV=vv;return true}
-function drumHit(kind,t,v=1,m=45){
+function drumHit(kind,t,v=1,m=45){try{ivDrumSeen(kind,t,m)}catch(_){}
   const c=ctx;if(drumSample(kind==='tom'?m:DRK[kind]||42,t,.55+.4*Math.min(1,v)))return;
   if(kind==='tom'){const o=c.createOscillator(),g=c.createGain(),f0=60+(m-41)*14;o.frequency.setValueAtTime(f0*1.6,t);o.frequency.exponentialRampToValueAtTime(f0,t+.08);g.gain.setValueAtTime(.7*v,t);g.gain.exponentialRampToValueAtTime(.001,t+.45);o.connect(g).connect(A.drumBus);o.start(t);o.stop(t+.5);return}
   if(kind==='oh'||kind==='ride'){const s=c.createBufferSource();s.buffer=A.noise;const f=c.createBiquadFilter(),g=c.createGain();f.type=kind==='ride'?'bandpass':'highpass';f.frequency.value=kind==='ride'?6000:7000;if(kind==='ride')f.Q.value=1.2;
@@ -3293,7 +3305,7 @@ async function renderSheet(){
       <small class="p" style="margin:0">¿No tienes ese archivo? Pídeselo a Claude, o carga tus Guitar Pro en 📁 Tablaturas.</small></div>`}
   else if(sheet.kind==='more'){
     const row=(k,t,d)=>`<button class="item" data-sheet="${k}"><span class="main"><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
-    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 115</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
+    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 116</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
       <div class="group"><span class="eyebrow">Sonido de la guitarra</span><div class="seg" style="flex-wrap:wrap">${[['orig',{n:'⭐ Como en el disco'}]].concat(Object.entries(GTS)).map(([k,v])=>`<button data-gpsnd="${k}" aria-pressed="${(GTS[S.gpSnd]?S.gpSnd:'orig')===k}">${v.n}</button>`).join('')}</div><small class="p" style="margin:0">"Como en el disco": cada guitarra suena como la de la grabación original.</small></div>
       <div class="group"><span class="eyebrow">Modo</span><div class="seg">${MODES.map(([m,l])=>`<button data-setmode="${m}" aria-pressed="${S.mode===m}">${l}</button>`).join('')}</div></div>`;
   }
@@ -3560,7 +3572,7 @@ function sgBind(el){let st=null;
     if(b.dataset.sg==='leave')sesEnd();else if(b.dataset.sg==='mic')sesMicGuest(!SES.micPc);
     else if(b.dataset.sginst){SES.inst=b.dataset.sginst;sesGuestPush();sesGuestRender()}else if(b.dataset.sgfx){SES.fx=b.dataset.sgfx;sesGuestPush();sesGuestRender()}});
   el.addEventListener('pointerdown',e=>{const pad=e.target.closest('#sgPad');if(!pad)return;e.preventDefault();
-    if(SES.inst==='k'||SES.inst==='d'){const r=pad.getBoundingClientRect(),y=(e.clientY-r.top)/r.height;sesStroke(clamp(.55+.45*(SES.inst==='k'?y:1-Math.abs(y-.6)),.45,1));const t=e.target.closest('.ivKey,.ivDrum');if(t){t.classList.add('on');setTimeout(()=>t.classList.remove('on'),140)}return}
+    if(SES.inst==='k'||SES.inst==='d'){const r=pad.getBoundingClientRect(),y=(e.clientY-r.top)/r.height;sesStroke(clamp(.55+.45*(SES.inst==='k'?y:1-Math.abs(y-.6)),.45,1));const t=e.target.closest('.ivP');if(t){t.classList.remove('hit');void t.getBBox();t.classList.add('hit');setTimeout(()=>t.classList.remove('hit'),1200)}return}
     st={y:e.clientY,t:e.timeStamp,dir:null,id:e.pointerId};sesStroke(.75)});
   el.addEventListener('pointermove',e=>{if(!st||e.pointerId!==st.id)return;const dy=e.clientY-st.y;if(Math.abs(dy)<22)return;const dir=dy>0?'d':'u';
     if(dir!==st.dir){const v=clamp(.35+Math.abs(dy)/Math.max(8,e.timeStamp-st.t)*.35,.3,1);if(st.dir)sesStroke(v);st.dir=dir}st.y=e.clientY;st.t=e.timeStamp});
@@ -3596,74 +3608,132 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
    Bajo: un mástil de 4 cuerdas gruesas, se rasguea igual que la guitarra.
    Teclado: teclas de piano; cada dedo que toca una tecla es un golpe (suena la parte de teclado de la canción).
    Batería: una batería completa vista desde arriba; toques donde toques, suena la batería de la canción. */
+/* ───────── La pantalla muestra el instrumento que tocas (diseño realista) ─────────
+   Bajo: mástil de 4 cuerdas entorchadas a lo largo del diapasón; se rasguea como la guitarra y las cuerdas vibran al tocarlas.
+   Teclado y batería: a pantalla completa. Teclado de escenario con 2 octavas; batería completa vista desde arriba.
+   Toques donde toques suena la parte de la canción; lo que suena se mueve (platillos que se balancean, parches que se hunden, teclas que bajan). */
+function ivDefs(){return `<defs>
+  <linearGradient id="ivChrome" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbfbfb"/><stop offset=".22" stop-color="#9aa1a8"/><stop offset=".45" stop-color="#ffffff"/><stop offset=".7" stop-color="#5f656c"/><stop offset="1" stop-color="#e3e6e9"/></linearGradient>
+  <radialGradient id="ivHead" cx=".42" cy=".36" r=".8"><stop offset="0" stop-color="#fffefb"/><stop offset=".55" stop-color="#f1ece2"/><stop offset=".9" stop-color="#d9d1c1"/><stop offset="1" stop-color="#bdb3a0"/></radialGradient>
+  <filter id="ivCoat" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="2.2" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 .45  0 0 0 0 .42  0 0 0 0 .38  0 0 0 .22 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+  <radialGradient id="ivBronze" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#ffe7a6"/><stop offset=".25" stop-color="#e2b65a"/><stop offset=".6" stop-color="#b98531"/><stop offset=".85" stop-color="#94661f"/><stop offset="1" stop-color="#6e4a15"/></radialGradient>
+  <radialGradient id="ivBell" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#fff4cf"/><stop offset=".6" stop-color="#d6a648"/><stop offset="1" stop-color="#8d621d"/></radialGradient>
+  <linearGradient id="ivSheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity=".38"/><stop offset=".55" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <pattern id="ivSpark" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#7a1018"/><circle cx="2" cy="2" r=".9" fill="#ff8a8f" opacity=".7"/><circle cx="5.5" cy="4.5" r=".6" fill="#ffd0d2" opacity=".6"/><circle cx="4" cy="6.4" r=".5" fill="#c7333d"/></pattern>
+  <radialGradient id="ivRug" cx=".5" cy=".6" r=".75"><stop offset="0" stop-color="#3b2a22"/><stop offset=".7" stop-color="#261a15"/><stop offset="1" stop-color="#140e0b"/></radialGradient>
+  <filter id="ivRugF"><feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="3" seed="2"/><feColorMatrix values="0 0 0 0 .12  0 0 0 0 .08  0 0 0 0 .06  0 0 0 .55 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+  <filter id="ivSh" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter>
+</defs>`}
+function ivCym(id,cx,cy,r,lab){let g='';for(let i=0;i<34;i++){const f=.24+i*.022;g+=`<circle cx="${cx}" cy="${cy}" r="${(r*f).toFixed(1)}" fill="none" stroke="${i%2?'#5a3c0e':'#fff1c4'}" stroke-opacity="${i%2?.16:.12}" stroke-width="1.1"/>`}
+  return `<g class="ivP ivCym" data-p="${id}"><ellipse cx="${cx+14}" cy="${cy+22}" rx="${r*.98}" ry="${r*.9}" fill="#000" opacity=".55" filter="url(#ivSh)"/>
+    <g class="ivMove"><circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#ivBronze)"/>${g}<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#ivSheen)"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#5c3d0f" stroke-width="2" stroke-opacity=".6"/><circle cx="${cx}" cy="${cy}" r="${r*.22}" fill="url(#ivBell)"/><circle cx="${cx}" cy="${cy}" r="${r*.22}" fill="none" stroke="#6b4813" stroke-opacity=".5"/>
+    <circle cx="${cx}" cy="${cy}" r="${r*.07}" fill="#222"/><circle cx="${cx}" cy="${cy}" r="${r*.045}" fill="url(#ivChrome)"/>
+    <circle class="ivHi" cx="${cx}" cy="${cy}" r="${r}" fill="#fff6d6" opacity="0"/></g>
+    ${lab?`<text x="${cx}" y="${cy+r+22}" text-anchor="middle" class="ivTx">${lab}</text>`:''}</g>`}
+function ivDrum(id,cx,cy,r,shell,lab,lugN){let l='';const n=lugN||8;for(let i=0;i<n;i++){const a=(i+.5)/n*Math.PI*2,x=cx+Math.cos(a)*(r+9),y=cy+Math.sin(a)*(r+9);l+=`<rect x="${(x-6).toFixed(1)}" y="${(y-4).toFixed(1)}" width="12" height="8" rx="2.5" fill="url(#ivChrome)" stroke="#333" stroke-width=".6" transform="rotate(${(a*180/Math.PI+90).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`}
+  return `<g class="ivP ivDr" data-p="${id}"><circle cx="${cx+12}" cy="${cy+18}" r="${r+14}" fill="#000" opacity=".6" filter="url(#ivSh)"/>
+    <circle cx="${cx}" cy="${cy}" r="${r+12}" fill="${shell}"/><circle cx="${cx}" cy="${cy}" r="${r+12}" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="2"/>${l}
+    <circle cx="${cx}" cy="${cy}" r="${r+3}" fill="none" stroke="url(#ivChrome)" stroke-width="7"/>
+    <g class="ivMove"><circle cx="${cx}" cy="${cy}" r="${r-1}" fill="url(#ivHead)"/><circle cx="${cx}" cy="${cy}" r="${r-1}" fill="#000" filter="url(#ivCoat)"/>
+    <circle cx="${cx}" cy="${cy}" r="${r*.7}" fill="none" stroke="#000" stroke-opacity=".05" stroke-width="${r*.25}"/>
+    <circle class="ivHi" cx="${cx}" cy="${cy}" r="${r-1}" fill="#fff" opacity="0"/></g>
+    ${lab?`<text x="${cx}" y="${cy+r+34}" text-anchor="middle" class="ivTx">${lab}</text>`:''}</g>`}
 function instSVG(k){
-  // ── guitarra / bajo: diapasón de palisandro, trastes de níquel, incrustaciones de nácar, cuerdas entorchadas ──
-  if(k==='b'||k==='g'){const six=k==='g',W=300,H=400,ns=six?6:4,frX=[0,70,134,192,244,290];
-    const ys=six?[60,116,172,228,284,340]:[78,159,241,322],ws=six?[3.2,2.8,2.4,1.9,1.5,1.2]:[7.5,6.4,5.3,4.4];
-    let s=`<svg class="ivSvg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice"><defs>
-      <filter id="ivGrain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".012 .45" numOctaves="3" seed="7"/><feColorMatrix values="0 0 0 0 .16  0 0 0 0 .09  0 0 0 0 .05  0 0 0 .55 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
-      <linearGradient id="ivRose" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a170d"/><stop offset=".5" stop-color="#3b2214"/><stop offset="1" stop-color="#25140b"/></linearGradient>
-      <linearGradient id="ivFret" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6f6a63"/><stop offset=".45" stop-color="#f4f1ea"/><stop offset=".6" stop-color="#cfcac0"/><stop offset="1" stop-color="#5b5650"/></linearGradient>
-      <radialGradient id="ivPearl" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#e9edf2"/><stop offset=".7" stop-color="#d7cfe4"/><stop offset="1" stop-color="#b9c4c9"/></radialGradient>
-      <linearGradient id="ivStr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8d8577"/><stop offset=".35" stop-color="#fffaf0"/><stop offset=".6" stop-color="#c8bba2"/><stop offset="1" stop-color="#5e5546"/></linearGradient>
-      <pattern id="ivWound" width="2.2" height="10" patternUnits="userSpaceOnUse"><rect width="2.2" height="10" fill="url(#ivStr)"/><rect width=".6" height="10" fill="#000" opacity=".28"/></pattern>
-      <linearGradient id="ivEdge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3e6c8"/><stop offset="1" stop-color="#c9b48a"/></linearGradient>
-      <linearGradient id="ivNut" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e9e2d0"/><stop offset="1" stop-color="#bfb59d"/></linearGradient></defs>
+  // ── batería completa vista desde arriba (diseño 1000x600, llena la pantalla) ──
+  if(k==='d'){const W=1000,H=600,sh='url(#ivSpark)';
+    const kick=`<g class="ivP ivDr" data-p="k"><rect x="400" y="362" width="216" height="228" rx="22" fill="#000" opacity=".6" filter="url(#ivSh)"/>
+      <rect x="390" y="346" width="220" height="232" rx="20" fill="${sh}"/><rect x="390" y="346" width="220" height="232" rx="20" fill="none" stroke="#000" stroke-opacity=".45" stroke-width="3"/>
+      <rect x="382" y="340" width="236" height="15" rx="7" fill="url(#ivChrome)"/><rect x="382" y="568" width="236" height="15" rx="7" fill="url(#ivChrome)"/>
+      ${[0,1,2,3,4].map(i=>`<rect x="${406+i*44}" y="354" width="9" height="214" rx="4" fill="url(#ivChrome)" opacity=".85"/>`).join('')}
+      <g class="ivMove"><rect x="440" y="420" width="120" height="58" rx="10" fill="#111" opacity=".45"/><text x="500" y="457" text-anchor="middle" font-family="Georgia,serif" font-size="20" letter-spacing="4" fill="#f3d79a">ROCKSTAR</text>
+      <rect class="ivHi" x="390" y="346" width="220" height="232" rx="20" fill="#fff" opacity="0"/></g><text x="500" y="540" text-anchor="middle" class="ivTx">BOMBO</text></g>`;
+    const hh=`<circle cx="205" cy="402" r="86" fill="#7d561a" opacity=".9"/>`+ivCym('h',195,390,86,'HI-HAT');
+    return `<svg class="ivSvg ivDrums" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${ivDefs()}
+      <defs><pattern id="ivPlank" width="1000" height="70" patternUnits="userSpaceOnUse"><rect width="1000" height="70" fill="#4a2f1c"/><rect width="1000" height="70" fill="#000" filter="url(#ivRugF)" opacity=".7"/><rect y="68" width="1000" height="2" fill="#1a0f08"/><rect x="310" y="0" width="2" height="68" fill="#1a0f08"/><rect x="760" y="0" width="2" height="68" fill="#1a0f08"/></pattern>
+        <pattern id="ivRugB" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#1f2a4d"/><path d="M20 4 L36 20 L20 36 L4 20 Z" fill="#c9a24d"/><path d="M20 11 L29 20 L20 29 L11 20 Z" fill="#8f1c22"/><circle cx="20" cy="20" r="3" fill="#f1dfb0"/></pattern>
+        <radialGradient id="ivRugC" cx=".5" cy=".5" r=".7"><stop offset="0" stop-color="#9c2a2c"/><stop offset=".6" stop-color="#7a1c21"/><stop offset="1" stop-color="#5a1418"/></radialGradient></defs>
+      <rect x="-400" y="-300" width="${W+800}" height="${H+600}" fill="url(#ivPlank)"/>
+      <g><rect x="22" y="14" width="${W-44}" height="${H-26}" rx="10" fill="#000" opacity=".45" filter="url(#ivSh)"/>
+      ${[...Array(43)].map((_,i)=>`<rect x="${10}" y="${22+i*13}" width="14" height="2.5" fill="#e8dcc0" opacity=".8"/><rect x="${W-24}" y="${24+i*13}" width="14" height="2.5" fill="#e8dcc0" opacity=".8"/>`).join('')}
+      <rect x="22" y="14" width="${W-44}" height="${H-26}" rx="8" fill="url(#ivRugB)"/>
+      <rect x="58" y="50" width="${W-116}" height="${H-98}" rx="6" fill="#efe1bd"/><rect x="66" y="58" width="${W-132}" height="${H-114}" rx="5" fill="url(#ivRugC)"/>
+      <rect x="66" y="58" width="${W-132}" height="${H-114}" rx="5" fill="#000" filter="url(#ivRugF)" opacity=".8"/>
+      <ellipse cx="${W/2}" cy="${H/2+20}" rx="230" ry="170" fill="none" stroke="#e2c27a" stroke-opacity=".35" stroke-width="10"/><ellipse cx="${W/2}" cy="${H/2+20}" rx="150" ry="105" fill="none" stroke="#1f2a4d" stroke-opacity=".45" stroke-width="14"/>
+      ${[[110,100],[W-110,100],[110,H-100],[W-110,H-100]].map(([x,y])=>`<path d="M${x} ${y-34} L${x+34} ${y} L${x} ${y+34} L${x-34} ${y} Z" fill="#1f2a4d" opacity=".55"/><path d="M${x} ${y-18} L${x+18} ${y} L${x} ${y+18} L${x-18} ${y} Z" fill="#e2c27a" opacity=".5"/>`).join('')}</g>
+      ${kick}
+      ${ivDrum('t1',412,228,66,sh,'TOM 1',6)}${ivDrum('t2',588,228,72,sh,'TOM 2',6)}
+      ${ivDrum('ft',785,390,92,sh,'TOM DE PISO',8)}
+      ${ivDrum('s',330,430,78,'url(#ivChrome)','CAJA',10)}
+      ${hh}
+      ${ivCym('c',190,140,122,'CRASH')}${ivCym('sp',500,84,54,'SPLASH')}${ivCym('r',822,160,138,'RIDE')}
+    </svg><div class="ivLab">BATERÍA · golpea donde quieras: suena la batería de la canción</div>`}
+  // ── teclado de escenario: panel de aluminio, pantalla, perillas; 2 octavas de teclas que bajan al tocarlas ──
+  if(k==='k'){const W=1000,H=600,top=150,nW=15,kw=W/nW;let s=`<svg class="ivSvg ivKeys" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${ivDefs()}<defs>
+      <linearGradient id="ivAlu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3b3f"/><stop offset=".5" stop-color="#1d1e21"/><stop offset="1" stop-color="#0c0c0d"/></linearGradient>
+      <pattern id="ivBrush" width="400" height="3" patternUnits="userSpaceOnUse"><rect width="400" height="3" fill="#fff" opacity="0"/><rect width="400" height="1" fill="#fff" opacity=".035"/></pattern>
+      <linearGradient id="ivIv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfc8b9"/><stop offset=".05" stop-color="#fdfbf6"/><stop offset=".86" stop-color="#f3eee4"/><stop offset=".94" stop-color="#e6dfd1"/><stop offset="1" stop-color="#b9b09d"/></linearGradient>
+      <linearGradient id="ivEb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#050505"/><stop offset=".2" stop-color="#2d2d30"/><stop offset=".45" stop-color="#141415"/><stop offset="1" stop-color="#020202"/></linearGradient>
+      <linearGradient id="ivEbT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1a1b"/><stop offset=".85" stop-color="#2e2e31"/><stop offset="1" stop-color="#555559"/></linearGradient>
+      <radialGradient id="ivKnob" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#6d6e73"/><stop offset=".6" stop-color="#2a2b2e"/><stop offset="1" stop-color="#0d0d0e"/></radialGradient></defs>
+      <rect width="${W}" height="${H}" fill="#070707"/><rect width="${W}" height="${top}" fill="url(#ivAlu)"/><rect width="${W}" height="${top}" fill="url(#ivBrush)"/>
+      <rect x="24" y="30" width="230" height="62" rx="6" fill="#0a1a12" stroke="#000" stroke-width="2"/><text id="ivLcd" x="38" y="72" font-family="ui-monospace,Menlo,monospace" font-size="28" fill="#7dffb2">STAGE PIANO</text>
+      ${[0,1,2,3,4,5].map(i=>`<g transform="translate(${310+i*62} 62)"><circle r="20" fill="url(#ivKnob)" stroke="#000"/><rect x="-2" y="-18" width="4" height="12" rx="2" fill="#e8e8e8" transform="rotate(${-120+i*45})"/><text y="38" text-anchor="middle" font-size="11" fill="#9a9aa0" font-family="system-ui">${['VOL','TONE','REV','CHO','DRIVE','EQ'][i]}</text></g>`).join('')}
+      <text x="${W-30}" y="58" text-anchor="end" font-family="Georgia,serif" font-size="30" letter-spacing="7" fill="#d9bf86">ROCKSTAR</text><text x="${W-30}" y="86" text-anchor="end" font-family="system-ui" font-size="13" letter-spacing="4" fill="#8b8b90">STAGE 88</text>
+      <rect x="0" y="${top-14}" width="${W}" height="14" fill="#7c1720"/><rect x="0" y="${top-14}" width="${W}" height="3" fill="#b0313b" opacity=".7"/>`;
+    for(let i=0;i<nW;i++){const x=i*kw;s+=`<g class="ivP ivKey" data-p="w${i}"><g class="ivMove"><rect x="${x+1.5}" y="${top}" width="${kw-3}" height="${H-top-4}" rx="6" fill="url(#ivIv)"/><rect x="${x+1.5}" y="${top}" width="2" height="${H-top-4}" fill="#000" opacity=".12"/><rect class="ivHi" x="${x+1.5}" y="${top}" width="${kw-3}" height="${H-top-4}" rx="6" fill="#e3b86e" opacity="0"/></g></g>`}
+    [0,1,3,4,5,7,8,10,11,12].forEach((i,j)=>{const x=(i+1)*kw-kw*.3,bw=kw*.6,bh=(H-top)*.6;s+=`<g class="ivP ivKey ivBlack" data-p="b${j}"><rect x="${x+5}" y="${top}" width="${bw}" height="${bh+8}" rx="5" fill="#000" opacity=".5"/><g class="ivMove"><rect x="${x}" y="${top}" width="${bw}" height="${bh}" rx="5" fill="url(#ivEb)"/><rect x="${x+bw*.12}" y="${top+bh*.8}" width="${bw*.76}" height="${bh*.17}" rx="3" fill="url(#ivEbT)"/><rect class="ivHi" x="${x}" y="${top}" width="${bw}" height="${bh}" rx="5" fill="#e3b86e" opacity="0"/></g></g>`});
+    return s+`<rect x="0" y="${top}" width="${W}" height="10" fill="#000" opacity=".45"/></svg><div class="ivLab">TECLADO · toca las teclas: suena el teclado de la canción</div>`}
+  // ── bajo: diapasón de palisandro con 4 cuerdas entorchadas (se adapta al tamaño de la pantalla) ──
+  if(k==='b'||k==='g'){const six=k==='g',r=(typeof boardEl!=='undefined'&&boardEl.getBoundingClientRect())||{width:600,height:300},W=Math.max(300,Math.round(r.width||600)),H=Math.max(160,Math.round(r.height||300)),ns=six?6:4;
+    const frX=[];for(let i=0;i<7;i++)frX.push(Math.round(W*(.04+.96*(1-Math.pow(.84,i))/(1-Math.pow(.84,6)))));
+    const ys=[...Array(ns)].map((_,i)=>Math.round(H*(.14+.72*i/(ns-1)))),ws=six?[3.4,3,2.6,2.1,1.6,1.3]:[H*.034,H*.03,H*.025,H*.021].map(v=>Math.max(3,v));
+    let s=`<svg class="ivSvg ivNeck" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs>
+      <filter id="ivGrain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".006 .35" numOctaves="3" seed="7"/><feColorMatrix values="0 0 0 0 .18  0 0 0 0 .1  0 0 0 0 .05  0 0 0 .6 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+      <linearGradient id="ivRose" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22120a"/><stop offset=".5" stop-color="#3a2013"/><stop offset="1" stop-color="#1e1009"/></linearGradient>
+      <linearGradient id="ivFret" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5b5650"/><stop offset=".45" stop-color="#f4f1ea"/><stop offset=".6" stop-color="#cfcac0"/><stop offset="1" stop-color="#4f4a44"/></linearGradient>
+      <radialGradient id="ivPearl" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="#e9edf2"/><stop offset=".7" stop-color="#d7cfe4"/><stop offset="1" stop-color="#b9c4c9"/></radialGradient>
+      <linearGradient id="ivStr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d6658"/><stop offset=".35" stop-color="#fff8ea"/><stop offset=".6" stop-color="#bfb197"/><stop offset="1" stop-color="#4a4236"/></linearGradient>
+      <pattern id="ivWound" width="3" height="10" patternUnits="userSpaceOnUse"><rect width="3" height="10" fill="url(#ivStr)"/><rect width=".9" height="10" fill="#000" opacity=".3"/></pattern>
+      <linearGradient id="ivBind" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3e6c8"/><stop offset="1" stop-color="#c9b48a"/></linearGradient>
+      <linearGradient id="ivNut" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ece6d6"/><stop offset="1" stop-color="#bdb39b"/></linearGradient></defs>
       <rect width="${W}" height="${H}" fill="url(#ivRose)"/><rect width="${W}" height="${H}" fill="#000" filter="url(#ivGrain)" opacity=".9"/>
-      <rect x="0" y="0" width="${W}" height="7" fill="url(#ivEdge)"/><rect x="0" y="${H-7}" width="${W}" height="7" fill="url(#ivEdge)"/>
-      <rect x="0" y="0" width="14" height="${H}" fill="url(#ivNut)"/><rect x="14" y="0" width="3" height="${H}" fill="#000" opacity=".35"/>`;
-    frX.slice(1).forEach(x=>{s+=`<rect x="${x-1}" y="7" width="6" height="${H-14}" fill="#000" opacity=".35"/><rect x="${x-3}" y="7" width="6" height="${H-14}" fill="url(#ivFret)"/>`});
-    const dot=(x,y)=>`<circle cx="${x}" cy="${y}" r="9" fill="url(#ivPearl)"/><circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#000" stroke-opacity=".25"/>`;
-    s+=dot((frX[2]+frX[3])/2+1,H/2)+dot((frX[4]+frX[5])/2+1,H/2);
-    ys.forEach((y,i)=>{const w=ws[i],wound=six?i<3:true;s+=`<rect x="0" y="${y+w*.9}" width="${W}" height="${w*.9}" fill="#000" opacity=".45" rx="${w/2}"/><rect x="0" y="${y-w/2}" width="${W}" height="${w}" rx="${w/2}" fill="${wound?'url(#ivWound)':'url(#ivStr)'}"/><rect x="0" y="${y-w/2+w*.18}" width="${W}" height="${Math.max(.6,w*.18)}" fill="#fff" opacity=".55"/>`});
-    return s+`</svg><div class="ivLab">${six?'GUITARRA · rasguea':'BAJO · rasguea como la guitarra'}</div>`}
-  // ── teclado: piano de cola negro laqueado, fieltro rojo, teclas de marfil y ébano ──
-  if(k==='k'){const W=300,H=400,n=10,kw=W/n,top=58;let s=`<svg class="ivSvg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs>
-      <linearGradient id="ivLac" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2b2e"/><stop offset=".15" stop-color="#0b0b0c"/><stop offset=".85" stop-color="#050505"/><stop offset="1" stop-color="#1a1a1c"/></linearGradient>
-      <linearGradient id="ivIv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9d3c6"/><stop offset=".06" stop-color="#fbf8f1"/><stop offset=".9" stop-color="#f1ece1"/><stop offset="1" stop-color="#c9c1b0"/></linearGradient>
-      <linearGradient id="ivIvS" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".18"/><stop offset=".12" stop-color="#000" stop-opacity="0"/><stop offset=".88" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>
-      <linearGradient id="ivEb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#070707"/><stop offset=".25" stop-color="#2c2c2e"/><stop offset=".5" stop-color="#121213"/><stop offset="1" stop-color="#020202"/></linearGradient>
-      <linearGradient id="ivEbT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a3d"/><stop offset=".9" stop-color="#0d0d0e"/><stop offset="1" stop-color="#4a4a4e"/></linearGradient></defs>
-      <rect width="${W}" height="${H}" fill="#050505"/><rect width="${W}" height="${top}" fill="url(#ivLac)"/>
-      <rect x="0" y="${top-9}" width="${W}" height="9" fill="#7d1820"/><rect x="0" y="${top-9}" width="${W}" height="2" fill="#a92a33" opacity=".7"/>
-      <text x="${W/2}" y="30" text-anchor="middle" font-size="13" letter-spacing="5" fill="#c9a96a" font-family="Georgia,serif">ROCKSTAR</text>`;
-    for(let i=0;i<n;i++){const x=i*kw;s+=`<g class="ivKey"><rect x="${x+.8}" y="${top}" width="${kw-1.6}" height="${H-top-2}" rx="3" fill="url(#ivIv)"/><rect x="${x+.8}" y="${top}" width="${kw-1.6}" height="${H-top-2}" rx="3" fill="url(#ivIvS)"/><rect class="ivHi" x="${x+.8}" y="${top}" width="${kw-1.6}" height="${H-top-2}" rx="3" fill="#e3b86e" opacity="0"/></g>`}
-    [0,1,3,4,5,7,8].forEach(i=>{const x=(i+1)*kw-kw*.31,bw=kw*.62,bh=(H-top)*.6;s+=`<g class="ivKey ivBlack"><rect x="${x+2}" y="${top}" width="${bw}" height="${bh+4}" rx="3" fill="#000" opacity=".45"/><rect x="${x}" y="${top}" width="${bw}" height="${bh}" rx="3" fill="url(#ivEb)"/><rect x="${x+bw*.15}" y="${top+bh*.78}" width="${bw*.7}" height="${bh*.2}" rx="2" fill="url(#ivEbT)"/><rect class="ivHi" x="${x}" y="${top}" width="${bw}" height="${bh}" rx="3" fill="#b8843f" opacity="0"/></g>`});
-    return s+`<rect x="0" y="${top}" width="${W}" height="6" fill="#000" opacity=".35"/></svg><div class="ivLab">TECLADO · toca las teclas con los dedos</div>`}
-  // ── batería completa vista desde arriba: alfombra, cascos con aros cromados, parches arenados, platillos de bronce ──
-  if(k==='d'){const W=300,H=400;
-    const lugs=(cx,cy,r,n)=>{let o='';for(let i=0;i<n;i++){const a=i/n*Math.PI*2,x=cx+Math.cos(a)*(r+3),y=cy+Math.sin(a)*(r+3);o+=`<rect x="${x-3}" y="${y-3}" width="6" height="6" rx="1.5" fill="url(#ivChrome)" transform="rotate(${a*180/Math.PI} ${x} ${y})"/>`}return o};
-    const drum=(cx,cy,r,shell,lab,n)=>`<g class="ivDrum"><circle cx="${cx+5}" cy="${cy+7}" r="${r+5}" fill="#000" opacity=".45"/><circle cx="${cx}" cy="${cy}" r="${r+4}" fill="${shell}"/>${lugs(cx,cy,r,n||8)}<circle cx="${cx}" cy="${cy}" r="${r+1}" fill="url(#ivChrome)"/><circle cx="${cx}" cy="${cy}" r="${r-2}" fill="url(#ivHead)"/><circle cx="${cx}" cy="${cy}" r="${r-2}" fill="#000" filter="url(#ivSand)" opacity=".18"/><circle cx="${cx}" cy="${cy}" r="${r*.28}" fill="#000" opacity=".06"/><circle class="ivHi" cx="${cx}" cy="${cy}" r="${r-2}" fill="#e3b86e" opacity="0"/>${lab?`<text x="${cx}" y="${cy+r+15}" text-anchor="middle" font-size="9.5" letter-spacing="1" fill="#b9ad98" font-family="system-ui">${lab}</text>`:''}</g>`;
-    const cym=(cx,cy,r,lab)=>{let rings='';for(let f=.92;f>.2;f-=.06)rings+=`<circle cx="${cx}" cy="${cy}" r="${r*f}" fill="none" stroke="#7a5a1c" stroke-opacity=".28" stroke-width=".7"/>`;
-      return `<g class="ivDrum"><ellipse cx="${cx+6}" cy="${cy+9}" rx="${r}" ry="${r*.96}" fill="#000" opacity=".4"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#ivBronze)"/>${rings}<circle cx="${cx}" cy="${cy}" r="${r*.2}" fill="url(#ivBell)"/><circle cx="${cx}" cy="${cy}" r="3" fill="#2a2a2a"/><circle class="ivHi" cx="${cx}" cy="${cy}" r="${r}" fill="#fff3c9" opacity="0"/>${lab?`<text x="${cx}" y="${cy+r+14}" text-anchor="middle" font-size="9.5" letter-spacing="1" fill="#b9ad98" font-family="system-ui">${lab}</text>`:''}</g>`};
-    return `<svg class="ivSvg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"><defs>
-      <filter id="ivRugF"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feColorMatrix values="0 0 0 0 .1  0 0 0 0 .02  0 0 0 0 .02  0 0 0 .5 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
-      <filter id="ivSand"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="9"/></filter>
-      <radialGradient id="ivRug" cx=".5" cy=".55" r=".7"><stop offset="0" stop-color="#5a1f1f"/><stop offset=".75" stop-color="#3a1414"/><stop offset="1" stop-color="#1c0b0b"/></radialGradient>
-      <radialGradient id="ivHead" cx=".42" cy=".38" r=".75"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#efe9dc"/><stop offset="1" stop-color="#cfc6b3"/></radialGradient>
-      <linearGradient id="ivChrome" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7f7f7"/><stop offset=".3" stop-color="#8d939a"/><stop offset=".55" stop-color="#ffffff"/><stop offset=".8" stop-color="#6c7178"/><stop offset="1" stop-color="#d9dde1"/></linearGradient>
-      <radialGradient id="ivBronze" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#f6d98a"/><stop offset=".35" stop-color="#d4a648"/><stop offset=".7" stop-color="#b8862d"/><stop offset="1" stop-color="#8a6120"/></radialGradient>
-      <radialGradient id="ivBell" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#fff0c0"/><stop offset="1" stop-color="#b0832c"/></radialGradient>
-      <linearGradient id="ivKick" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3c0f12"/><stop offset=".35" stop-color="#8f1e25"/><stop offset=".5" stop-color="#c13a3f"/><stop offset=".65" stop-color="#8f1e25"/><stop offset="1" stop-color="#3c0f12"/></linearGradient></defs>
-      <rect width="${W}" height="${H}" fill="#0d0b0a"/><rect x="10" y="40" width="${W-20}" height="${H-50}" rx="14" fill="url(#ivRug)"/><rect x="10" y="40" width="${W-20}" height="${H-50}" rx="14" fill="#000" filter="url(#ivRugF)"/>
-      <rect x="18" y="48" width="${W-36}" height="${H-66}" rx="10" fill="none" stroke="#c9a96a" stroke-opacity=".25" stroke-dasharray="2 4"/>
-      <text x="${W/2}" y="26" text-anchor="middle" font-size="11" letter-spacing="2" fill="#e3b86e" font-family="system-ui">BATERÍA · golpea donde quieras</text>
-      <g class="ivDrum"><rect x="${W/2-50+6}" y="236" width="100" height="120" rx="10" fill="#000" opacity=".45"/><rect x="${W/2-50}" y="228" width="100" height="120" rx="8" fill="url(#ivKick)"/><rect x="${W/2-54}" y="226" width="108" height="9" rx="4" fill="url(#ivChrome)"/><rect x="${W/2-54}" y="341" width="108" height="9" rx="4" fill="url(#ivChrome)"/><text x="${W/2}" y="292" text-anchor="middle" font-size="12" letter-spacing="3" fill="#f3d9a0" font-family="Georgia,serif" opacity=".85">ROCKSTAR</text><rect class="ivHi" x="${W/2-50}" y="228" width="100" height="120" rx="8" fill="#e3b86e" opacity="0"/><text x="${W/2}" y="366" text-anchor="middle" font-size="9.5" letter-spacing="1" fill="#b9ad98" font-family="system-ui">BOMBO</text></g>
-      ${cym(62,92,46,'CRASH')}${cym(244,104,52,'RIDE')}${cym(48,262,30,'HI-HAT')}
-      ${drum(120,170,28,'#8f1e25','TOM 1',6)}${drum(186,170,30,'#8f1e25','TOM 2',6)}${drum(236,250,38,'#8f1e25','TOM DE PISO',8)}${drum(86,226,31,'#9aa0a6','CAJA',10)}
-    </svg>`}
+      <rect x="0" y="0" width="${W}" height="6" fill="url(#ivBind)"/><rect x="0" y="${H-6}" width="${W}" height="6" fill="url(#ivBind)"/>
+      <rect x="0" y="0" width="${Math.round(W*.035)}" height="${H}" fill="url(#ivNut)"/><rect x="${Math.round(W*.035)}" y="0" width="3" height="${H}" fill="#000" opacity=".35"/>`;
+    frX.slice(1).forEach(x=>{s+=`<rect x="${x+1}" y="6" width="7" height="${H-12}" fill="#000" opacity=".35"/><rect x="${x-3}" y="6" width="7" height="${H-12}" fill="url(#ivFret)"/>`});
+    const dr=Math.max(7,H*.035),dot=(x,y)=>`<circle cx="${x}" cy="${y}" r="${dr}" fill="url(#ivPearl)"/>`;
+    s+=dot((frX[2]+frX[3])/2,H/2)+dot((frX[4]+frX[5])/2,H/2)+dot((frX[6]+W)/2,H*.3)+dot((frX[6]+W)/2,H*.7);
+    ys.forEach((y,i)=>{const w=ws[i];s+=`<g class="ivStr" data-s="${i}"><rect x="0" y="${(y+w*.8).toFixed(1)}" width="${W}" height="${(w*.9).toFixed(1)}" fill="#000" opacity=".5" rx="${w/2}"/><g class="ivMove"><rect x="0" y="${(y-w/2).toFixed(1)}" width="${W}" height="${w.toFixed(1)}" rx="${w/2}" fill="${six&&i>=3?'url(#ivStr)':'url(#ivWound)'}"/><rect x="0" y="${(y-w/2+w*.16).toFixed(1)}" width="${W}" height="${Math.max(.8,w*.16).toFixed(1)}" fill="#fff" opacity=".55"/></g></g>`});
+    return s+`</svg><div class="ivLab">${six?'GUITARRA · rasguea':'BAJO · rasguea sobre las 4 cuerdas'}</div>`}
   return ''}
-// vista en la pantalla principal (quien lleva el tiempo)
+/* qué pieza se mueve con cada golpe de la batería de la canción */
+const IV_DRUM={k:'k',s:'s',h:'h',oh:'h',crash:'c',ride:'r',tom:['t1','t2','ft']};
+function ivAnim(p){const v=document.getElementById('instView');if(!v)return;const el=v.querySelector(`.ivP[data-p="${p}"]`);if(!el)return;el.classList.remove('hit');void el.getBBox();el.classList.add('hit');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('hit'),el.classList.contains('ivCym')?1300:260)}
+function ivDrumSeen(kind,t,m){if((S.myInst||'g')!=='d'||!document.getElementById('instView'))return;let p=IV_DRUM[kind];if(Array.isArray(p))p=m<=45?'ft':m<=47?'t2':'t1';if(kind==='crash'&&(m===55))p='sp';if(p)animAt(t,()=>ivAnim(p))}
+function ivKeySeen(midi,t){if((S.myInst||'g')!=='k'||!document.getElementById('instView'))return;const pc=((midi%24)+24)%24,WH=[0,2,4,5,7,9,11],o=Math.floor(pc/12),q=pc%12;
+  const wi=WH.indexOf(q);let p;if(wi>=0)p='w'+(o*7+wi);else{const bl=[1,3,6,8,10].indexOf(q);p='b'+(o*5+bl)}animAt(t,()=>ivAnim(p))}
+// el instrumento ocupa toda la pantalla (teclado y batería) o el diapasón (bajo)
 function instViewSync(){const my=S.myInst||'g';let v=document.getElementById('instView');
-  if(my==='g'){if(v)v.remove();return}
-  if(!v||v.dataset.k!==my){if(v)v.remove();v=document.createElement('div');v.id='instView';v.dataset.k=my;v.className='instView'+(my==='b'?' pass':'');v.innerHTML=instSVG(my);boardEl.appendChild(v);
-    if(my!=='b')ivBindTaps(v,(vel,dir)=>easyStroke(dir,vel))}}
-// teclado y batería: cada dedo que toca es un golpe (vale cualquier lugar); se ilumina lo que tocaste
+  if(my==='g'){if(v)v.remove();document.body.classList.remove('ivFull');return}
+  const full=my==='d'||my==='k';
+  if(!v||v.dataset.k!==my||(my==='b'&&v.dataset.sz!==String(Math.round(boardEl.clientWidth))+'x'+Math.round(boardEl.clientHeight))){if(v)v.remove();v=document.createElement('div');v.id='instView';v.dataset.k=my;v.dataset.sz=Math.round(boardEl.clientWidth)+'x'+Math.round(boardEl.clientHeight);
+    v.className='instView'+(my==='b'?' pass':'')+(full?' full':'');
+    v.innerHTML=instSVG(my)+(full?`<div class="ivBar"><button class="ivB" data-iv="g">🎸 Guitarra</button><b class="ivT">${esc(song().title||'')}</b><button class="ivB" data-iv="prev">◀</button><button class="ivB ivNext" data-iv="next">Siguiente ▶</button><button class="ivB" data-iv="band">🥁 Banda</button><button class="ivB" data-iv="more">⋮</button></div>`:'');
+    (full?document.body:boardEl).appendChild(v);document.body.classList.toggle('ivFull',full);
+    if(full){v.querySelector('.ivBar').addEventListener('pointerdown',e=>e.stopPropagation());v.querySelector('.ivBar').addEventListener('click',e=>{const b=e.target.closest('[data-iv]');if(!b)return;const a=b.dataset.iv;
+      if(a==='g'){S.myInst='g';persist();render()}else if(a==='prev')step(-1);else if(a==='next')step(1);else if(a==='band')openSheet('band');else if(a==='more')openSheet('more')});
+      ivBindTaps(v.querySelector('.ivSvg'),(vel,dir)=>easyStroke(dir,vel))}}
+  if(full){const t=v.querySelector('.ivT');if(t)t.textContent=(song().title||'')+(seq.items[idx]&&seq.items[idx].chord?' · '+disp(seq.items[idx].chord):'');const nb=v.querySelector('.ivNext'),gb=$('#nextBtn');if(nb&&gb)nb.classList.toggle('goNow',gb.classList.contains('goNow'))}}
+window.addEventListener('resize',()=>{try{const v=document.getElementById('instView');if(v&&v.dataset.k==='b')instViewSync()}catch(e){}});
+// teclado y batería: cada dedo que toca es un golpe (vale cualquier lugar); se mueve la pieza que tocaste
 function ivBindTaps(el,hit){let n=0;el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();ensureAudio();n++;
-    const r=el.getBoundingClientRect(),y=(e.clientY-r.top)/r.height,vel=clamp(.55+.45*(el.dataset.k==='k'?y:1-Math.abs(y-.6)),.45,1);hit(vel,n%2?'down':'up');
-    const t=e.target.closest&&e.target.closest('.ivKey,.ivDrum');if(t){t.classList.remove('on');void t.getBBox;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),140)}
-    else{el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}
+    const r=el.getBoundingClientRect(),y=(e.clientY-r.top)/r.height,vel=clamp(.55+.45*(el.closest('.instView')&&el.closest('.instView').dataset.k==='k'?y:1-Math.abs(y-.6)),.45,1);hit(vel,n%2?'down':'up');
+    const t=e.target.closest&&e.target.closest('.ivP');if(t&&t.dataset.p)ivAnim(t.dataset.p);
     try{navigator.vibrate&&navigator.vibrate(7)}catch(_){}},{passive:false})}
+// bajo: las cuerdas que cruza tu dedo vibran
+(function(){let ly=null;boardEl.addEventListener('pointerdown',e=>{ly=e.clientY},true);boardEl.addEventListener('pointerup',()=>{ly=null},true);
+  boardEl.addEventListener('pointermove',e=>{if((S.myInst||'g')!=='b'||ly==null)return;const v=document.getElementById('instView');if(!v)return;const r=boardEl.getBoundingClientRect(),a=(ly-r.top)/r.height,b=(e.clientY-r.top)/r.height;ly=e.clientY;
+    v.querySelectorAll('.ivStr').forEach((g,i)=>{const sy=.14+.72*i/3;if((a-sy)*(b-sy)<=0&&a!==b){g.classList.remove('vib');void g.getBBox();g.classList.add('vib');clearTimeout(g._t);g._t=setTimeout(()=>g.classList.remove('vib'),700)}})},true)})();
 
 /* Biblioteca: todas tus partituras en un solo archivo, para llevarlas a la app instalada o a otro teléfono */
 const b64e=buf=>{const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)};
@@ -3743,7 +3813,7 @@ setTimeout(()=>{try{if(!inFrame()&&!GPHAVE.size){openSheet('welcomeLib')}}catch(
 setInterval(()=>{try{const b=$('#nextBtn');if(!b)return;let on=false,wait=false;
   if(!S.auto&&stepOn()&&loopOn()&&!MB.go&&ctx){const U=UN(),k=MB.sec!=null?MB.sec:unIdx(idx),u=U[k];
     if(u&&k<U.length-1){const pos=MB.on?mbPosAt(ctx.currentTime):MB.pos,act=MB.on||ctx.currentTime-MB.last<2.5;wait=!!MB.hold&&ctx.currentTime-MB.last<30;on=wait||(act&&u.b-pos<=Math.min(4,(u.b-u.a)/2)&&pos>=u.a-1e-6)}}
-  b.classList.toggle('goNow',on);b.classList.toggle('wait',on&&wait)}catch(e){}},120);
+  b.classList.toggle('goNow',on);b.classList.toggle('wait',on&&wait);const ivn=document.querySelector('.ivNext');if(ivn)ivn.classList.toggle('goNow',on)}catch(e){}},120);
 
 /* La pantalla no se apaga mientras usas la app: bloqueo de pantalla del navegador y, si no lo deja, un video mudo diminuto en bucle (como NoSleep) */
 const WAKE={lock:null,vid:null};
