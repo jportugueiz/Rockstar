@@ -1154,7 +1154,42 @@ function stepBuild(){const key=S.songId+'|'+S.transpose+'|'+S.simple+'|'+seq.ite
        · donde la guitarra principal hace un riff o arpegio (notas sueltas), se toca ese riff tal cual en la acústica
        · donde rasguea, se rasguea el acorde abierto de fogata CON EL RITMO DEL DISCO (sus golpes, sus silencios, sus apagados)
        · donde la guitarra calla, un rasgueo de fogata sobre el acorde; sin solos, sin banda */
-    if(fogOn()){const F=[],main=mainT,mbar={};if(main)main.ev.forEach(e=>{const k=barOf(e.b);(mbar[k]=mbar[k]||[]).push(e)});
+    /* ═══ FOGATA 2 (muestra en /fogata): suena TODO lo de la guitarra, pero en una sola guitarra de nylon ═══
+       · los riffs, arpegios, punteos y solos del disco, nota por nota (con sus bends y vibratos)
+       · donde los teclados llevan la melodía y la guitarra calla (intro de Tren al Sur), esa melodía también va en la guitarra
+       · los rasgueos son de fogata: el acorde abierto completo, con el ritmo del disco, abajo en el tiempo y arriba en el contratiempo
+       · donde no hay rasgueo (acordes largos, solos sin banda, partes vacías) entra el rasgueo clásico de fogata, más suave bajo el punteo */
+    if(fogOn()&&window.ROCK_FOGATA_DEMO){
+      const chAt=b=>(seq.items[itemAt(b)]||{}).chord;
+      const full=(ch,d,up)=>{let ns=chordMidis(ch).map((m,i)=>m==null?null:{midi:m,str:i,fret:0,dur:d}).filter(Boolean);if(up)ns=ns.slice(-4);return ns};
+      const isChord=ns=>{const v=ns.filter(n=>!n.dead);if(ns.length>=3)return true;if(v.length===2){const iv=Math.abs(v[0].midi-v[1].midi)%12;return iv===7||iv===5}return false};
+      const bars={};ev.forEach(x=>{if(x.gp){const k=barOf(x.b);(bars[k]=bars[k]||[]).push(x)}});
+      const vox=/\b(voz|voces|voice|vocals?|vox|voix|canto|coros?|choir)\b/i;
+      const syn=GP.tracks.filter(T=>!T.drums&&!/guitar|bass/i.test(T.type)&&!vox.test(T.name||'')&&!(T.prog>=48&&T.prog<=55)&&!(T.prog>=88&&T.prog<=95)&&!(T.prog>=32&&T.prog<=39)&&T.ev.length>=8&&T.ev.reduce((a,e)=>a+e.notes.length,0)/T.ev.length<=1.4);
+      const sbar=new Map();syn.forEach(T=>{const m={};T.ev.forEach(e=>{const k=barOf(e.b);(m[k]=m[k]||[]).push(e)});sbar.set(T,m)});
+      const F=[],PAT=[[0,'D',1],[1,'D',.8],[1.5,'U',.7],[2.5,'U',.7],[3,'D',.85],[3.5,'U',.7]];
+      const strum=(b,d,dir,dyn,dead,ac)=>{const ch=chAt(b);if(!ch)return;let ns=full(ch,d,dir==='U');if(dead)ns=ns.map(n=>Object.assign({},n,{dead:true}));
+        if(ns.length)F.push({ii:itemAt(b),b,gp:{ns,lead:false,dyn,brush:dir==='U'?'Up':'Down',dur:d,tr:0,snd:'fog',role:'main',ac}})};
+      const lvl=['PPP','PP','P','MP','MF','F','FF','FFF'],atLeast=(d,m)=>lvl.indexOf(d||'MF')<lvl.indexOf(m)?m:d;
+      GP.bars.forEach((bar,k)=>{const xs=bars[k]||[],len=bar.len||4;
+        const lead=xs.filter(x=>x.gp.mel||x.gp.role==='solo'||x.gp.role==='lead'&&!isChord(x.gp.ns));
+        const rh=xs.filter(x=>!lead.includes(x)&&!x.gp.fill);
+        const seen=new Set(),chd=rh.filter(x=>isChord(x.gp.ns)).filter(x=>{const t=x.b.toFixed(2);if(seen.has(t))return false;seen.add(t);return true});
+        const line=rh.filter(x=>!isChord(x.gp.ns));
+        line.forEach(x=>F.push(Object.assign({},x,{gp:Object.assign({},x.gp,{snd:'fog',role:'main'})})));
+        lead.forEach(x=>F.push(Object.assign({},x,{gp:Object.assign({},x.gp,{snd:'fog',lead:true})})));
+        // melodía de teclados donde la guitarra no tiene línea propia
+        let mel=0;if(line.length<3&&lead.length<3){let best=null,bc=1;syn.forEach(T=>{const c=(sbar.get(T)[k]||[]).length;if(c>bc){bc=c;best=T}});
+          if(best){(sbar.get(best)[k]||[]).forEach(e=>{const ns=e.notes.filter(n=>!n.skip).map(n=>{let m=n.midi;while(m>86)m-=12;while(m<52)m+=12;return Object.assign({},n,{midi:m})});if(ns.length){mel++;F.push({ii:itemAt(e.b),b:e.b,gp:{ns,lead:true,mel:true,dyn:atLeast(e.dyn,'MF'),brush:null,dur:e.d,tr:98,snd:'fog',role:'mel'}})}})}}
+        const sustained=chd.length&&chd.length<=2&&chd.every(x=>(x.gp.dur||1)>=1.5);
+        if(chd.length&&!sustained){const has16=chd.filter(x=>{const f=(x.b-bar.start)*4;return Math.abs(f-Math.round(f))<.02&&Math.round(f)%2===1}).length>=3,u=has16?.25:.5;
+          chd.forEach(x=>{const r=(x.b-bar.start)/u,i=Math.round(r),onGrid=Math.abs(r-i)<.05,dir=onGrid?(i%2?'U':'D'):'D';
+            strum(x.b,Math.max(.25,x.gp.dur||.5),dir,atLeast(x.gp.dyn,dir==='D'?'MF':'MP'),x.gp.ns.every(n=>n.dead),i===0&&onGrid)});return}
+        if(line.length>=3)return;   // riff o arpegio: la guitarra hace eso, sin rasgueo encima
+        const soft=lead.length>=2||mel>=2;
+        PAT.forEach(([o,dir,a])=>{if(o>=len-1e-6)return;strum(bar.start+o,.5,dir,soft?(a>.9?'MP':'P'):(a>.9?'F':'MF'),false,a>.9&&!soft)})});
+      ev.length=0;F.forEach(x=>ev.push(x))}
+    else if(fogOn()){const F=[],main=mainT,mbar={};if(main)main.ev.forEach(e=>{const k=barOf(e.b);(mbar[k]=mbar[k]||[]).push(e)});
       const chAt=b=>(seq.items[itemAt(b)]||{}).chord,open=(ch,d)=>chordMidis(ch).map((m,i)=>m==null?null:{midi:m,str:i,fret:0,dur:d}).filter(Boolean);
       const PAT=[[0,'D',1],[1,'D',.8],[1.5,'U',.7],[2.5,'U',.7],[3,'D',.85],[3.5,'U',.7]];   // el clásico de fogata: abajo, abajo-arriba, arriba-abajo-arriba
       GP.bars.forEach((bar,k)=>{const es=(mbar[k]||[]).filter(e=>e.notes.some(n=>!n.skip));
@@ -3226,7 +3261,8 @@ async function renderSheet(){
     const hadFocus=document.activeElement&&document.activeElement.id==='songQ';
     if(!['todas','art','fav','solos'].includes(sheet.filter)&&!lists.some(l=>l.id===sheet.filter))sheet.filter='todas';
     const cmp=(a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}),q=sheet.q.toLowerCase();
-    const songs=allSongs().filter(x=>{if(q&&!(x.title+' '+x.artist).toLowerCase().includes(q))return false;
+    const FOGD=window.ROCK_FOGATA_DEMO?['tren-al-sur','musica-ligera','sultans-swing','he-barrido']:null;
+    const songs=allSongs().filter(x=>{if(FOGD&&!FOGD.includes(x.id))return false;if(q&&!(x.title+' '+x.artist).toLowerCase().includes(q))return false;
       if(sheet.filter==='solos')return x.zone==='solos';if(sheet.filter==='fav')return favs.has(x.id);const L2=lists.find(l=>l.id===sheet.filter);if(L2)return L2.songs.includes(x.id);
       return x.zone!=='solos'||!!q}).sort((a,b)=>cmp(a.title,b.title));
     // tarjeta simple: nombre, artista, ✓ si tiene su partitura; tocar la tarjeta abre la canción
@@ -3913,6 +3949,7 @@ function modeSync(){const sg=$('#modeSeg');if(!sg)return;sg.style.display=gpOn()
 function setFogata(on){ensureAudio();if(DEMO.on)demoStop();S.fogata=!!on;(S.fogBy=S.fogBy||{})[S.songId]=S.fogata;if(S.fogata&&band.on)stopBand();
   STEP.key=null;RIG.key=null;staticKey='';try{gpBanks(GPS[S.songId])}catch(_){}persist();restartSong();modeSync();flashMsg(S.fogata?'🔥 Fogata: la guitarra del asado':'💿 Original: como en el disco')}
 try{S.fogata=!!(S.fogBy||{})[S.songId]}catch(_){}
+if(window.ROCK_FOGATA_DEMO)setTimeout(()=>{try{openSheet('songs');flashMsg('🔥 Muestra fogata: elige una canción y toca 🔥 Fogata')}catch(_){}},1500);
 /* empezar la canción de nuevo */
 function restartSong(){ensureAudio();if(DEMO.on)demoStop();try{vampStop()}catch(_){}MB.on=false;clearInterval(MB.timer);try{clStopTicker()}catch(_){}MB.hold=false;MB.go=false;MB.passes=[];MB.last=0;MB.np=0;MB.base=0;
   stepBuild();mbSeek(0);MB.limit=0;idx=0;MB.idx=-1;MB.seekB=null;MB.sec=0;try{CL.push=1;CL.pend=null}catch(_){}if(band.on){band.idx=0;band.step=0}saveResume();render();flashMsg('⟲ Desde el principio')}
