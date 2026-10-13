@@ -3652,6 +3652,9 @@ learnedLoad(S.songId);
    - Pasada de aire en un rasgueo: roce apagado de las cuerdas, como un guitarrista de verdad. */
 const CL={st:[],pend:[],dead:0};
 function clSpeed(){return S.clSpeed||1}
+/* la mano «cubre» lo que viene justo después de cada pasada: hasta 1,5 veces tu ritmo de pasadas (0,15–0,45 s).
+   Si tu mano se está moviendo, todo suena a tiempo; recién cuando paras y vuelves, el acorde espera tu pasada. */
+function clWin(){const a=CL.st,d=[];for(let i=Math.max(1,a.length-9);i<a.length;i++){const x=a[i]-a[i-1];if(x<1)d.push(x)}if(!d.length)return .12;d.sort((x,y)=>x-y);return clamp(d[d.length>>1]*1.5,.15,.45)}
 function clTe(e){return MB.t0+(e.b-MB.p0)/MB.rate}
 function clSingle(e){const g=e.gp;return !!g&&(g.ns.length<=2||g.role==='solo'||g.role==='mel'||g.role==='lead')}
 function clRoce(dir,vel,now){const E=STEP.ev,pos=mbPosAt(now);
@@ -3692,7 +3695,7 @@ function clTick(){
       MB.pos=L.b;MB.on=false;clearInterval(MB.timer);MB.hold=true;CL.pend=[];render();return}   // fin de la parte (sin Auto): espera con el último acorde
     MB.ei++;const t=Math.max(now,te)+.001,spb=1/MB.rate;
     if(e.band){playEv(e,t,.8+.3*MB.vel,spb)}
-    else{const claimed=CL.st.some(s=>s>=te-.12&&s<=te+.012);
+    else{const W=clWin(),claimed=CL.st.some(s=>s>=te-W&&s<=te+.012);
       if(claimed)playEv(e,t,.8+.3*MB.vel,spb);
       else if(clSingle(e))playEv(e,t,.42,spb);                 // punteo sin pasada: suena suave
       else CL.pend.push({e,te});                                 // acorde sin pasada: espera un instante por si llega tarde
