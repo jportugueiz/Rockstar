@@ -481,7 +481,7 @@ const DEMOS=[
    ["he-barrido","He barrido el sol","Los Tres",120,'gpc'],["quien-es","Quién es la que viene allí","Los Tres",120,'gpc'],["dejate-caer","Déjate caer","Los Tres",111,'gpc'],
    ["torre-babel","La torre de Babel","Los Tres",125,'strat'],["amor-violento","Un amor violento","Los Tres",120,'gpc'],
    ["cuando-pase","Cuando pase el temblor","Soda Stereo",90,'gpc'],["profugos","Prófugos","Soda Stereo",120,'strat',['pr fugos']],["puente","Puente","Gustavo Cerati",76,'gpc'],
-   ["bamboleo","Bamboleo","Gipsy Kings",150,'gpc'],["tu-falta","Tu falta de querer","Mon Laferte",120,'gpc']]
+   ["tu-falta","Tu falta de querer","Mon Laferte",120,'gpc']]
    .map(([id,title,artist,bpm,inst,aka])=>({id,title,artist,aka,needGp:true,inst,preset:inst==='gpc'?'vintage':'rocklatino',mode:'rockstar',bpm,style:'rock',sections:[{name:'Carga su archivo Guitar Pro',chords:['C:4']}]})),
 ];
 
@@ -3275,7 +3275,7 @@ async function renderSheet(){
       <small class="p" style="margin:0">¿No tienes ese archivo? Pídeselo a Claude, o carga tus Guitar Pro en 📁 Tablaturas.</small></div>`}
   else if(sheet.kind==='more'){
     const row=(k,t,d)=>`<button class="item" data-sheet="${k}"><span class="main"><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
-    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 111</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
+    body.innerHTML=`<div style="text-align:center;font:600 12px var(--f-mono);color:var(--gold);letter-spacing:.1em">ROCKSTAR · VERSIÓN 112</div><div class="list">${row('songs','🎸 Cancionero','Todas tus canciones y artistas')}${row('ses','👥 Tocar con amigos',SES.role==='stage'?'Sesión '+(SES.code||'').toUpperCase()+' abierta':'Tu instrumento: '+INAME(S.myInst||'g'))}${row('band','🥁 Banda','Batería, bajo y teclado')}${row('orig','🎵 Con la canción original','Tocar sobre el MP3 de la canción')}${row('fx','🎛 Efectos',fxLabel())}${row('inst','🎸 Guitarras',inst().name)}${row('folder','📁 Cargar canciones','Tus archivos Guitar Pro o PDF')}${row('recs','⏺ Grabaciones','Escuchar lo que grabaste')}${row('install','📲 Instalar en mi teléfono','Tenerla como app, con su ícono')}${row('settings','⚙️ Ajustes','Forma de tocar, mano, volumen')}</div>
       <div class="group"><span class="eyebrow">Sonido de la guitarra</span><div class="seg" style="flex-wrap:wrap">${[['orig',{n:'⭐ Como en el disco'}]].concat(Object.entries(GTS)).map(([k,v])=>`<button data-gpsnd="${k}" aria-pressed="${(GTS[S.gpSnd]?S.gpSnd:'orig')===k}">${v.n}</button>`).join('')}</div><small class="p" style="margin:0">"Como en el disco": cada guitarra suena como la de la grabación original.</small></div>
       <div class="group"><span class="eyebrow">Modo</span><div class="seg">${MODES.map(([m,l])=>`<button data-setmode="${m}" aria-pressed="${S.mode===m}">${l}</button>`).join('')}</div></div>`;
   }
@@ -3655,7 +3655,7 @@ async function libExport(){try{const d=await odb();const keys=await new Promise(
     if(dl){await dl.save({filename:fn,data:blob});}else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
     sheet.libMsg='✅ Guardado: '+recs.length+' canciones en «'+fn+'» (en tus Descargas).';renderSheetIfOpen()}catch(e){sheet.libMsg=e&&e.code==='declined'?'No se guardó.':'No se pudo guardar ('+(e&&(e.code||e.message)||'error')+').';renderSheetIfOpen()}}
 async function libImport(file){try{const L=JSON.parse(await file.text());if(L.app!=='rockstar'||!Array.isArray(L.recs))throw new Error('ese archivo no es de Rockstar');let n=0;
-    for(const r of L.recs){if(!/^gp\|[\w.-]+$/.test(String(r.k)))continue;await odbPut(r.k,r.xml?{xml:String(r.xml),name:String(r.name||'')}:{bin:b64d(r.bin),name:String(r.name||'')});GPHAVE.add(r.k.slice(3));n++}
+    for(const r of L.recs){if(!/^gp\|[\w.-]+$/.test(String(r.k)))continue;if(REMOVED.includes(String(r.k).slice(3)))continue;await odbPut(r.k,r.xml?{xml:String(r.xml),name:String(r.name||'')}:{bin:b64d(r.bin),name:String(r.name||'')});GPHAVE.add(r.k.slice(3));n++}
     (L.songs||[]).forEach(x=>{if(x&&x.id&&!userSongs.some(y=>y.id===x.id)&&!DEMOS.some(y=>y.id===x.id))userSongs.push({id:String(x.id),title:String(x.title||''),artist:String(x.artist||''),custom:true,gp:true,gpFile:String(x.gpFile||''),inst:'gpc',preset:'vintage',mode:'rockstar',bpm:+x.bpm||100,sections:[{name:'Parte 1',chords:['C:4']}]})});
     store.set('songs',userSongs);store.set('gpHave',[...GPHAVE]);sheet.libMsg='✅ Listo: '+n+' canciones cargadas. Búscalas en el Cancionero.';await gpLoad(S.songId);buildSeq();render();renderSheetIfOpen()}catch(e){sheet.libMsg='No se pudo cargar: '+(e&&e.message||'error');renderSheetIfOpen()}}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-lib]');if(b&&b.dataset.lib==='out')libExport()});
@@ -3704,7 +3704,7 @@ function hrecSheet(body){const sg=song()||{};
     <small class="p" style="margin:0;font-size:15px">No se graba sonido: solo tus movimientos y lo que suena de la partitura. Graba 2 minutos o más. Elige la canción antes de empezar.</small>
     <button class="btn big" data-hrec="sigue" style="text-align:left;white-space:normal">🎧 <b>1 · La canción suena sola</b><br><small>Va a su velocidad real y tú la acompañas con la mano como si la tocaras. Tu mano no la manda.</small></button>
     <button class="btn big" data-hrec="mano" style="text-align:left;white-space:normal">🎸 <b>2 · Como siempre</b><br><small>Tu mano manda, igual que cuando tocas normalmente.</small></button>
-    <small class="p" style="margin:0">Mientras grabas aparece «⏹ Terminar» arriba a la izquierda de las cuerdas. Ideal: haz las dos en Bamboleo, Nothing Else Matters y una de Prisioneros o Soda.</small></div>`}
+    <small class="p" style="margin:0">Mientras grabas aparece «⏹ Terminar» arriba a la izquierda de las cuerdas. Ideal: haz las dos en Nothing Else Matters y una de Prisioneros o Soda.</small></div>`}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-hrec]');if(!b)return;const a=b.dataset.hrec;if(a==='save')hrecSave();else hrecStart(a)});
 (function(){const add=(e,ty)=>{if(!HREC.on)return;const r=boardEl.getBoundingClientRect();(ty===1&&e.getCoalescedEvents?e.getCoalescedEvents():[e]).forEach(ev=>{
     HREC.pt.push([Math.round(ev.timeStamp-HREC.t0),Math.round((ev.clientY-r.top)/r.height*1000),Math.round((ev.clientX-r.left)/r.width*1000),ty,e.pointerId%100])})};
@@ -3713,6 +3713,10 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
   const b=$('#hrecBtn');if(b)b.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(HREC.on)hrecStop(false);else openSheet('hrec')})})();
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.id==='libFile'&&t.files&&t.files[0])libImport(t.files[0])});
 // primera vez en la app instalada (fuera de Claude) y sin partituras: se ofrece cargar la biblioteca
+/* canciones sacadas de la app: se borran también de este teléfono */
+const REMOVED=['bamboleo'];setTimeout(async()=>{for(const id of REMOVED){try{if(GPHAVE.has(id)){GPHAVE.delete(id);store.set('gpHave',[...GPHAVE]);await odbDel('gp|'+id)}
+  if(userSongs.some(x=>x.id===id)){userSongs=userSongs.filter(x=>x.id!==id);store.set('songs',userSongs)}favs.delete(id);
+  if(S.songId===id){loadSong('musica-ligera',true)}}catch(e){}}},400);
 setTimeout(()=>{try{if(!inFrame()&&!GPHAVE.size){openSheet('welcomeLib')}}catch(e){}},1500);
 /* Sin Auto: el botón Siguiente se enciende en rojo cuando se acerca el final de la parte (y late más rápido cuando la canción ya te espera) */
 setInterval(()=>{try{const b=$('#nextBtn');if(!b)return;let on=false,wait=false;
