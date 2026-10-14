@@ -730,6 +730,13 @@ const GTS={acu:{n:'Acústica',b:'ka',nb:'ka4',m:'kam'},doce:{n:'Acústica 12 cue
   fog:{n:'Fogata (nylon)',b:'ny2',nb:'ny2',m:'kam'},
   fla:{n:'Flamenca (rumba)',b:'fl',m:'flm',g:'flg',flam:1}};   // guitarra flamenca: brillante, seca, ataque de uña; rasgueo rápido con chasquido y golpe en la caja
 function fogOn(){return !!S.fogata&&!!gpOn()}
+/* muestra fogata: sonidos y rasgueos para elegir de oído */
+const FOG_PATS={clasica:{n:'Fogata clásica',d:'abajo · abajo-arriba · arriba-abajo-arriba',p:[[0,'D',1],[1,'D',.8],[1.5,'U',.7],[2.5,'U',.7],[3,'D',.85],[3.5,'U',.7]]},
+  simple:{n:'Lento y lleno',d:'abajo · abajo · abajo-arriba (pocos golpes, que suenen)',p:[[0,'D',1],[1,'D',.8],[2,'D',.9],[2.5,'U',.6],[3,'D',.8]]},
+  chasquido:{n:'Con chasquido',d:'abajo-arriba · ¡tac! · abajo-arriba · ¡tac!',p:[[0,'D',1],[.5,'U',.5],[1,'X',.9],[1.5,'U',.55],[2,'D',.9],[2.5,'U',.5],[3,'X',.9],[3.5,'U',.6]]},
+  charango:{n:'Charango',d:'abajo · abajo-arriba en cada tiempo, suave',p:[[0,'D',1],[.5,'D',.6],[.75,'U',.45],[1,'D',.8],[1.5,'U',.5],[2,'D',.95],[2.5,'D',.6],[2.75,'U',.45],[3,'D',.8],[3.5,'U',.5]]}};
+const FOG_BANKS={ny2:'Nylon 1 (la de ahora)',ny:'Nylon 2 (clásica española)',fl:'Flamenca (nylon)',ka4:'Acústica de acero'};
+{const fb=store.get('fogBank',null);if(window.ROCK_FOGATA_DEMO&&fb&&FOG_BANKS[fb]){GTS.fog.b=GTS.fog.nb=fb}}
 function newSnd(){return S.snd2!=='old'}const gB=GT=>newSnd()&&GT.nb?GT.nb:GT.b;   // sonido nuevo: guitarra directa + amplificador y parlante reales
 const GPSND={a:{n:'Limpia 1',lead:'electric',rhy:'electric',mute:'mm'},b:{n:'Limpia 2',lead:'fc',rhy:'fj',mute:'fm'},c:{n:'Limpia 3',lead:'bc',rhy:'bj',mute:'mm'},d:{n:'Jazz',lead:'mj',rhy:'mj',mute:'mm'}};
 const gpSnd=()=>GPSND[S.gpSnd]||GPSND.b;
@@ -744,7 +751,7 @@ const SONG_GEAR={
   'no-podras':{def:'cho',rules:[[/guitarra 2|dist|power/i,'dist'],[/ac[uú]st/i,'acu']]},   // pop-rock 1992: limpia con chorus y eco; coros con distorsión
   'november-rain':{def:'neck',rules:[[/solo|fills/i,'crunch'],[/ac[uú]st/i,'acu']],fill:'neck',mel:'neck'},   // Slash: Les Paul (Derrig) a Marshall, poco efecto, algo de eco
   'rayando-el-sol':{def:'cho',rules:[[/acompa|ac[uú]st/i,'acu'],[/solo/i,'crunch']]},   // Ulises Calleros: eléctrica limpia con chorus y eco + acústicas
-  'tren-al-sur':{def:'acu',rules:[[/charango/i,'charango']],fill:'acu',mel:'cho',band:2.6,fillAll:1,fillSkip:/intro/i,fogPat:[[0,'D',1],[.5,'U',.5],[1,'D',.8],[1.5,'U',.6],[2,'D',.95],[2.5,'U',.5],[3,'D',.8],[3.5,'U',.65]]},   // la intro es solo sintetizador   // no tiene guitarra rasgueada: charango y sintetizadores (Wikipedia; 178 bpm)
+  'tren-al-sur':{def:'acu',rules:[[/charango/i,'charango']],fill:'acu',mel:'cho',band:2.6,fillAll:1,fillSkip:/intro/i},   // la intro es solo sintetizador   // no tiene guitarra rasgueada: charango y sintetizadores (Wikipedia; 178 bpm)
          // charango de Santaolalla (brillante, cuerdas dobles)
   'persiana-americana':{def:'cho',rules:[[/solo|lead/i,'crunch']]},                   // Cerati 1986: Jackson, chorus de los 80 y eco de corchea con puntillo
   'sweet-child':{def:'crunch'},                                                       // Slash: Les Paul, pastilla del mástil, Marshall alquilado, casi sin efectos
@@ -1170,7 +1177,7 @@ function stepBuild(){const key=S.songId+'|'+S.transpose+'|'+S.simple+'|'+seq.ite
       const syn=GP.tracks.filter(T=>!T.drums&&!/guitar|bass/i.test(T.type)&&!vox.test(T.name||'')&&!(T.prog>=48&&T.prog<=55)&&!(T.prog>=88&&T.prog<=95)&&!(T.prog>=32&&T.prog<=39)&&T.ev.length>=8&&T.ev.reduce((a,e)=>a+e.notes.length,0)/T.ev.length<=1.4);
       const sbar=new Map();syn.forEach(T=>{const m={};T.ev.forEach(e=>{const k=barOf(e.b);(m[k]=m[k]||[]).push(e)});sbar.set(T,m)});
       let synBest=null,sbc=0;syn.forEach(T=>{const c=Object.values(sbar.get(T)).filter(a=>a.length>=2).length;if(c>sbc){sbc=c;synBest=T}});   // la melodía de teclado más presente en la canción
-      const F=[],PAT=gpGear().fogPat||[[0,'D',1],[1,'D',.8],[1.5,'U',.7],[2.5,'U',.7],[3,'D',.85],[3.5,'U',.7]];
+      const pk=(store.get('fogPat',{})||{})[S.songId],F=[],PAT=pk&&FOG_PATS[pk]?FOG_PATS[pk].p:gpGear().fogPat||FOG_PATS.clasica.p;
       const strum=(b,d,dir,dyn,dead,ac)=>{const ch=chAt(b);if(!ch)return;let ns=full(ch,d,dir==='U');if(dead)ns=ns.map(n=>Object.assign({},n,{dead:true}));
         if(ns.length)F.push({ii:itemAt(b),b,gp:{ns,lead:false,dyn,brush:dir==='U'?'Up':'Down',dur:d,tr:90,snd:'fog',role:'main',ac}})};
       const lvl=['PPP','PP','P','MP','MF','F','FF','FFF'],atLeast=(d,m)=>lvl.indexOf(d||'MF')<lvl.indexOf(m)?m:d;
@@ -1194,7 +1201,7 @@ function stepBuild(){const key=S.songId+'|'+S.transpose+'|'+S.simple+'|'+seq.ite
             strum(x.b,Math.max(.25,x.gp.dur||.5),dir,atLeast(x.gp.dyn,dir==='D'?'MF':'MP'),x.gp.ns.every(n=>n.dead),i===0&&onGrid)});return}
         if(line.length>=3)return;   // riff o arpegio: la guitarra hace eso, sin rasgueo encima
         const soft=lead.length>=2||mel>=2;
-        const lv=a=>a>=.95?'F':a>=.8?'MF':a>=.6?'MP':'P';PAT.forEach(([o,dir,a])=>{if(o>=len-1e-6)return;strum(bar.start+o,.5,dir,lv(soft?a*.85:a),false,a>=.95)})});
+        const lv=a=>a>=.95?'F':a>=.8?'MF':a>=.6?'MP':'P';PAT.forEach(([o,dir,a])=>{if(o>=len-1e-6)return;strum(bar.start+o,dir==='X'?.2:.5,dir==='X'?'D':dir,lv(soft?a*.85:a),dir==='X',a>=.95)})});
       ev.length=0;F.forEach(x=>ev.push(x))}
     else if(fogOn()){const F=[],main=mainT,mbar={};if(main)main.ev.forEach(e=>{const k=barOf(e.b);(mbar[k]=mbar[k]||[]).push(e)});
       const chAt=b=>(seq.items[itemAt(b)]||{}).chord,open=(ch,d)=>chordMidis(ch).map((m,i)=>m==null?null:{midi:m,str:i,fret:0,dur:d}).filter(Boolean);
@@ -1366,7 +1373,7 @@ function playGp(g,t,vscale,spb,b){const k=g.tr,SN=gpSnd(),gk0=gpOrig()?(fogOn()?
   if(g.accomp)acc*=.72;const order=up?nsP.slice().reverse():nsP;
   const hum=(Math.random()-.5)*.012,base=(g.brush&&chord?1.15:1)*(DYN[g.dyn]||.68)*(g.lead?(g.mel?1.08:1):.8)*acc*vscale*(.93+Math.random()*.14)*(g.dense&&chord?1.2:1);   // rasgueo con menos ataques: recupera su volumen
   // un rasgueo real barre las cuerdas en pocos milisegundos (más lento suena a arpegio, a "punteo"); el flamenco es aún más rápido
-  const flam=GT&&GT.flam,spread=CH?(up?.0035:.0045):flam?(up?.0032:.0042):g.dense?(up?.0045:.006):(up?.006:.008);
+  const fogH=fogOn()&&chord,flam=GT&&GT.flam,spread=fogH?(up?.005+Math.random()*.004:.007+Math.random()*.005):CH?(up?.0035:.0045):flam?(up?.0032:.0042):g.dense?(up?.0045:.006):(up?.006:.008);
   // rumba: golpe con la mano en la caja que apaga las cuerdas (la partitura lo escribe como cuerdas muertas)
   if(flam&&ns.length>=3&&ns.every(n=>n.dead)){const v=voice(52,{when:t+hum,vel:clamp(base*1.05,.2,1),bank:GT.g,dest:dst,pan,mul:1.1});stopVoice(v,t+.22,.04);
     nsP.forEach(n=>{const o=GPV[k+':'+n.str];if(o){stopVoice(o,t+hum+.004,.02);GPV[k+':'+n.str]=null}});animAt(t,()=>{stage.flash=Math.min(1,stage.flash+.25)});return}
@@ -1378,8 +1385,8 @@ function playGp(g,t,vscale,spb,b){const k=g.tr,SN=gpSnd(),gk0=gpOrig()?(fogOn()?
     if(light&&old&&old.midi===n.midi&&!n.dead&&nsP.indexOf(n)<nsP.length-2)return;
     if(old)stopVoice(old,w,strm?.025:.015);
     if(n.dead){const v=voice(n.midi,{when:w,vel:clamp(base*(strm?.3:.75),.06,1),dir:up?'up':'down',mul:strm?.4:.7,bank:mbank,pan,dest:dst,soft:strm&&!orig?.004:0});stopVoice(v,w+.09,.03);GPV[key]=null;return}
-    const vv=clamp(base*(chord?.85:1)*(n.hopo?.7:1)*(orig&&n.pm?.8:1)*(orig&&chord?(1.18-i*.05):1),.08,1),bk=n.pm&&!orig?mbank:bank;
-    const v=voice(n.midi,{when:w,vel:vv,dir:up?'up':'down',mul:g.lead?1.05:.85,pan,bank:bk,dest:dst,soft:n.hopo&&!chord&&newSnd()?.012:strm&&!orig?(light?.022:.012):0,detune:flam?(Math.random()-.5)*8:0});GPV[key]=v;
+    const vv=clamp(base*(chord?.85:1)*(n.hopo?.7:1)*(orig&&n.pm?.8:1)*(orig&&chord?(1.18-i*.05):1)*(fogH?.82+Math.random()*.32:1),.08,1),bk=n.pm&&!orig?mbank:bank;
+    const v=voice(n.midi,{when:w,vel:vv,dir:up?'up':'down',mul:g.lead?1.05:.85,pan,bank:bk,dest:dst,soft:n.hopo&&!chord&&newSnd()?.012:strm&&!orig?(light?.022:.012):0,detune:flam?(Math.random()-.5)*8:fogH?(Math.random()-.5)*6:0});GPV[key]=v;
     // expresión del solista: bends de la partitura, vibrato (y vibrato natural en notas largas de solo), slides y ligados sin púa
     if(!chord&&!n.dead&&newSnd()){const durS=Math.max(.05,n.dur*spb),dt=v.src.detune;
       if(old&&old.slideOut&&old.midi!==n.midi&&Math.abs(old.midi-n.midi)<=12&&!fogOn()){dt.setValueAtTime((old.midi-n.midi)*100,w);dt.linearRampToValueAtTime(0,w+Math.min(.09,durS*.5))}
@@ -1596,6 +1603,19 @@ function clStartTicker(){clearInterval(MB.timer);MB.timer=null;
   try{if(!CL.worker){const u=URL.createObjectURL(new Blob(['let t=null;onmessage=e=>{clearInterval(t);if(e.data>0)t=setInterval(()=>postMessage(0),e.data)}'],{type:'text/javascript'}));CL.worker=new Worker(u);CL.worker.onmessage=()=>clTick()}
     CL.worker.postMessage(8);CL.ticker='w'}catch(e){CL.ticker=null;MB.timer=setInterval(clTick,8)}}
 function clStopTicker(){try{CL.worker&&CL.worker.postMessage(0)}catch(e){}clearInterval(MB.timer)}
+/* muestra fogata: escuchar cada guitarra y cada rasgueo antes de elegir */
+const FT={n:0};
+async function fogTry(bank,what,pat){ensureAudio();ensureBank(bank);if(bank==='ka4'||bank==='fl')ensureBank('kam');const id=++FT.n;
+  for(let i=0;i<80&&!(banks[bank]&&banks[bank].ready);i++){if(i===2)flashMsg('Cargando la guitarra…');await new Promise(r=>setTimeout(r,100))}if(id!==FT.n||!(banks[bank]&&banks[bank].ready))return;
+  LIVE.forEach(v=>{try{stopVoice(v,ctx.currentTime+.01,.05)}catch(_){}});
+  const t0=ctx.currentTime+.08,dst=A.instIn;
+  if(what==='punteo'){const spb=60/125,N=[[71,1.5],[69,1.5],[71,1],[69,1.5],[71,1],[69,1],[66,1.5],[64,1],[66,1.5],[69,.5],[71,2]];let b=0;
+    N.forEach(([m,d])=>{const w=t0+b*spb,vel=.78+Math.random()*.12,v=voice(m,{when:w,vel,mul:1.1,bank,dest:dst});v.f.frequency.value=Math.min(v.f.frequency.value,2600+4200*vel);stopVoice(v,w+Math.min(2.4,d*spb*1.8+.25),.07);b+=d});return}
+  // rasgueo: 4 compases con los acordes del comienzo de Tren al Sur, a su tempo
+  const P=FOG_PATS[pat||'clasica'].p,spb=60/178,ch=['Am','Am','F','G'];
+  for(let bar=0;bar<4;bar++)P.forEach(([o,dir,a])=>{const up=dir==='U',dead=dir==='X',all=chordMidis(ch[bar]).map((m,i)=>m==null?null:m).filter(m=>m!=null);let ns=up?all.slice(-4).reverse():all;
+    const w0=t0+(bar*4+o)*spb+(Math.random()-.5)*.012,sp=up?.005+Math.random()*.004:.007+Math.random()*.005,base=(a>=.95?.9:a>=.8?.75:a>=.6?.6:.48)*(.93+Math.random()*.14);
+    ns.forEach((m,i)=>{const w=w0+i*sp,v=voice(m,{when:w,vel:clamp(base*(.82+Math.random()*.32)*(dead?.6:1),.08,1),mul:.85,bank:dead?'kam':bank,dir:up?'up':'down',dest:dst,detune:(Math.random()-.5)*6});stopVoice(v,w+(dead?.08:Math.max(.25,.5*spb*2.2)),dead?.03:.08)})})}
 /* muestra fogata: golpe extra de tu mano entre los golpes del disco
    · donde se rasguea: el acorde entero (abajo o arriba según tu mano), más suave que los golpes del disco
    · donde la guitarra hace un riff sin rasgueo: solo un roce apagado, para no tapar la melodía
@@ -3269,7 +3289,7 @@ async function origImport(files,target,part){
 
 /* ───────── Hojas ───────── */
 const sheet={kind:null,filter:'todas',q:'',imp:{title:'',artist:'',txt:'',upb:'auto',inst:'lespaul',bpm:100,target:'solo'}};
-const TITLES={hrec:'Grabar mi mano',welcomeLib:'Tus canciones',install:'Instalar en mi teléfono',mic:'Micrófono',ses:'Tocar con amigos',orig:'Canción original',folder:'Mis tablaturas',import:'Importar un solo',songs:'Cancionero',chords:'Acordes',inst:'Guitarras',fx:'Efectos',recs:'Grabaciones',settings:'Ajustes',band:'Banda',more:'Más'};
+const TITLES={fogsnd:'Sonido de la fogata',hrec:'Grabar mi mano',welcomeLib:'Tus canciones',install:'Instalar en mi teléfono',mic:'Micrófono',ses:'Tocar con amigos',orig:'Canción original',folder:'Mis tablaturas',import:'Importar un solo',songs:'Cancionero',chords:'Acordes',inst:'Guitarras',fx:'Efectos',recs:'Grabaciones',settings:'Ajustes',band:'Banda',more:'Más'};
 function openSheet(k){sheet.kind=k;$('#sheetWrap').hidden=false;renderSheet();$('#sheetBody').scrollTop=0}
 function closeSheet(){sheet.kind=null;$('#sheetWrap').hidden=true;document.querySelectorAll('#sheetBody audio').forEach(a=>a.pause())}
 function renderSheetIfOpen(){if(sheet.kind)renderSheet()}
@@ -3309,7 +3329,7 @@ async function renderSheet(){
       if(!F.length)return '<div class="empty">Cuando tengas 2 canciones o más de un mismo artista, aquí aparece su carpeta.</div>';
       return F.map(([k,v])=>`<details class="folder" data-art="${esc(k)}" ${(sheet.openArt||{})[k]?'open':''}><summary>📁 ${esc(v.name)} <small>(${v.L.length})</small></summary><div class="slist">${v.L.map(songCard).join('')}</div></details>`).join('')};
     const tab=(f,l)=>`<button data-filter="${f}" aria-pressed="${sheet.filter===f}">${l}</button>`;
-    body.innerHTML=`
+    body.innerHTML=`${FOGD?'<button class="btn" data-sheet="fogsnd" style="width:100%;margin-bottom:8px">🎧 Elegir sonido de guitarra y rasgueo</button>':''}
       <input id="songQ" class="field" placeholder="Buscar canción o artista" value="${esc(sheet.q)}" aria-label="Buscar canción">
       <div class="seg" role="group" aria-label="Ver">${tab('todas','Canciones')}${tab('art','Artistas')}${tab('fav','★ Favoritas')}${tab('solos','Solos')}${lists.map(l=>tab(l.id,esc(l.name))).join('')}</div>
       <div class="slist">${sheet.filter==='art'&&!q?artists():songs.length?songs.map(songCard).join(''):`<div class="empty">${sheet.filter==='fav'?'Toca la ★ de una canción para tenerla aquí.':'No hay canciones con ese nombre.'}</div>`}</div>
@@ -3448,6 +3468,13 @@ async function renderSheet(){
   else if(sheet.kind==='mic'){micSheet(body)}
   else if(sheet.kind==='install'){installSheet(body)}
   else if(sheet.kind==='hrec'){hrecSheet(body)}
+  else if(sheet.kind==='fogsnd'){const cb=GTS.fog.nb,pp=store.get('fogPat',{})||{},cp=pp['tren-al-sur']||'clasica';
+    body.innerHTML=`<p class="p">Escucha y elige con el oído. Lo que elijas queda para la fogata.</p>
+      <div class="group"><span class="eyebrow">Guitarra · escucha el punteo del solo de Música Ligera</span>
+      ${Object.entries(FOG_BANKS).map(([k,n])=>`<div class="fx"><div class="head"><span class="main"><b>${k===cb?'✓ ':''}${n}</b></span><button class="btn quiet" data-fsnd="${k}">▶ Punteo</button><button class="btn quiet" data-fsst="${k}">▶ Rasgueo</button><button class="btn ${k===cb?'':'quiet'}" data-fsuse="${k}">${k===cb?'Elegida':'Usar'}</button></div></div>`).join('')}</div>
+      <div class="group"><span class="eyebrow">Rasgueo de Tren al Sur</span>
+      ${Object.entries(FOG_PATS).map(([k,P])=>`<div class="fx"><div class="head"><span class="main"><b>${k===cp?'✓ ':''}${P.n}</b><small>${P.d}</small></span><button class="btn quiet" data-fpat="${k}">▶ Escuchar</button><button class="btn ${k===cp?'':'quiet'}" data-fpuse="${k}">${k===cp?'Elegido':'Usar'}</button></div></div>`).join('')}</div>
+      <button class="btn quiet" data-sheet="songs" style="width:100%">◀ Volver al cancionero</button>`}
   else if(sheet.kind==='welcomeLib'){body.innerHTML=`<div class="group"><b style="font-size:19px">Carga tus canciones (una sola vez)</b>
       <small class="p" style="margin:0;font-size:15px">Toca el botón y elige el archivo <b>rockstar-mis-canciones.json</b> (está en tus Descargas). Quedan todas tus canciones con su partitura en este teléfono.</small>
       <label class="btn big" style="display:flex;justify-content:center;cursor:pointer;font-size:18px">🎸 Cargar mis canciones<input id="libFile" type="file" accept=".json,application/json" style="display:none"></label>
@@ -3498,6 +3525,9 @@ $('#sheetBody').addEventListener('click',e=>{
     store.set('songs',userSongs);sheet.imp={title:'',artist:'',txt:'',upb:'auto',inst:'lespaul',bpm:100};S.pulse=true;loadSong(id,true);closeSheet();return}
   if(d.resume){loadSong(d.resume,false);closeSheet();return}
   if(d.sheet){openSheet(d.sheet);return}
+  if(d.fsnd){fogTry(d.fsnd,'punteo');return}if(d.fsst){fogTry(d.fsst,'rasgueo','clasica');return}if(d.fpat){fogTry(GTS.fog.nb,'rasgueo',d.fpat);return}
+  if(d.fsuse){store.set('fogBank',d.fsuse);GTS.fog.b=GTS.fog.nb=d.fsuse;ensureAudio();ensureBank(d.fsuse);STEP.key=null;RIG.key=null;try{gpBanks(GPS[S.songId])}catch(_){}renderSheet();flashMsg('🎸 '+FOG_BANKS[d.fsuse]);return}
+  if(d.fpuse){const pp=store.get('fogPat',{})||{};pp['tren-al-sur']=d.fpuse;store.set('fogPat',pp);STEP.key=null;renderSheet();flashMsg('Rasgueo: '+FOG_PATS[d.fpuse].n);return}
   if(d.setmode){setMode(d.setmode);renderSheet();return}
   if(d.snd2){S.snd2=d.snd2==='old'?'old':'new';persist();RIG.key=null;STEP.key=null;try{gpBanks(GPS[S.songId])}catch(_){}flashMsg(S.snd2==='old'?'Sonido anterior':'Sonido nuevo');renderSheet();return}
   if(d.motor){S.motor=d.motor==='old'?'old':'new';persist();try{vampStop()}catch(_){}MB.on=false;clearInterval(MB.timer);try{clStopTicker()}catch(_){}MB.hold=false;MB.go=false;MB.passes=[];MB.last=0;MB.idx=-1;CL.push=1;CL.base=0;flashMsg(S.motor==='old'?'Forma anterior':'Forma nueva');renderSheet();return}
