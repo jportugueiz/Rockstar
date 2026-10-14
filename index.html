@@ -758,7 +758,7 @@ Object.assign(SPRITES,{"pg":[[30,0,1,0.2,6.5],[30,1,1,6.9,6.5],[30,2,1,13.6,6.5]
 // Marshall JCM900 canal A (crunch) y B (distorsión media), Magnatone Super 59 empujado (como un combo chico al máximo, parlante Fender)
 Object.keys(SPRITES).forEach(k=>SAMPLE_SETS[k]={sprite:'samples/x/'+k+'.mp3',regions:SPRITES[k]});
 // cada guitarra: banco de notas (b), banco de golpes apagados (m), y si es de 12 cuerdas o lleva chorus
-const GTS={acu:{n:'Acústica',b:'ka',nb:'ka4',m:'kam'},nam_lead:{n:'Marshall IA solista',b:'emj',nb:'emj',m:'kemc',hid:1},nam_neck:{n:'Marshall IA mástil',b:'emc',nb:'emc',m:'kemc',hid:1},nam_rhy:{n:'Marshall IA crunch',b:'emc',nb:'emc',m:'kemc',hid:1},nam_lo:{n:'Marshall IA suave',b:'eml',nb:'eml',m:'kemc',hid:1},tw:{n:'Fender Twin limpio',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},tws:{n:'Fender Twin con eco',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},twd:{n:'Fender Twin con delay',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},vl:{n:'Vox al borde',b:'e_vl',nb:'e_vl',m:'k_tw',hid:1},vc:{n:'Vox empujado',b:'e_vc',nb:'e_vc',m:'kemc',hid:1},j9a:{n:'Marshall JCM900 crunch',b:'e_9a',nb:'e_9a',m:'kemc',hid:1},j9b:{n:'Marshall JCM900 distorsión',b:'e_9b',nb:'e_9b',m:'kemc',hid:1},mg:{n:'Combo chico al máximo',b:'e_mg',nb:'e_mg',m:'kemc',hid:1},nylm:{n:'Nylon (criolla)',b:'nym',nb:'nym',m:'kam',hid:1},doce:{n:'Acústica 12 cuerdas',b:'ka',nb:'ka4',m:'kam',twelve:1},nyl:{n:'Nylon / clásica',b:'ny',nb:'ny2',m:'kam'},
+const GTS={acu:{n:'Acústica',b:'ka',nb:'ka4',m:'kam'},acm:{n:'Acústica (grabada nota por nota)',b:'mst',nb:'mst',m:'kam',hid:1},nam_lead:{n:'Marshall IA solista',b:'emj',nb:'emj',m:'kemc',hid:1},nam_neck:{n:'Marshall IA mástil',b:'emc',nb:'emc',m:'kemc',hid:1},nam_rhy:{n:'Marshall IA crunch',b:'emc',nb:'emc',m:'kemc',hid:1},nam_lo:{n:'Marshall IA suave',b:'eml',nb:'eml',m:'kemc',hid:1},tw:{n:'Fender Twin limpio',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},tws:{n:'Fender Twin con eco',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},twd:{n:'Fender Twin con delay',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},vl:{n:'Vox al borde',b:'e_vl',nb:'e_vl',m:'k_tw',hid:1},vc:{n:'Vox empujado',b:'e_vc',nb:'e_vc',m:'kemc',hid:1},j9a:{n:'Marshall JCM900 crunch',b:'e_9a',nb:'e_9a',m:'kemc',hid:1},j9b:{n:'Marshall JCM900 distorsión',b:'e_9b',nb:'e_9b',m:'kemc',hid:1},mg:{n:'Combo chico al máximo',b:'e_mg',nb:'e_mg',m:'kemc',hid:1},nylm:{n:'Nylon (criolla)',b:'nym',nb:'nym',m:'kam',hid:1},doce:{n:'Acústica 12 cuerdas',b:'ka',nb:'ka4',m:'kam',twelve:1},nyl:{n:'Nylon / clásica',b:'ny',nb:'ny2',m:'kam'},
   strat:{n:'Eléctrica limpia (Fender)',b:'fc2',m:'kem'},cho:{n:'Eléctrica con chorus',b:'fc2',m:'kem',cho:1},neck:{n:'Eléctrica suave',b:'fj2',m:'kem'},
   arch:{n:'Eléctrica archtop',b:'ke',m:'kem'},gretsch:{n:'Gretsch hueca',b:'gg',m:'ggm'},crunch:{n:'Crunch',b:'fd',nb:'em',m:'kem'},dist:{n:'Distorsión',b:'fd2',nb:'em',m:'kem'},
   doce_e:{n:'Eléctrica 12 cuerdas',b:'fc2',m:'kem',twelve:1},
@@ -790,7 +790,7 @@ const SONG_GEAR={
   'musica-ligera':{def:'crunch'},   // Vox AC-50 empujado: crunch de los 70, no distorsión alta (ni la guitarra 'distorsionada')
                          // Cerati 1990: PRS a un Vox AC-50 empujado, muchas guitarras dobladas
   'baile-sobran':{def:'acu',mel:'acu'},                                               // Narea: guitarra acústica (la única vez en Pateando Piedras)
-  'wish-you-were-here':{def:'acu'},   // Martin con cuerpo (la 12 cuerdas simulada con octavas sonaba plástica, a instrumento oriental)           // Gilmour: Martin D12-28 (12 cuerdas) y D-35, con púa
+  'wish-you-were-here':{def:'acm'},   // Martin con cuerpo (la 12 cuerdas simulada con octavas sonaba plástica, a instrumento oriental)           // Gilmour: Martin D12-28 (12 cuerdas) y D-35, con púa
   'no-podras':{def:'dist',rules:[[/ac[uú]st/i,'acu']]},   // las guitarras eléctricas atacan con distorsión desde el comienzo
     // pop-rock 1992: limpia con chorus y eco; coros con distorsión
   'november-rain':{def:'neck',rules:[[/solo/i,'dist_slash'],[/fills/i,'crunch'],[/ac[uú]st/i,'acu']],fill:'neck',mel:'neck',mix:{solo:1.8}},   // Slash: Les Paul (Derrig) a Marshall, poco efecto, algo de eco
@@ -1355,7 +1355,7 @@ const RIGS={   // drive 0-10, hp/lp: filtros del parlante, mid: [frecuencia, dB]
 // por canción: 'all' vale para todas sus guitarras; delay en tiempos de la canción [tiempos, repeticiones, cuánto] o en segundos (delayS)
 // por canción: 'all' vale para todas sus guitarras, o por sonido; delay en tiempos [tiempos, repeticiones, cuánto] o en segundos (delayS); slap: eco corto rockabilly
 const SONG_FX={
-  'wish-you-were-here':{acu:{hp:70,lo:[160,1.5],mid:[250,-1],pres:[3200,-2.5],hi:-1,lp:11000,rev:.18,dbl:1,dblG:.55}},   // cálida y redonda: sin el brillo plástico
+  'wish-you-were-here':{acm:{hp:85,lo:[150,-2],mid:[250,-1.5],pres:[3000,-3],hi:-2,lp:9000,rev:.16,gain:1.7,dbl:0}},   // una sola guitarra, sin doblar: cada nota grabada en su propia cuerda (sin estirar el sonido de otra nota)   // cálida y redonda: sin el brillo plástico
   'sultans-swing':{all:{rev:.2},strat:{drive:1,pres:[3000,2]}},
   'solo-sweet-child':{dist_slash:{drive:6,hp:90,lp:5500,mid:[800,3],pres:[3000,-1],delayS:[.38,.15,.12],rev:.2},crunch:{drive:4,rev:.15}},
   'solo-numb-1':{dist_lead:{drive:6.5,hp:100,lp:6000,mid:[700,2],pres:[2500,2],cho:.3,delayS:[.44,.3,.2],rev:.3},dist:{drive:5,lp:4500,mid:[1000,-3],rev:.25}},
@@ -1370,7 +1370,7 @@ const SONG_FX={
 
   'musica-ligera':{crunch:{drive:3,hp:90,lp:6000,mid:[800,2],pres:[2500,1],hi:0,rev:.15,dbl:1}},
   'baile-sobran':{acu:{hp:90,lp:12000,mid:[300,-2],pres:[3000,1.5],hi:1,cho:0,rev:.15,dbl:1}},
-  'wish-you-were-here':{all:{rev:.16,dbl:1},doce:{hp:90,pres:[3500,1.5]}},
+  
   'no-podras':{cho:{cho:.4,delayS:[.35,.3,.2],rev:.3},dist:{drive:6,hp:90,lp:5500,mid:[1000,3],pres:[3000,2],cho:.12,delayS:[.4,.25,.18],rev:.3,dbl:1},acu:{cho:.15,rev:.2}},
   'november-rain':{dist_slash:{drive:6,hp:90,lp:5000,mid:[800,3],pres:[2500,1],delayS:[.5,.35,.25],rev:.4},crunch:{drive:5,mid:[800,3],pres:[2500,1.5],delayS:[.42,.25,.18],rev:.22},neck:{rev:.2},acu:{rev:.18,dbl:1}},
   'rayando-el-sol':{cho:{cho:.35,delay:[.75,.3,.2],rev:.25},acu:{cho:.1,rev:.2,dbl:1},crunch:{drive:4,delay:[.5,.25,.15],rev:.2}},
@@ -1521,7 +1521,7 @@ function playGp(g,t,vscale,spb,b){const k=g.tr,SN=gpSnd(),gk0=gpOrig()?(fogOn()?
       {const GW=gpOn()||{};if(g.wah==='pedal'&&!fogOn()){if(g.txt==='+')WAHP.st=1;else if(g.txt==='o')WAHP.st=0;const f=v.f,fq=480+1500*WAHP.st;f.type='peaking';f.Q.value=2.4;f.gain.value=13;f.frequency.cancelScheduledValues(w);f.frequency.setValueAtTime(WAHP.f||fq,w);f.frequency.exponentialRampToValueAtTime(fq,w+.035);WAHP.f=fq}}
       {const GW=gpOn()||{},WB=GW.wahB;if((g.wah==='auto'||WB!=null&&b>=WB-1e-6&&(GW.wahE==null||b<GW.wahE-1e-6)&&g.lead&&!g.wah)&&!fogOn()){const f=v.f;f.type='peaking';f.Q.value=2.2;f.gain.value=14;f.frequency.cancelScheduledValues(w);f.frequency.setValueAtTime(420,w);f.frequency.exponentialRampToValueAtTime(1900,w+Math.min(.16,durS*.45));f.frequency.exponentialRampToValueAtTime(650,w+Math.max(.22,durS*1.1))}}   // wah: el pie sube y baja con cada nota
       if(fogOn()){v.f.frequency.value=Math.min(v.f.frequency.value,2600+4200*vv)}   // nylon: punteo cálido, no brillante como caja de música
-      else if(n.vib||durS>=.35&&(g.role==='solo'||g.lead||g.mel)&&!/^(acu|doce|nyl|fla|charango|mst|nylm)/.test(gk||'')){const o=ctx.createOscillator(),og=ctx.createGain();o.frequency.value=n.vib?5.8:5.2;og.gain.setValueAtTime(0,w);og.gain.linearRampToValueAtTime((n.vib?45:24)*(fogOn()?.35:1),w+Math.min(.5,durS*.7));o.connect(og).connect(dt);o.start(w+Math.min(.18,durS*.3));o.stop(w+durS+1.2)}
+      else if(n.vib||durS>=.35&&(g.role==='solo'||g.lead||g.mel)&&!/^(ac|doce|nyl|fla|charango|fog)/.test(gk||'')){const o=ctx.createOscillator(),og=ctx.createGain();o.frequency.value=n.vib?5.8:5.2;og.gain.setValueAtTime(0,w);og.gain.linearRampToValueAtTime((n.vib?45:24)*(fogOn()?.35:1),w+Math.min(.5,durS*.7));o.connect(og).connect(dt);o.start(w+Math.min(.18,durS*.3));o.stop(w+durS+1.2)}
       v.slideOut=n.slide;
       if(n.harm>=2&&n.harm!==3&&orig){const hv=voice(n.midi+19,{when:w,vel:vv*.5,mul:.8,pan,bank:bk,dest:dst});hv.f.frequency.value=9000;stopVoice(hv,w+Math.min(durS,1.2),.08)}   // armónico de púa (pinch): el chillido encima
       if(n.trem&&orig){const st={1:.5,2:.25,3:.125}[n.trem]*spb;let pv=v;for(let tt=w+st;tt<w+durS-.02;tt+=st){stopVoice(pv,tt,.012);pv=voice(n.midi,{when:tt,vel:vv*(.82+Math.random()*.12),mul:g.lead?1.05:.85,pan,bank:bk,dest:dst});GPV[key]=pv}}}   // trémolo de púa
