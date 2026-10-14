@@ -797,7 +797,8 @@ function sampleFor(midi,bk,vel){const K=bk||bankKind(inst()),B=banks[K];if(!B){e
     return{b:x.b,rate:Math.pow(2,(midi-best)/12),real:1,gain:x.l===0&&B.layers>1?1.15:1}}B.map.forEach((b,m)=>{const d=Math.abs(m-midi)+(m>midi?.1:0);if(d<bd){bd=d;best=m}});return best==null||bd>6?null:{b:B.map.get(best),rate:Math.pow(2,(midi-best)/12)}}
 const LIVE=new Set(),MAXV=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)?56:96;
 function voice(midi,{when,vel,dir='down',pan=0,mul=1,damp=false,detune=0,dest=null,bank=null,soft=0}){
-  const sm=sampleFor(midi,bank,vel),b=sm?sm.b:getBuf(midi),src=ctx.createBufferSource();src.buffer=b;if(sm)src.playbackRate.value=sm.rate;src.detune.value=detune;
+  const sm=sampleFor(midi,bank,vel);if(!sm&&bank&&SAMPLE_SETS[bank]&&fogOn()){mul=0;if(!voice.ldMsg||ctx.currentTime-voice.ldMsg>3){voice.ldMsg=ctx.currentTime;try{flashMsg('Afinando la guitarra… un segundo')}catch(_){}}}   // fogata: mientras carga la nylon, silencio (no una guitarra falsa)
+  const b=sm?sm.b:getBuf(midi),src=ctx.createBufferSource();src.buffer=b;if(sm)src.playbackRate.value=sm.rate;src.detune.value=detune;
   const f=ctx.createBiquadFilter();f.type='lowpass';f.Q.value=.4;f.frequency.value=sm&&sm.real?Math.min(20000,(5000+15000*vel)*(dir==='up'?1.15:1)):(1400+9500*Math.pow(vel,1.5))*(dir==='up'?1.3:1);
   const g=ctx.createGain(),peak=(.12+.3*vel)*mul*(sm&&sm.gain||1);if(soft){g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(peak,when+.006)}else if(newEng()){g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(peak,when+.002)}else g.gain.setValueAtTime(peak,when);
   if(damp)g.gain.setTargetAtTime(0,when+.004,.012);
@@ -1595,14 +1596,20 @@ function clStopTicker(){try{CL.worker&&CL.worker.postMessage(0)}catch(e){}clearI
 /* muestra fogata: golpe extra de tu mano entre los golpes del disco
    · donde se rasguea: el acorde entero (abajo o arriba según tu mano), más suave que los golpes del disco
    · donde la guitarra hace un riff sin rasgueo: solo un roce apagado, para no tapar la melodía
-   · como mucho dos golpes extra entre cada golpe del disco, y no más de uno cada 70 ms */
+   · como mucho dos golpes extra entre cada golpe del disco, y siempre a tempo: en la semicorchea siguiente de la canción */
 const FOGX={ei:-1,n:0,t:0};
-function fogExtra(dir,vel,now){const E=STEP.ev,pos=mbPosAt(now);if(FOGX.ei!==MB.ei){FOGX.ei=MB.ei;FOGX.n=0}if(FOGX.n>=2||now-FOGX.t<.06)return;
+function fogExtra(dir,vel,now){const E=STEP.ev,pos=mbPosAt(now),G=gpOn();if(FOGX.ei!==MB.ei){FOGX.ei=MB.ei;FOGX.n=0}if(FOGX.n>=2)return;
+  // a tempo: el golpe extra cae en la próxima semicorchea de la canción (corchea si la canción es rápida), nunca encima de un golpe del disco
+  const u=mbOrig()*60*clSpeed()>140?.5:.25;let q=Math.ceil((pos-.03)/u)*u;if(q<pos-.03)q+=u;
+  if(FOGX.q!=null&&Math.abs(FOGX.q-q)<.01)return;   // ese espacio ya tiene su golpe extra
+  for(let j=Math.max(0,MB.ei-6);j<Math.min(E.length,MB.ei+12);j++){const x=E[j];if(x.gp&&Math.abs(x.b-q)<.06&&x.gp.brush)return}
+  const t=Math.max(now+.002,MB.t0+(q-MB.p0)/MB.rate);if(t-now>.2)return;
+  const bar=G&&G.bars.find(B=>B.start<=q+1e-6&&B.start+(B.len||4)>q+1e-6),r=Math.round((q-(bar?bar.start:0))/u),gdir=r%2?'up':'down';
   let riff=null;for(let j=Math.min(E.length,MB.ei)-1;j>=0&&j>MB.ei-80;j--){const x=E[j];if(x.band||!x.gp)continue;if(pos-x.b>2.5)break;const g=x.gp;
-    if(g.brush){const ch=(seq.items[x.ii]||{}).chord;if(!ch)return;let ns=chordMidis(ch).map((m,i)=>m==null?null:{midi:m,str:i,fret:0,dur:.5}).filter(Boolean);if(dir==='up')ns=ns.slice(-4);if(!ns.length)return;
-      FOGX.n++;FOGX.t=now;playGp(Object.assign({},g,{ns,brush:dir==='up'?'Up':'Down',gh:false,dense:false,ac:false,dyn:'MF'}),now+.002,.42+.25*(vel==null?.6:vel),1/MB.rate,pos);return}
+    if(g.brush){const ch=(seq.items[x.ii]||{}).chord;if(!ch)return;let ns=chordMidis(ch).map((m,i)=>m==null?null:{midi:m,str:i,fret:0,dur:.5}).filter(Boolean);if(gdir==='up')ns=ns.slice(-4);if(!ns.length)return;
+      FOGX.n++;FOGX.q=q;playGp(Object.assign({},g,{ns,brush:gdir==='up'?'Up':'Down',gh:false,dense:false,ac:false,dyn:'MF'}),t,.42+.25*(vel==null?.6:vel),1/MB.rate,q);return}
     if(g.role==='main'){riff=x;break}}   // los punteos (solo, melodía) no cuentan: debajo de ellos se sigue rasgueando
-  if(riff){FOGX.n++;FOGX.t=now;const ns=riff.gp.ns.slice().sort((a,c)=>c.midi-a.midi).slice(0,3);ns.forEach((n,i)=>{const w=now+.003+i*.006,vv=voice(n.midi,{when:w,vel:clamp(.16+.2*(vel==null?.6:vel),.1,.4),dir,mul:.3,bank:'kam',dest:A.gpBus?rigIn('fog',0):null,soft:.002});stopVoice(vv,w+.06,.02)})}}
+  if(riff){FOGX.n++;FOGX.q=q;const ns=riff.gp.ns.slice().sort((a,c)=>c.midi-a.midi).slice(0,3);ns.forEach((n,i)=>{const w=t+.003+i*.006,vv=voice(n.midi,{when:w,vel:clamp(.16+.2*(vel==null?.6:vel),.1,.4),dir:gdir,mul:.3,bank:'kam',dest:A.gpBus?rigIn('fog',0):null,soft:.002});stopVoice(vv,w+.06,.02)})}}
 // roce: la mano pasa por las cuerdas agudas apagadas; voces aparte, NO corta las cuerdas que están sonando
 function clRoce(dir,vel,now){const E=STEP.ev,pos=mbPosAt(now);
   for(let j=Math.min(E.length,MB.ei)-1;j>=0&&j>MB.ei-60;j--){const x=E[j];if(x.band||!x.gp)continue;if(pos-x.b>2.5)return;if(clSingle(x))return;
@@ -3474,7 +3481,7 @@ async function renderSheet(){
 }
 $('#sheetBody').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;
-  if(d.open){if(d.fog!=null){(S.fogBy=S.fogBy||{})[d.open]=d.fog==='1';if(d.fog==='1'&&band.on)stopBand();STEP.key=null;RIG.key=null;staticKey=''}loadSong(d.open,true);if(d.fog!=null){persist();flashMsg(d.fog==='1'?'🔥 Fogata: la guitarra del asado':'💿 Original: como en el disco')}const so=allSongs().find(x=>x.id===d.open);if(so&&so.needGp&&!gpHas(d.open)){sheet.gpSong=d.open;sheet.gpPick=false;sheet.gpMsg='Falta el archivo Guitar Pro de '+so.title+'. Elígelo aquí abajo (en Ultimate Guitar: tipo "Guitar Pro").';openSheet('folder');return}closeSheet();return}
+  if(d.open){if(d.fog!=null){try{ensureAudio();if(d.fog==='1'){ensureBank('ny2');ensureBank('kam')}}catch(_){}(S.fogBy=S.fogBy||{})[d.open]=d.fog==='1';if(d.fog==='1'&&band.on)stopBand();STEP.key=null;RIG.key=null;staticKey=''}loadSong(d.open,true);if(d.fog!=null){persist();flashMsg(d.fog==='1'?'🔥 Fogata: la guitarra del asado':'💿 Original: como en el disco')}const so=allSongs().find(x=>x.id===d.open);if(so&&so.needGp&&!gpHas(d.open)){sheet.gpSong=d.open;sheet.gpPick=false;sheet.gpMsg='Falta el archivo Guitar Pro de '+so.title+'. Elígelo aquí abajo (en Ultimate Guitar: tipo "Guitar Pro").';openSheet('folder');return}closeSheet();return}
   if(d.delsong){userSongs=userSongs.filter(x=>x.id!==d.delsong);store.set('songs',userSongs);if(S.songId===d.delsong){S.songId='musica-ligera';buildSeq();render()}renderSheet();return}
   if(d.upb){sheet.imp.upb=d.upb;renderSheet();return}
   if(d.impinst){sheet.imp.inst=d.impinst;renderSheet();return}
