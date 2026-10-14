@@ -585,7 +585,7 @@ let resume=store.get('resume',{});
 const free=Object.assign({root:9,q:'m',prog:['Am','F','C','G'],sel:0},store.get('free',{}));
 const band=Object.assign({mode:'follow',style:'pop',bpm:90,count:true,parts:{drums:[true,.8],bass:[true,.75],keys:[false,.55],gtr:[false,.7]}},store.get('band',{}));
 band.on=false;
-if(!store.get('keysOn1',false)){band.parts.keys[0]=true;store.set('keysOn1',true);try{saveBand()}catch(_){}}   // los teclados ahora son instrumentos reales: suenan con la banda
+if(!store.get('keysOff2',false)){band.parts.keys[0]=false;store.set('keysOff2',true);try{saveBand()}catch(_){}}   // los teclados vuelven a estar apagados por defecto (como en la v132): se encienden con el botón Teclado
 let seq={type:'chords',items:[],sections:[]};
 let idx=0;
 function persist(){store.set('state',S);store.set('free',free);if(S.preset==='custom')store.set('fx',fx)}
@@ -757,12 +757,12 @@ Object.assign(SPRITES,{"pg":[[30,0,1,0.2,6.5],[30,1,1,6.9,6.5],[30,2,1,13.6,6.5]
 // Marshall JCM900 canal A (crunch) y B (distorsión media), Magnatone Super 59 empujado (como un combo chico al máximo, parlante Fender)
 Object.keys(SPRITES).forEach(k=>SAMPLE_SETS[k]={sprite:'samples/x/'+k+'.mp3',regions:SPRITES[k]});
 // cada guitarra: banco de notas (b), banco de golpes apagados (m), y si es de 12 cuerdas o lleva chorus
-const GTS={acu:{n:'Acústica',b:'mst',nb:'mst',m:'kam'},nam_lead:{n:'Marshall IA solista',b:'emj',nb:'emj',m:'kemc',hid:1},nam_neck:{n:'Marshall IA mástil',b:'emc',nb:'emc',m:'kemc',hid:1},nam_rhy:{n:'Marshall IA crunch',b:'emc',nb:'emc',m:'kemc',hid:1},nam_lo:{n:'Marshall IA suave',b:'eml',nb:'eml',m:'kemc',hid:1},tw:{n:'Fender Twin limpio',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},tws:{n:'Fender Twin con eco',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},twd:{n:'Fender Twin con delay',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},vl:{n:'Vox al borde',b:'e_vl',nb:'e_vl',m:'k_tw',hid:1},vc:{n:'Vox empujado',b:'e_vc',nb:'e_vc',m:'kemc',hid:1},j9a:{n:'Marshall JCM900 crunch',b:'e_9a',nb:'e_9a',m:'kemc',hid:1},j9b:{n:'Marshall JCM900 distorsión',b:'e_9b',nb:'e_9b',m:'kemc',hid:1},mg:{n:'Combo chico al máximo',b:'e_mg',nb:'e_mg',m:'kemc',hid:1},nylm:{n:'Nylon (criolla)',b:'nym',nb:'nym',m:'kam',hid:1},doce:{n:'Acústica 12 cuerdas',b:'mst',nb:'mst',m:'kam',twelve:1},nyl:{n:'Nylon / clásica',b:'ny',nb:'ny2',m:'kam'},
+const GTS={acu:{n:'Acústica',b:'ka',nb:'ka4',m:'kam'},nam_lead:{n:'Marshall IA solista',b:'emj',nb:'emj',m:'kemc',hid:1},nam_neck:{n:'Marshall IA mástil',b:'emc',nb:'emc',m:'kemc',hid:1},nam_rhy:{n:'Marshall IA crunch',b:'emc',nb:'emc',m:'kemc',hid:1},nam_lo:{n:'Marshall IA suave',b:'eml',nb:'eml',m:'kemc',hid:1},tw:{n:'Fender Twin limpio',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},tws:{n:'Fender Twin con eco',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},twd:{n:'Fender Twin con delay',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},vl:{n:'Vox al borde',b:'e_vl',nb:'e_vl',m:'k_tw',hid:1},vc:{n:'Vox empujado',b:'e_vc',nb:'e_vc',m:'kemc',hid:1},j9a:{n:'Marshall JCM900 crunch',b:'e_9a',nb:'e_9a',m:'kemc',hid:1},j9b:{n:'Marshall JCM900 distorsión',b:'e_9b',nb:'e_9b',m:'kemc',hid:1},mg:{n:'Combo chico al máximo',b:'e_mg',nb:'e_mg',m:'kemc',hid:1},nylm:{n:'Nylon (criolla)',b:'nym',nb:'nym',m:'kam',hid:1},doce:{n:'Acústica 12 cuerdas',b:'ka',nb:'ka4',m:'kam',twelve:1},nyl:{n:'Nylon / clásica',b:'ny',nb:'ny2',m:'kam'},
   strat:{n:'Eléctrica limpia (Fender)',b:'fc2',m:'kem'},cho:{n:'Eléctrica con chorus',b:'fc2',m:'kem',cho:1},neck:{n:'Eléctrica suave',b:'fj2',m:'kem'},
   arch:{n:'Eléctrica archtop',b:'ke',m:'kem'},gretsch:{n:'Gretsch hueca',b:'gg',m:'ggm'},crunch:{n:'Crunch',b:'fd',nb:'em',m:'kem'},dist:{n:'Distorsión',b:'fd2',nb:'em',m:'kem'},
   doce_e:{n:'Eléctrica 12 cuerdas',b:'fc2',m:'kem',twelve:1},
   charango:{n:'Charango',b:'ch',m:'chm',course:1},
-  fog:{n:'Fogata (nylon)',b:'nym',nb:'nym',m:'kam'},
+  fog:{n:'Fogata (nylon)',b:'nyx',nb:'nyx',m:'kam'},
   dist_slash:{n:'Les Paul (Slash)',b:'fd2',nb:'em',m:'kem'},dist_lead:{n:'Solista con distorsión',b:'fd2',nb:'em',m:'kem'},dist_slashneck:{n:'Les Paul, pastilla del mástil',b:'fd2',nb:'em',m:'kem'},crunch_lo:{n:'Crunch suave',b:'fd',nb:'em',m:'kem'},
   fla:{n:'Flamenca (rumba)',b:'fl',m:'flm',g:'flg',flam:1}};   // guitarra flamenca: brillante, seca, ataque de uña; rasgueo rápido con chasquido y golpe en la caja
 function fogOn(){return !!S.fogata&&!!gpOn()}
@@ -1374,7 +1374,7 @@ const SONG_FX={
   'rayando-el-sol':{cho:{cho:.35,delay:[.75,.3,.2],rev:.25},acu:{cho:.1,rev:.2,dbl:1},crunch:{drive:4,delay:[.5,.25,.15],rev:.2}},
   'tren-al-sur':{doce:{hp:350,lp:11000,mid:[800,-2],pres:[4000,4],hi:3,cho:.1,rev:.2,dbl:1},acu:{cho:.2,delay:[.5,.25,.15],rev:.25,gain:.6},cho:{cho:.45,delayS:[.375,.35,.25],rev:.3}},
   'persiana-americana':{cho:{drive:1.5,hp:120,lp:7000,mid:[1200,1.5],pres:[3000,1.5],cho:.3,delayS:[.3,.15,.15],rev:.2,dbl:1}},
-  'sweet-child':{nam_neck:{lp:5800,mid:[700,1],pres:[2500,-1.5],delayS:[.38,.15,.1],rev:.2},nam_lead:{lp:8000,mid:[800,1.5],pres:[3000,1],delayS:[.38,.15,.12],rev:.2},nam_rhy:{lp:7000,mid:[700,1],delayS:[.43,.18,.1],rev:.18},nam_lo:{lp:6500,rev:.18},crunch:{drive:4.5,lp:5500,mid:[700,2.5],delayS:[.43,.18,.1],rev:.18},crunch_lo:{drive:2.5,lp:5000,mid:[700,1.5],rev:.18},dist:{drive:5,lp:5200,mid:[750,2],rev:.15},
+  'sweet-child':{nam_neck:{lp:5800,mid:[700,1],pres:[2500,-1.5],delayS:[.38,.15,.1],rev:.2},nam_lead:{lp:5500,mid:[800,1.5],pres:[3000,-1],delayS:[.38,.15,.12],rev:.2},nam_rhy:{lp:5000,mid:[700,1],delayS:[.43,.18,.1],rev:.18},nam_lo:{lp:5000,rev:.18},crunch:{drive:4.5,lp:5500,mid:[700,2.5],delayS:[.43,.18,.1],rev:.18},crunch_lo:{drive:2.5,lp:5000,mid:[700,1.5],rev:.18},dist:{drive:5,lp:5200,mid:[750,2],rev:.15},
     dist_slashneck:{drive:4.5,hp:80,lp:4300,mid:[700,2],pres:[2500,-1],delayS:[.38,.15,.1],rev:.2},dist_slash:{drive:6.5,hp:90,lp:6000,mid:[800,3],pres:[3000,1],delayS:[.38,.15,.12],rev:.2}},
   'nothing else matters':{strat:{drive:0,mid:[450,-2],pres:[3000,1.5],rev:.25,dbl:1},doce:{rev:.2,dbl:1},dist:{mid:[1200,-2],delayS:[.45,.25,.2],rev:.2,dbl:1}},
   'stairway':{crunch:{drive:4,hp:120,lp:7000,mid:[1000,3],pres:[3000,2],rev:.12},doce_e:{hp:150,pres:[3000,3],rev:.12},acu:{mid:[250,-2],rev:.15}},
@@ -1902,50 +1902,11 @@ const STYLES={
  vals:{name:'Vals 3/4',bar:6,k:[0],s:[2,4],h:[0,2,4],bass:[0],bassLen:1.8,fifth:[],keys:[2,4],keysLen:1.8,gtr:[[0,'d'],[2,'d'],[3,'u'],[4,'d'],[5,'u']]},
  balada:{name:'Balada',k:[0,5],s:[4],h:[0,2,4,6],bass:[0,4],bassLen:3.6,fifth:[4],keys:[0,4],keysLen:3.8,gtr:[[0,'d'],[3,'u'],[4,'d'],[6,'d'],[7,'u']]},
 };
-/* ───────── Estudio canción por canción (octubre 2026): equipo del disco → amplificadores copiados con IA ─────────
-   Cada sonido sale de la misma guitarra directa pasada por el amplificador que corresponde. Fuentes: entrevistas, créditos y foros (ver notas). */
-Object.assign(SONG_GEAR,{
-  // Cerati 1990 (Canción Animal): PRS a un Vox AC-50 con parlantes Marshall, sin pedales; riff al borde, rítmicas con crunch medio, muy dobladas y al centro
-  'musica-ligera':{band:0.8,def:'vc',rules:[[/^guitarra$/i,'vl'],[/distor/i,'vc']]},
-  // Narea: guitarra española (nylon) rasgueada, agregada al final; la melodía es un sonido de acordeón (teclado)
-  'baile-sobran':{band:3,def:'nylm',noMel:1},
-  // Knopfler: Strat con los dedos, limpia, solo compresión y reverb; los punteos bien adelante (~6 dB sobre la rítmica de David)
-  'sultans-swing':{band:1.3,def:'strat',mix:{lead:2,solo:2.1}},
-  // Kiko Cibrián: lead con ganancia media, comprimido, chorus + eco + reverb grande (no metal); rítmica de quintas con medios, doblada
-  'no-podras':{band:1.4,def:'nam_rhy',rules:[[/guitarra 1/i,'nam_rhy'],[/guitarra 2/i,'j9a'],[/ac[uú]st/i,'acu']]},
-  // Slash 1991: Les Paul a un JCM800 modificado; arpegios limpios bajando el volumen de la guitarra, rellenos con crunch, solo con eco de negra
-  'november-rain':{band:1.4,def:'nam_lo',rules:[[/solo/i,'nam_lead'],[/fills/i,'nam_rhy'],[/ac[uú]st/i,'acu']],fill:'nam_lo',mel:'nam_lo',mix:{solo:1.8}},
-  // Ulises Calleros (Falta Amor): eléctrica limpia con chorus y eco de corchea con puntillo; acústica de Fher; solo con distorsión
-  'rayando-el-sol':{band:1.8,def:'tw',rules:[[/acompa|ac[uú]st/i,'acu'],[/solo/i,'nam_lead'],[/guitarra 2/i,'twd']]},
-  // Cerati 1986 (Signos): Jackson limpia, sonido Roland JC-120: chorus estéreo, eco y plate; todas las guitarras son eléctricas (no acústicas)
-  'persiana-americana':{band:1.0,def:'tw',rules:[[/./,'tw']]},
-  // Cerati 1985: Strat limpia con chorus, eco y cámara de reverb; "reggae con carnavalito", flauta del DX7 al mismo nivel
-  'cuando-pase':{band:2.2,def:'tw'},
-  // Cerati 1986: riff funk limpio y comprimido (doblado por un clavinet), chorus suave
-  'profugos':{band:1.2,def:'tw',rules:[[/./,'tw']]},
-  // Cerati 1999: "armada sobre una guitarra criolla" (nylon), eléctricas limpias con ecos a los lados, distorsión en los coros
-  'puente':{band:1.3,def:'tw',rules:[[/ac[uú]stica/i,'nylm'],[/distor/i,'j9b'],[/delay/i,'twd'],[/^guitarra electrica$/i,'vl']],gtrByProg:{25:'nylm',29:'vl'}},
-  // Page: solo con la Telecaster "Dragon" a un Supro chico al máximo; final con rítmicas sucias
-  'stairway':{def:'j9a',rules:[[/solo slide/i,'tw'],[/solo/i,'mg'],[/ac[uú]st|intro/i,'acu']],mix:{solo:1.4}},
-  // Narea 1987: Fender Lead I a un Twin Reverb '65 limpio (new wave, The Cars); la segunda con algo de crunch
-  'pa-pa-pa':{band:1.6,def:'tws',rules:[[/guitarra ?2/i,'j9a']]},
-  // Unplugged 1995: dos acústicas (D-35 de Álvaro, J-45 de Ángel), acordeón de Cuti Aste y contrabajo; la "pista 6" es la melodía de la voz
-  'he-barrido':{band:1.5,def:'acu',noMel:1,keysOff:[0,1]},
-  'quien-es':{def:'acu'},
-  // La espada & la pared: acústicas rasgueadas + semi-hueca eléctrica de Ángel en el solo (al borde, reverb)
-  'dejate-caer':{band:2.2,def:'acu',rules:[[/solo|el[eé]ctric/i,'vl']]},
-  // Fome 1997: Gretsch de Ángel a un combo empujado con slapback; Jaguar de Álvaro limpio; el punteo va metido en la banda, no encima
-  'torre-babel':{def:'tw',rules:[[/pista 1/i,'mg'],[/pista 2/i,'tw']],mix:{lead:.8,solo:.9}},   // en el archivo la pista 1 lleva los riffs y el solo (Ángel), la 2 los acordes (Álvaro)
-  // November Rain, solos de Lick Library (canción propia importada): Slash a Marshall con eco; Izzy rítmicas
-  'november rain':{def:'nam_rhy',rules:[[/guitar 1/i,'nam_lead'],[/guitar 2/i,'nam_lo'],[/guitar 3/i,'nam_neck'],[/guitar 4/i,'nam_rhy']],mix:{solo:1.8}},
-  // Los Tres 1991: bolero eléctrico limpio (Ibanez en la pastilla del mástil, Sheraton); la "flauta" es la melodía de la voz
-  'amor-violento':{band:1.6,def:'tw',rules:[[/pista 2/i,'tws'],[/pista 1/i,'tw']],noMel:1,keysOff:[0]}});
 /* Solos (octubre 2026): todos con amplificadores copiados con IA, nada de amplificador imitado con fórmulas.
    Knopfler: Strat limpia a un Fender, con los dedos · Slash: Les Paul a Marshall con eco · Gilmour: Strat, Big Muff a Hiwatt, mucho eco ·
    Brian May: Red Special con treble booster a Vox AC30 · Jabs/Schenker: Marshall cantante con mucha sala · Hammett: Mesa/Boogie con medios recortados */
 Object.assign(SONG_GEAR,{
-  'sultans-swing':{band:1.3,def:'tw',mix:{lead:2,solo:2.1}},
-  'solo-sultans-1':{def:'tw',leadSnd:'tw',mix:{solo:2.2},band:.5},'solo-sultans-2':{def:'tw',leadSnd:'tw',mix:{solo:2.2},band:.5},
+  'solo-sultans-1':{def:'strat',leadSnd:'strat',mix:{solo:2.2},band:.5},'solo-sultans-2':{def:'strat',leadSnd:'strat',mix:{solo:2.2},band:.5},   // el mismo sonido de Sultans completa (el que tenía potencia)
   'solo-nov-1':{def:'nam_lo',leadSnd:'nam_lead',rules:[[/fills/i,'nam_rhy']],zones:[{tr:3,from:1,to:300,vm:.6}],mix:{solo:2.2},band:.3},
   'solo-nov-2':{def:'nam_rhy',leadSnd:'nam_lead',zones:[{tr:3,from:1,to:300,vm:.7}],mix:{solo:2.2},band:.3},
   'solo-numb-1':{def:'tw',leadSnd:'j9b',rules:[[/ac[oó]?[uú]st/i,'doce']],mix:{solo:2.2},band:.25},
@@ -1954,8 +1915,6 @@ Object.assign(SONG_GEAR,{
   'solo-still-1':{def:'tw',leadSnd:'nam_lead',mix:{solo:2.2},band:.3},'solo-still-2':{def:'tw',leadSnd:'nam_lead',mix:{solo:2.2},band:.2},
   'solo-one':{bpm:200,def:'nam_lead',leadSnd:'nam_lead',rules:[[/ac[oó]?[uú]st/i,'acu']],mix:{solo:2.2},band:.3}});
 Object.assign(SONG_FX,{
-  'sultans-swing':{tw:{rev:.14,lo:[150,-3],mid:[1200,0],pres:[2800,-5],hi:0,geq:[[250,-7],[2000,-9],[3150,-6],[4000,-5],[6300,-3]]}},
-  'solo-sultans-1':{tw:{rev:.14,lo:[150,-3],mid:[1200,0],pres:[2800,-5],hi:0,geq:[[250,-7],[2000,-9],[3150,-6],[4000,-5],[6300,-3]]}},'solo-sultans-2':{tw:{rev:.14,lo:[150,-3],mid:[1200,0],pres:[2800,-5],hi:0,geq:[[250,-7],[2000,-9],[3150,-6],[4000,-5],[6300,-3]]}},
   'solo-nov-1':{nam_lead:{lp:7500,mid:[800,1.5],delayS:[.76,.3,.2],rev:.35},nam_lo:{lp:7000,delayS:[.38,.25,.15],rev:.25},nam_rhy:{lp:6500,rev:.2}},
   'solo-nov-2':{nam_lead:{lp:7500,mid:[800,1.5],delayS:[.38,.3,.2],rev:.3},nam_rhy:{lp:6500,rev:.2}},
   'solo-numb-1':{j9b:{lp:6500,mid:[900,1.5],delayS:[.44,.35,.28],rev:.4},tw:{cho:.2,rev:.25}},
@@ -1964,22 +1923,6 @@ Object.assign(SONG_FX,{
   'solo-still-1':{nam_lead:{lp:7500,mid:[800,1],delayS:[.4,.25,.2],rev:.4},tw:{cho:.35,delayS:[.4,.2,.15],rev:.3}},
   'solo-still-2':{nam_lead:{lp:7500,mid:[800,1],delayS:[.4,.25,.2],rev:.4},tw:{cho:.35,delayS:[.4,.2,.15],rev:.3}},
   'solo-one':{nam_lead:{lp:8000,mid:[750,-3],pres:[3000,2],delayS:[.3,.2,.12],rev:.2},acu:{rev:.15}}});
-Object.assign(SONG_FX,{
-  'musica-ligera':{vl:{rev:.12,mid:[800,1]},vc:{rev:.12,mid:[750,1.5],dbl:1,dblG:.6,dblD:.012}},
-  'baile-sobran':{nylm:{rev:.15,pres:[2800,1.5]}},
-  'no-podras':{nam_rhy:{lp:7500,mid:[800,1.5],cho:.3,delayS:[.382,.28,.22],rev:.22},j9a:{lp:7000,mid:[700,2],dbl:1,dblG:.8}},
-  'november-rain':{nam_lo:{lp:7000,delayS:[.38,.25,.15],rev:.25},nam_rhy:{lp:6500,delayS:[.38,.25,.15],rev:.22},nam_lead:{lp:7500,mid:[800,1.5],delayS:[.38,.3,.2],rev:.3}},
-  'rayando-el-sol':{tw:{cho:.45,delayS:[.4,.2,.18],rev:.2},twd:{cho:.3,delayS:[.4,.2,.15],rev:.2},nam_lead:{lp:7500,delayS:[.4,.25,.22],rev:.2}},
-  'persiana-americana':{tw:{cho:.5,delayS:[.446,.3,.2],rev:.25,pres:[3000,1.5]}},
-  'cuando-pase':{tw:{cho:.5,delayS:[.319,.2,.15],rev:.3}},
-  'profugos':{tw:{cho:.3,delayS:[.236,.15,.12],rev:.15,pres:[3000,2]}},
-  'puente':{nylm:{rev:.2},vl:{rev:.25},twd:{delayS:[.592,.35,.3],rev:.35},tw:{delayS:[.395,.35,.3],rev:.3},j9b:{rev:.2,dbl:1,dblG:.7}},
-  'stairway':{mg:{rev:.1,mid:[1000,1.5]},j9a:{rev:.12},tw:{rev:.1}},
-  'pa-pa-pa':{tws:{slap:[.11,.15],rev:.15},j9a:{rev:.12}},
-  'dejate-caer':{vl:{rev:.24}},
-  'torre-babel':{mg:{slap:[.11,.15],rev:.12},tw:{rev:.12}},
-  'november rain':{nam_lead:{lp:7500,mid:[800,1.5],delayS:[.38,.3,.2],rev:.3},nam_lo:{lp:7000,delayS:[.38,.25,.15],rev:.25},nam_neck:{lp:6000,delayS:[.38,.25,.15],rev:.25},nam_rhy:{lp:6500,rev:.2}},
-  'amor-violento':{tw:{rev:.25},tws:{slap:[.1,.12],rev:.25}}});
 
 const PARTS=[['drums','Batería','Groove según el estilo'],['bass','Bajo','Toca la nota base de cada acorde'],['keys','Teclado','Piano eléctrico con los acordes'],['gtr','Guitarra guía','Rasguea por ti para que escuches cómo va']];
 function bandItems(){if(seq.type==='chords')return seq.items;const s=song(),out=[];s.sections.forEach(sec=>sec.chords.forEach(c0=>{const [c,beats]=splitBeats(c0);out.push({chord:transposeChord(S.simple?simplify(c):c,S.transpose),beats})}));return out}
@@ -2043,7 +1986,7 @@ const DRK={k:36,s:38,side:37,h:42,hl:44,oh:46,crash:49,ride:51};
 function drumSample(m,t,v){const B=banks.dk;if(!B||!B.ready)return false;
   const k=m===35||m===36?36:m===37?37:m===38||m===40||m===39?38:m===42?42:m===44?44:m===46?46:m===49||m===52||m===55||m===57?49:m===51||m===53||m===59?51:m===41||m===43?41:m===45?45:m===47||m===48?47:m===50?50:42;
   if(k===42||k===44){if(A.ohV){stopVoice(A.ohV,t,.03);A.ohV=null}}   // el hi-hat cerrado corta al abierto
-  const vv=voice(k,{when:t,vel:clamp(v,.1,1),bank:'dk',dest:A.drumBus,mul:1.68,pan:k===42||k===44||k===46?.25:k===51?-.3:k===49?-.2:k===41?-.2:k===50?.2:0});if(k===46)A.ohV=vv;return true}
+  const vv=voice(k,{when:t,vel:clamp(v,.1,1),bank:'dk',dest:A.drumBus,mul:1.45,pan:k===42||k===44||k===46?.25:k===51?-.3:k===49?-.2:k===41?-.2:k===50?.2:0});if(k===46)A.ohV=vv;return true}
 function drumHit(kind,t,v=1,m=45){try{ivDrumSeen(kind,t,m)}catch(_){}
   const c=ctx;if(drumSample(kind==='tom'?m:DRK[kind]||42,t,.55+.4*Math.min(1,v)))return;
   if(kind==='tom'){const o=c.createOscillator(),g=c.createGain(),f0=60+(m-41)*14;o.frequency.setValueAtTime(f0*1.6,t);o.frequency.exponentialRampToValueAtTime(f0,t+.08);g.gain.setValueAtTime(.7*v,t);g.gain.exponentialRampToValueAtTime(.001,t+.45);o.connect(g).connect(A.drumBus);o.start(t);o.stop(t+.5);return}
@@ -3448,7 +3391,7 @@ function gpTarget(fn,G,sel,picked){const n0=gpNorm(fn);
     if(picked||ss&&n0.includes(gpNorm(ss.title)))return sel}   // un solo lleva el archivo de la canción completa: se guarda en el solo que elegiste
   const n=gpNorm(fn),hit=gpDemoFor(n);
   // solos: el archivo se reconoce por el nombre de la canción (sin "(1er solo)"); un archivo sirve a todos los solos de esa canción
-  const base=x=>gpNorm(x.title.replace(/\s*\([^)]*\)\s*/g,' ')),solos=DEMOS.filter(x=>x.zone==='solos'&&base(x).length>=3&&(' '+n+' ').includes(' '+base(x)+' '));
+  const base=x=>gpNorm(x.title.replace(/\s*\([^)]*\)\s*/g,' ')),solos=DEMOS.filter(x=>x.zone==='solos'&&base(x).length>=3&&(' '+n+' ').includes(' '+base(x)+' ')&&(base(x).length>=6||n.includes(gpNorm(x.artist||'')))&&!DEMOS.some(y=>y.zone!=='solos'&&gpNorm(y.title).length>5&&n.includes(gpNorm(y.title))&&!base(x).includes(gpNorm(y.title))));   // nombres cortos (One) exigen el artista; un archivo de otra canción (Stairway) nunca cae en un solo
   if(solos.length&&(/(^| )solo/.test(n)||!hit||hit.zone==='solos')){const ok=solos.filter(x=>gpSoloFits(x,G)),L=ok.length?ok:solos;gpTarget.also=L.slice(1).map(x=>x.id);return L[0].id}
   if(hit&&hit.zone!=='solos'){const miss=solos.filter(x=>!gpHas(x.id)&&gpSoloFits(x,G)).map(x=>x.id);if(gpHas(hit.id)&&miss.length){gpTarget.also=miss.slice(1);return miss[0]}gpTarget.also=miss;return hit.id}   // si la canción ya tiene su archivo, este va a los solos que lo esperan (no se pisa la canción)   // la canción completa también sirve a sus solos que aún no tienen archivo
   const own=userSongs.find(x=>x.gpFile===fn);if(own)return own.id;
@@ -3728,7 +3671,7 @@ async function renderSheet(){
 }
 $('#sheetBody').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;
-  if(d.open){if(d.fog!=null){try{ensureAudio();if(d.fog==='1'){ensureBank('nym');ensureBank('kam')}}catch(_){}(S.fogBy=S.fogBy||{})[d.open]=d.fog==='1';if(d.fog==='1'&&band.on)stopBand();STEP.key=null;RIG.key=null;staticKey=''}loadSong(d.open,true);if(d.fog!=null){persist();flashMsg(d.fog==='1'?'🔥 Fogata: la guitarra del asado':'💿 Original: como en el disco')}const so=allSongs().find(x=>x.id===d.open);if(so&&so.needGp&&!gpHas(d.open)){sheet.gpSong=d.open;sheet.gpPick=false;sheet.gpMsg='Falta el archivo Guitar Pro de '+so.title+'. Elígelo aquí abajo (en Ultimate Guitar: tipo "Guitar Pro").';openSheet('folder');return}closeSheet();return}
+  if(d.open){if(d.fog!=null){try{ensureAudio();if(d.fog==='1'){ensureBank('nyx');ensureBank('kam')}}catch(_){}(S.fogBy=S.fogBy||{})[d.open]=d.fog==='1';if(d.fog==='1'&&band.on)stopBand();STEP.key=null;RIG.key=null;staticKey=''}loadSong(d.open,true);if(d.fog!=null){persist();flashMsg(d.fog==='1'?'🔥 Fogata: la guitarra del asado':'💿 Original: como en el disco')}const so=allSongs().find(x=>x.id===d.open);if(so&&so.needGp&&!gpHas(d.open)){sheet.gpSong=d.open;sheet.gpPick=false;sheet.gpMsg='Falta el archivo Guitar Pro de '+so.title+'. Elígelo aquí abajo (en Ultimate Guitar: tipo "Guitar Pro").';openSheet('folder');return}closeSheet();return}
   if(d.delsong){userSongs=userSongs.filter(x=>x.id!==d.delsong);store.set('songs',userSongs);if(S.songId===d.delsong){S.songId='musica-ligera';buildSeq();render()}renderSheet();return}
   if(d.upb){sheet.imp.upb=d.upb;renderSheet();return}
   if(d.impinst){sheet.imp.inst=d.impinst;renderSheet();return}
