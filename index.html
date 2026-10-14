@@ -1912,16 +1912,17 @@ Object.assign(SONG_GEAR,{
   'solo-sultans-1':{def:'strat',leadSnd:'strat',mix:{solo:2.2},band:.5},'solo-sultans-2':{def:'strat',leadSnd:'strat',mix:{solo:2.2},band:.5},   // el mismo sonido de Sultans completa (el que tenía potencia)
   'solo-nov-1':{def:'nam_lo',leadSnd:'nam_lead',rules:[[/fills/i,'nam_rhy']],zones:[{tr:3,from:1,to:300,vm:.6}],mix:{solo:2.2},band:.3},
   'solo-nov-2':{def:'nam_rhy',leadSnd:'nam_lead',zones:[{tr:3,from:1,to:300,vm:.7}],mix:{solo:2.2},band:.3},
-  'solo-numb-1':{def:'tw',leadSnd:'j9b',rules:[[/ac[oó]?[uú]st/i,'doce']],mix:{solo:2.2},band:.25},
-  'solo-numb-2':{def:'tw',leadSnd:'j9b',rules:[[/ac[oó]?[uú]st/i,'doce']],mix:{solo:2.2},band:.3},
+  // Gilmour: Strat con Big Muff a Hiwatt: el solo SOSTIENE (no se apaga después del golpe); acústica 'high-strung' grabada de verdad; rítmica con fuzz
+  'solo-numb-1':{def:'acm',leadSnd:'nam_lead',rules:[[/ac[oó]?[uú]st/i,'acm'],[/fuzz/i,'nam_rhy']],mix:{solo:2.2},band:.25},
+  'solo-numb-2':{def:'acm',leadSnd:'nam_lead',rules:[[/ac[oó]?[uú]st/i,'acm'],[/fuzz/i,'nam_rhy']],mix:{solo:2.2},band:.3},
   'solo-bohemian':{def:'vl',leadSnd:'vc',mix:{solo:2.2},band:.45},
   'solo-still-1':{def:'tw',leadSnd:'nam_lead',mix:{solo:2.2},band:.3},'solo-still-2':{def:'tw',leadSnd:'nam_lead',mix:{solo:2.2},band:.2},
   'solo-one':{bpm:200,def:'nam_lead',leadSnd:'nam_lead',rules:[[/ac[oó]?[uú]st/i,'acu']],mix:{solo:2.2},band:.3}});
 Object.assign(SONG_FX,{
   'solo-nov-1':{nam_lead:{lp:7500,mid:[800,1.5],delayS:[.76,.3,.2],rev:.35},nam_lo:{lp:7000,delayS:[.38,.25,.15],rev:.25},nam_rhy:{lp:6500,rev:.2}},
   'solo-nov-2':{nam_lead:{lp:7500,mid:[800,1.5],delayS:[.38,.3,.2],rev:.3},nam_rhy:{lp:6500,rev:.2}},
-  'solo-numb-1':{j9b:{lp:6500,mid:[900,1.5],delayS:[.44,.35,.28],rev:.4},tw:{cho:.2,rev:.25}},
-  'solo-numb-2':{j9b:{lp:6500,mid:[900,1.5],delayS:[.44,.35,.28],rev:.4},tw:{cho:.2,rev:.25}},
+  'solo-numb-1':{nam_lead:{lp:6000,mid:[900,2],pres:[3000,-1],delayS:[.44,.25,.18],rev:.35},nam_rhy:{lp:4800,mid:[800,1],rev:.25},acm:{rev:.2,hi:1}},
+  'solo-numb-2':{nam_lead:{lp:6000,mid:[900,2],pres:[3000,-1],delayS:[.44,.25,.18],rev:.35},nam_rhy:{lp:4800,mid:[800,1],rev:.25},acm:{rev:.2,hi:1}},
   'solo-bohemian':{vc:{lp:7000,mid:[1500,3],delayS:[.3,.2,.15],rev:.25},vl:{rev:.15}},
   'solo-still-1':{nam_lead:{lp:7500,mid:[800,1],delayS:[.4,.25,.2],rev:.4},tw:{cho:.35,delayS:[.4,.2,.15],rev:.3}},
   'solo-still-2':{nam_lead:{lp:7500,mid:[800,1],delayS:[.4,.25,.2],rev:.4},tw:{cho:.35,delayS:[.4,.2,.15],rev:.3}},
