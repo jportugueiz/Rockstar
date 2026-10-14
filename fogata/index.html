@@ -1592,6 +1592,17 @@ function clStartTicker(){clearInterval(MB.timer);MB.timer=null;
   try{if(!CL.worker){const u=URL.createObjectURL(new Blob(['let t=null;onmessage=e=>{clearInterval(t);if(e.data>0)t=setInterval(()=>postMessage(0),e.data)}'],{type:'text/javascript'}));CL.worker=new Worker(u);CL.worker.onmessage=()=>clTick()}
     CL.worker.postMessage(8);CL.ticker='w'}catch(e){CL.ticker=null;MB.timer=setInterval(clTick,8)}}
 function clStopTicker(){try{CL.worker&&CL.worker.postMessage(0)}catch(e){}clearInterval(MB.timer)}
+/* muestra fogata: golpe extra de tu mano entre los golpes del disco
+   · donde se rasguea: el acorde entero (abajo o arriba según tu mano), más suave que los golpes del disco
+   · donde la guitarra hace un riff sin rasgueo: solo un roce apagado, para no tapar la melodía
+   · como mucho dos golpes extra entre cada golpe del disco, y no más de uno cada 70 ms */
+const FOGX={ei:-1,n:0,t:0};
+function fogExtra(dir,vel,now){const E=STEP.ev,pos=mbPosAt(now);if(FOGX.ei!==MB.ei){FOGX.ei=MB.ei;FOGX.n=0}if(FOGX.n>=2||now-FOGX.t<.06)return;
+  let riff=null;for(let j=Math.min(E.length,MB.ei)-1;j>=0&&j>MB.ei-80;j--){const x=E[j];if(x.band||!x.gp)continue;if(pos-x.b>2.5)break;const g=x.gp;
+    if(g.brush){const ch=(seq.items[x.ii]||{}).chord;if(!ch)return;let ns=chordMidis(ch).map((m,i)=>m==null?null:{midi:m,str:i,fret:0,dur:.5}).filter(Boolean);if(dir==='up')ns=ns.slice(-4);if(!ns.length)return;
+      FOGX.n++;FOGX.t=now;playGp(Object.assign({},g,{ns,brush:dir==='up'?'Up':'Down',gh:false,dense:false,ac:false,dyn:'MF'}),now+.002,.42+.25*(vel==null?.6:vel),1/MB.rate,pos);return}
+    if(g.role==='main'){riff=x;break}}   // los punteos (solo, melodía) no cuentan: debajo de ellos se sigue rasgueando
+  if(riff){FOGX.n++;FOGX.t=now;const ns=riff.gp.ns.slice().sort((a,c)=>c.midi-a.midi).slice(0,3);ns.forEach((n,i)=>{const w=now+.003+i*.006,vv=voice(n.midi,{when:w,vel:clamp(.16+.2*(vel==null?.6:vel),.1,.4),dir,mul:.3,bank:'kam',dest:A.gpBus?rigIn('fog',0):null,soft:.002});stopVoice(vv,w+.06,.02)})}}
 // roce: la mano pasa por las cuerdas agudas apagadas; voces aparte, NO corta las cuerdas que están sonando
 function clRoce(dir,vel,now){const E=STEP.ev,pos=mbPosAt(now);
   for(let j=Math.min(E.length,MB.ei)-1;j>=0&&j>MB.ei-60;j--){const x=E[j];if(x.band||!x.gp)continue;if(pos-x.b>2.5)return;if(clSingle(x))return;
@@ -1618,7 +1629,7 @@ function clPass(vel,dir){
     if(n>=7&&CL.base){const ds=[];for(let i=n-6;i<n;i++){const x=a[i]-a[i-1];if(x<.6)ds.push(x)}
       if(ds.length>=4){ds.sort((x,y)=>x-y);const sh=ds[ds.length>>1],vr=CL.sv.slice(-6).reduce((x,y)=>x+y,0)/6,vb=CL.sv.reduce((x,y)=>x+y,0)/CL.sv.length,
         en=(CL.base/sh)*Math.sqrt(Math.max(.5,vr/Math.max(.2,vb))),tg=1+(en>1.12?Math.min(.12,(en-1.12)*.4):en<.8?Math.max(-.05,(en-.8)*.3):0);CL.push=CL.push*.9+tg*.1}}}
-  const rate=mbOrig()*clSpeed()*CL.push;
+  const rate=mbOrig()*clSpeed()*CL.push,wasOn=MB.on;
   if(!MB.on&&!band.on){let j=MB.ei;while(j<E.length&&E[j].band)j++;const nx=E[j];if(nx&&nx.b-MB.pos>=8){startBand();const bar=gpOn()?gpOn().bars.findIndex(x=>x.start>=nx.b-1e-6)+1:0;flashMsg('La banda toca la intro'+(bar?': tu parte entra en el compás '+bar:''))}}   // la canción empieza sin tu instrumento (Tren al Sur): la banda la toca
   if(!MB.on){// el reloj estaba detenido: parte aquí; si viene un silencio corto, salta a la próxima nota para que tu pasada suene al tiro
     let j=MB.ei;while(j<E.length&&E[j].band)j++;const nx=E[j],L=mbLoop();
@@ -1630,7 +1641,10 @@ function clPass(vel,dir){
     if(CL.pend&&now<=CL.pend.until){CL.pend.evs.forEach(e=>clPlay(e,now+.002,.8+.3*MB.vel));CL.used=CL.pend.area;CL.pend=null}
     else{let j=MB.ei;while(j<E.length&&E[j].band)j++;const nx=E[j];if(!(nx&&clTe(nx)<=now+.12))clRoce(dir,v,now)}}
   else{// Guitar Hero: si la frase que suena se te pasó hace un instante, tu pasada la abre desde aquí
-    Object.values(CL.run).forEach(r=>{if(!r.hit&&now-r.t<=.12)r.hit=true})}
+    Object.values(CL.run).forEach(r=>{if(!r.hit&&now-r.t<=.12)r.hit=true});
+    // muestra fogata: si pasas la mano entre los golpes del disco, suena un rasgueo más (la sensación de tocar en vivo)
+    if(window.ROCK_FOGATA_DEMO&&fogOn()&&wasOn){let j=MB.ei;while(j<E.length&&E[j].band)j++;const nx=E[j];let k=MB.ei-1;while(k>=0&&E[k].band)k--;const pv=E[k];
+      if(!(nx&&clTe(nx)<=now+.05)&&!(pv&&clTe(pv)>=now-.05))fogExtra(dir,v,now)}}
   clTick();seenHint();
 }
 function clTick(){
