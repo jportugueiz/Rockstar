@@ -638,7 +638,8 @@ function buildGraph(){
   A.ir=makeIR(2.6);
   const rv={in:G(),out:G(),dry:G(),wet:G(),conv:c.createConvolver()};rv.conv.buffer=A.ir;rv.wet.gain.value=0;
   rv.in.connect(rv.dry).connect(rv.out);rv.in.connect(rv.conv).connect(rv.wet).connect(rv.out);A.reverb=rv;
-  A.master=G();A.limit=c.createDynamicsCompressor();A.limit.threshold.value=-4;A.limit.ratio.value=12;A.limit.knee.value=4;A.limit.attack.value=.006;A.limit.release.value=.25;   // ataque no tan instantáneo: un limitador muy rápido deforma la onda de los graves (eso era la distorsión en los bajos)
+  A.master=G();{const cl=c.createWaveShaper(),n=4097,cv=new Float32Array(n);for(let i=0;i<n;i++){const x=(i/(n-1)*2-1)*2,a=Math.abs(x);cv[i]=Math.sign(x)*(a<.8?a:.8+.2*Math.tanh((a-.8)/.2))}cl.curve=cv;cl.oversample='4x';const pg=c.createGain();pg.gain.value=.5;pg.connect(cl);A.clip=pg;A.clipOut=cl}   // salida: los golpes que pasan del máximo se redondean (antes se recortaban en seco: sonido plástico y áspero)
+  A.limit=c.createDynamicsCompressor();A.limit.threshold.value=-4;A.limit.ratio.value=12;A.limit.knee.value=4;A.limit.attack.value=.006;A.limit.release.value=.25;   // ataque no tan instantáneo: un limitador muy rápido deforma la onda de los graves (eso era la distorsión en los bajos)
   A.fxIn.connect(A.comp).connect(A.pre).connect(A.shaper).connect(A.post).connect(A.gateSlot).connect(A.tone)
     .connect(A.cabHP).connect(A.cabPk).connect(A.cabLP).connect(A.eqL).connect(A.eqM).connect(A.eqH).connect(A.wah)
     .connect(A.chorus.in);A.chorus.out.connect(A.flanger.in);A.flanger.out.connect(A.phaser.in);A.phaser.out.connect(A.delay.in);
@@ -647,7 +648,7 @@ function buildGraph(){
   A.lowCut=c.createBiquadFilter();A.lowCut.type='highpass';A.lowCut.frequency.value=55;A.lowCut.Q.value=.6;A.lowShelf=c.createBiquadFilter();A.lowShelf.type='lowshelf';A.lowShelf.frequency.value=130;A.lowShelf.gain.value=-2.5;
   // nivelador: todas las canciones salen al mismo volumen (se mide como oye el oído y se ajusta despacio; lo aprendido queda por canción)
   A.lvl=G(1);A.lvlAn=c.createAnalyser();A.lvlAn.fftSize=4096;{const kh=c.createBiquadFilter();kh.type='highpass';kh.frequency.value=100;const ks=c.createBiquadFilter();ks.type='highshelf';ks.frequency.value=1500;ks.gain.value=4;A.lvl.connect(kh);kh.connect(ks);ks.connect(A.lvlAn)}
-  A.master.connect(A.lowCut).connect(A.lowShelf).connect(A.lvl).connect(A.limit).connect(c.destination);
+  A.master.connect(A.lowCut).connect(A.lowShelf).connect(A.lvl).connect(A.limit).connect(A.clip);A.clipOut.connect(c.destination);
   // guitarras de la partitura: sonido grabado real, sin simulador de amplificador; un poco de compresión y de sala
   A.gpBus=G();A.gpComp=c.createDynamicsCompressor();A.gpComp.threshold.value=-20;A.gpComp.ratio.value=3;A.gpComp.attack.value=.01;A.gpComp.release.value=.2;
   A.gpBus.connect(A.gpComp);A.gpRev=c.createConvolver();A.gpRev.buffer=makeIR(1.4);A.gpRevG=G();A.gpRevG.gain.value=.16;A.gpRev.connect(A.gpRevG).connect(A.master);A.gpBus.gain.value=.8;
@@ -1520,7 +1521,7 @@ function playGp(g,t,vscale,spb,b){const k=g.tr,SN=gpSnd(),gk0=gpOrig()?(fogOn()?
       {const GW=gpOn()||{};if(g.wah==='pedal'&&!fogOn()){if(g.txt==='+')WAHP.st=1;else if(g.txt==='o')WAHP.st=0;const f=v.f,fq=480+1500*WAHP.st;f.type='peaking';f.Q.value=2.4;f.gain.value=13;f.frequency.cancelScheduledValues(w);f.frequency.setValueAtTime(WAHP.f||fq,w);f.frequency.exponentialRampToValueAtTime(fq,w+.035);WAHP.f=fq}}
       {const GW=gpOn()||{},WB=GW.wahB;if((g.wah==='auto'||WB!=null&&b>=WB-1e-6&&(GW.wahE==null||b<GW.wahE-1e-6)&&g.lead&&!g.wah)&&!fogOn()){const f=v.f;f.type='peaking';f.Q.value=2.2;f.gain.value=14;f.frequency.cancelScheduledValues(w);f.frequency.setValueAtTime(420,w);f.frequency.exponentialRampToValueAtTime(1900,w+Math.min(.16,durS*.45));f.frequency.exponentialRampToValueAtTime(650,w+Math.max(.22,durS*1.1))}}   // wah: el pie sube y baja con cada nota
       if(fogOn()){v.f.frequency.value=Math.min(v.f.frequency.value,2600+4200*vv)}   // nylon: punteo cálido, no brillante como caja de música
-      else if(n.vib||durS>=.35&&(g.role==='solo'||g.lead||g.mel)){const o=ctx.createOscillator(),og=ctx.createGain();o.frequency.value=n.vib?5.8:5.2;og.gain.setValueAtTime(0,w);og.gain.linearRampToValueAtTime((n.vib?45:24)*(fogOn()?.35:1),w+Math.min(.5,durS*.7));o.connect(og).connect(dt);o.start(w+Math.min(.18,durS*.3));o.stop(w+durS+1.2)}
+      else if(n.vib||durS>=.35&&(g.role==='solo'||g.lead||g.mel)&&!/^(acu|doce|nyl|fla|charango|mst|nylm)/.test(gk||'')){const o=ctx.createOscillator(),og=ctx.createGain();o.frequency.value=n.vib?5.8:5.2;og.gain.setValueAtTime(0,w);og.gain.linearRampToValueAtTime((n.vib?45:24)*(fogOn()?.35:1),w+Math.min(.5,durS*.7));o.connect(og).connect(dt);o.start(w+Math.min(.18,durS*.3));o.stop(w+durS+1.2)}
       v.slideOut=n.slide;
       if(n.harm>=2&&n.harm!==3&&orig){const hv=voice(n.midi+19,{when:w,vel:vv*.5,mul:.8,pan,bank:bk,dest:dst});hv.f.frequency.value=9000;stopVoice(hv,w+Math.min(durS,1.2),.08)}   // armónico de púa (pinch): el chillido encima
       if(n.trem&&orig){const st={1:.5,2:.25,3:.125}[n.trem]*spb;let pv=v;for(let tt=w+st;tt<w+durS-.02;tt+=st){stopVoice(pv,tt,.012);pv=voice(n.midi,{when:tt,vel:vv*(.82+Math.random()*.12),mul:g.lead?1.05:.85,pan,bank:bk,dest:dst});GPV[key]=pv}}}   // trémolo de púa
