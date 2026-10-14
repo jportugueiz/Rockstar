@@ -789,7 +789,7 @@ const SONG_GEAR={
   'musica-ligera':{def:'crunch'},   // Vox AC-50 empujado: crunch de los 70, no distorsión alta (ni la guitarra 'distorsionada')
                          // Cerati 1990: PRS a un Vox AC-50 empujado, muchas guitarras dobladas
   'baile-sobran':{def:'acu',mel:'acu'},                                               // Narea: guitarra acústica (la única vez en Pateando Piedras)
-  'wish-you-were-here':{def:'acu',rules:[[/cool|rythm|ritm|12/i,'doce']]},           // Gilmour: Martin D12-28 (12 cuerdas) y D-35, con púa
+  'wish-you-were-here':{def:'acu'},   // Martin con cuerpo (la 12 cuerdas simulada con octavas sonaba plástica, a instrumento oriental)           // Gilmour: Martin D12-28 (12 cuerdas) y D-35, con púa
   'no-podras':{def:'dist',rules:[[/ac[uú]st/i,'acu']]},   // las guitarras eléctricas atacan con distorsión desde el comienzo
     // pop-rock 1992: limpia con chorus y eco; coros con distorsión
   'november-rain':{def:'neck',rules:[[/solo/i,'dist_slash'],[/fills/i,'crunch'],[/ac[uú]st/i,'acu']],fill:'neck',mel:'neck',mix:{solo:1.8}},   // Slash: Les Paul (Derrig) a Marshall, poco efecto, algo de eco
@@ -1346,7 +1346,7 @@ const RIGS={   // drive 0-10, hp/lp: filtros del parlante, mid: [frecuencia, dB]
   nam_lead:{drive:0,hp:80,lp:9000,mid:[800,0],hi:0,rev:.2},nam_neck:{drive:0,hp:80,lp:7000,mid:[700,0],hi:0,rev:.2},nam_rhy:{drive:0,hp:85,lp:8000,mid:[800,0],hi:0,rev:.18},nam_lo:{drive:0,hp:85,lp:8000,mid:[800,0],hi:0,rev:.18},tw:{drive:0,gain:1.8,hp:70,lp:10000,mid:[1000,0],pres:[3000,-4],hi:0,rev:.15},tws:{drive:0,gain:1.8,hp:70,lp:10000,mid:[1000,0],pres:[3000,-4],hi:0,rev:.18,slap:[.1,.14]},twd:{drive:0,gain:1.8,hp:70,lp:10000,mid:[1000,0],pres:[3000,-4],hi:0,rev:.2},vl:{drive:0,hp:80,lp:9000,mid:[800,0],hi:0,rev:.14},vc:{drive:0,hp:85,lp:8000,mid:[800,0],hi:0,rev:.12},j9a:{drive:0,hp:85,lp:8000,mid:[800,0],hi:0,rev:.14},j9b:{drive:0,hp:90,lp:7500,mid:[800,0],hi:0,rev:.16},mg:{drive:0,hp:90,lp:8000,mid:[900,0],hi:0,rev:.15},nylm:{drive:0,hp:70,lp:13000,lo:[120,.5],mid:[260,-1],pres:[2600,1],hi:.5,rev:.16,gain:1.9},   // el amplificador ya viene en la muestra: aquí solo ecualización y efectos
   fog:{drive:0,hp:65,lp:14000,lo:[120,1],mid:[260,-1],pres:[2600,1.2],hi:.5,rev:.12,gain:1.9},   // fogata: guitarra de nylon cálida, cerca, con un poco de aire (la grabación es muy seca)   // fogata: una acústica cerca, con cuerpo, al aire libre (casi sin sala)
   charango:{drive:0,hp:160,lp:15000,lo:[300,2],mid:[650,-1],pres:[3800,2.5],hi:2,rev:.14,gain:.55,dbl:1,dblG:1,dblD:.026},   // doblado pesado: dos tomas iguales a los lados, con más cuerpo   // charango: brillante, sin graves, cuerpo chico
-  acu:{drive:0,hp:75,lp:16000,mid:[220,-2.5],hi:2,rev:.14,dbl:1,gain:1.7},doce:{drive:0,hp:90,lp:16000,mid:[220,-3],hi:2.5,rev:.12,dbl:1,gain:1.7},nyl:{drive:0,hp:70,lp:11000,mid:[250,-1.5],hi:1,rev:.16,dbl:1,gain:1.7},fla:{drive:0,hp:95,lp:15000,lo:[180,-3],mid:[320,-2],pres:[2800,2],hi:1.5,rev:.11,dbl:1,gain:1.9},
+  acu:{drive:0,hp:75,lp:16000,mid:[220,-2.5],hi:2,rev:.14,dbl:1,gain:1.7},doce:{drive:0,hp:80,lp:13000,mid:[220,-1.5],pres:[3200,-1.5],hi:0,rev:.13,dbl:1,gain:1.7},nyl:{drive:0,hp:70,lp:11000,mid:[250,-1.5],hi:1,rev:.16,dbl:1,gain:1.7},fla:{drive:0,hp:95,lp:15000,lo:[180,-3],mid:[320,-2],pres:[2800,2],hi:1.5,rev:.11,dbl:1,gain:1.9},
   // Fender: ecualización ajustada midiendo el espectro de la guitarra de Sultans of Swing original contra la de la app
   strat:{drive:1.5,hp:60,lp:16000,mid:[1000,0],hi:0,rev:.12,geq:[[125,-10],[200,-5],[400,-4],[1600,-6],[2500,-6],[6300,-2],[11000,6]],gain:2},cho:{drive:1,hp:60,lp:16000,mid:[1000,0],hi:0,rev:.14,cho:.35,geq:[[125,-10],[200,-5],[400,-4],[1600,-6],[2500,-6],[6300,-2],[11000,6]],gain:2},neck:{drive:1,hp:60,lp:9000,mid:[1000,0],hi:-1,rev:.15,geq:[[125,-8],[200,-4],[1600,-4],[2500,-4]],gain:1.7},
   arch:{drive:1,hp:85,lp:5500,mid:[800,1.5],hi:-1,rev:.15},gretsch:{drive:2.5,hp:95,lp:6000,mid:[1500,2],hi:0,rev:.12,slap:[.1,.14]},
@@ -1354,6 +1354,7 @@ const RIGS={   // drive 0-10, hp/lp: filtros del parlante, mid: [frecuencia, dB]
 // por canción: 'all' vale para todas sus guitarras; delay en tiempos de la canción [tiempos, repeticiones, cuánto] o en segundos (delayS)
 // por canción: 'all' vale para todas sus guitarras, o por sonido; delay en tiempos [tiempos, repeticiones, cuánto] o en segundos (delayS); slap: eco corto rockabilly
 const SONG_FX={
+  'wish-you-were-here':{acu:{hp:70,lo:[160,1.5],mid:[250,-1],pres:[3200,-2.5],hi:-1,lp:11000,rev:.18,dbl:1,dblG:.55}},   // cálida y redonda: sin el brillo plástico
   'sultans-swing':{all:{rev:.2},strat:{drive:1,pres:[3000,2]}},
   'solo-sweet-child':{dist_slash:{drive:6,hp:90,lp:5500,mid:[800,3],pres:[3000,-1],delayS:[.38,.15,.12],rev:.2},crunch:{drive:4,rev:.15}},
   'solo-numb-1':{dist_lead:{drive:6.5,hp:100,lp:6000,mid:[700,2],pres:[2500,2],cho:.3,delayS:[.44,.3,.2],rev:.3},dist:{drive:5,lp:4500,mid:[1000,-3],rev:.25}},
@@ -1525,7 +1526,7 @@ function playGp(g,t,vscale,spb,b){const k=g.tr,SN=gpSnd(),gk0=gpOrig()?(fogOn()?
       if(n.trem&&orig){const st={1:.5,2:.25,3:.125}[n.trem]*spb;let pv=v;for(let tt=w+st;tt<w+durS-.02;tt+=st){stopVoice(pv,tt,.012);pv=voice(n.midi,{when:tt,vel:vv*(.82+Math.random()*.12),mul:g.lead?1.05:.85,pan,bank:bk,dest:dst});GPV[key]=pv}}}   // trémolo de púa
     let len=n.pm?Math.min(orig?.16:.2,n.dur*spb):fogOn()&&!chord?Math.max(.3,Math.min(2.4,n.dur*spb*1.8+.25)):g.dense&&chord?Math.max(1,n.dur)*spb+.08:Math.max(.06,n.dur*spb*(n.letRing?2.5:1))+.05;if(g.ring&&!n.pm&&!n.dead&&!/dist|crunch/.test(gk))len=Math.max(len,Math.min(3.2,4*spb));   // arpegio: suena hasta que esa cuerda se vuelve a tocarstopVoice(v,w+len,n.pm?.04:.07);
     // 12 cuerdas: las cuatro graves llevan su octava, las dos agudas van dobladas al unísono; chorus: una segunda guitarra apenas desafinada
-    const xs=[];if(GT&&GT.twelve)xs.push(n.str<4?[12,.42,.004]:[0,.5,.006]);if(GT&&GT.cho)xs.push([0,.45,.011]);if(GT&&GT.course)xs.push([0,.9,.007],[0,.6,.013]);   // cada orden del charango son dos cuerdas: la segunda apenas después y desafinada
+    const xs=[];if(GT&&GT.twelve)xs.push(n.str<4?[12,.3,.004]:[0,.45,.006]);if(GT&&GT.cho)xs.push([0,.45,.011]);if(GT&&GT.course)xs.push([0,.9,.007],[0,.6,.013]);   // cada orden del charango son dos cuerdas: la segunda apenas después y desafinada
     xs.forEach(([tr,gm,dl],j)=>{const v2=voice(n.midi+tr,{when:w+dl,vel:vv*gm,dir:up?'up':'down',mul:g.lead?1.05:.85,pan:-pan*.6,bank:bk,dest:dst,detune:tr?0:(j?-7:7),soft:.006});
       const o2=GPV[key+'x'+j];if(o2)stopVoice(o2,w,.02);GPV[key+'x'+j]=v2;stopVoice(v2,w+len,n.pm?.04:.07)})});
   animAt(t,()=>{stage.flash=Math.min(1,stage.flash+(chord?.3:.15))})}
