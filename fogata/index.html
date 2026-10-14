@@ -1190,6 +1190,7 @@ function stepBuild(){const key=S.songId+'|'+S.transpose+'|'+S.simple+'|'+seq.ite
       const sbar=new Map();syn.forEach(T=>{const m={};T.ev.forEach(e=>{const k=barOf(e.b);(m[k]=m[k]||[]).push(e)});sbar.set(T,m)});
       let synBest=null,sbc=0;syn.forEach(T=>{const c=Object.values(sbar.get(T)).filter(a=>a.length>=2).length;if(c>sbc){sbc=c;synBest=T}});   // la melodía de teclado más presente en la canción
       const F=[],PAT=gpGear().fogPat||FOG_PATS.clasica.p;
+      const bassT=GP.tracks.find(T=>!T.drums&&/bass/i.test(T.type)&&T.ev.length>20),bbar={};if(bassT)bassT.ev.forEach(e=>{const k=barOf(e.b);(bbar[k]=bbar[k]||[]).push(e)});
       const strum=(b,d,dir,dyn,dead,ac)=>{const ch=chAt(b);if(!ch)return;let ns=full(ch,d,dir==='U');if(dead)ns=ns.map(n=>Object.assign({},n,{dead:true}));
         if(ns.length)F.push({ii:itemAt(b),b,gp:{ns,lead:false,dyn,brush:dir==='U'?'Up':'Down',dur:d,tr:90,snd:'fog',role:'main',ac}})};
       const lvl=['PPP','PP','P','MP','MF','F','FF','FFF'],atLeast=(d,m)=>lvl.indexOf(d||'MF')<lvl.indexOf(m)?m:d;
@@ -1214,6 +1215,9 @@ function stepBuild(){const key=S.songId+'|'+S.transpose+'|'+S.simple+'|'+seq.ite
         if(line.length>=3)return;   // riff o arpegio: la guitarra hace eso, sin rasgueo encima
         const soft=lead.length>=2||mel>=2;
         const lv=a=>a>=.95?'F':a>=.8?'MF':a>=.6?'MP':'P',half=mbOrig()*60>=140&&Math.round(len)===4,ph=half?(k%2)*4:0;   // canción rápida: el rasgueo de fogata a medio tiempo (dura dos compases), como lo toca una persona
+        // segunda guitarra (como cuando en la fogata hay dos): mientras una rasguea, la otra hace la línea del bajo en las cuerdas graves
+        (bbar[k]||[]).forEach(e=>{const n0=e.notes.find(n=>!n.skip&&!n.dead);if(!n0)return;let m=n0.midi;while(m<40)m+=12;while(m>55)m-=12;
+          F.push({ii:itemAt(e.b),b:e.b,gp:{ns:[{midi:m,str:m<45?0:m<50?1:2,fret:0,dur:e.d}],lead:false,dyn:atLeast(e.dyn,'MP')==='FFF'?'F':'MP',brush:null,dur:e.d,tr:91,snd:'fog',role:'rhy2',pan:.35}})});
         PAT.forEach(([o0,dir,a])=>{const o=half?o0*2-ph:o0;if(o<-1e-6||o>=len-1e-6)return;strum(bar.start+o,dir==='X'?.2:.5,dir==='X'?'D':dir,lv(soft?a*.85:a),dir==='X',a>=.95)})});
       ev.length=0;F.forEach(x=>ev.push(x))}
     else if(fogOn()){const F=[],main=mainT,mbar={};if(main)main.ev.forEach(e=>{const k=barOf(e.b);(mbar[k]=mbar[k]||[]).push(e)});
