@@ -1166,7 +1166,22 @@ function stepBuild(){const key=S.songId+'|'+S.transpose+'|'+S.simple+'|'+seq.ite
        · los rasgueos son de fogata: el acorde abierto completo, con el ritmo del disco, abajo en el tiempo y arriba en el contratiempo
        · donde no hay rasgueo (acordes largos, solos sin banda, partes vacías) entra el rasgueo clásico de fogata, más suave bajo el punteo */
     if(fogOn()&&window.ROCK_FOGATA_DEMO){
-      const chAt=b=>(seq.items[itemAt(b)]||{}).chord;
+      /* acordes de fogata: simples y bien elegidos (como en un cancionero)
+         · sin séptimas ni adornos; un acorde por medio compás (por compás en canciones rápidas): las notas de paso del bajo no cambian el acorde
+         · si en ese compás nadie toca la tercera (solo bajo y voz), el acorde toma la forma de la tonalidad: La → Lam en una canción en La menor */
+      const vox0=/\b(voz|voces|voice|vocals?|vox|voix|canto|coros?|choir)\b/i,harm={};
+      GP.tracks.forEach(T=>{if(T.drums||/bass/i.test(T.type)||vox0.test(T.name||''))return;T.ev.forEach(e=>{const k=barOf(e.b),h=harm[k]||(harm[k]=new Set());e.notes.forEach(n=>{if(!n.skip&&!n.dead)h.add(n.midi%12)})})});
+      const kw=new Array(12).fill(0);seq.items.forEach(it=>{if(!it.chord)return;const c=parseChord(it.chord);(QINT[c.q]||QINT['']).forEach(iv=>kw[(c.pc+iv)%12]+=(it.beats||4))});
+      let ton=0,tsc=-1;for(let t=0;t<12;t++){const v=[0,2,4,5,7,9,11].reduce((q,i)=>q+kw[(t+i)%12],0);if(v>tsc){tsc=v;ton=t}}
+      const scl=new Set([0,2,4,5,7,9,11].map(i=>(ton+i)%12));
+      const simple=(ch,k)=>{const c=parseChord(ch),r=c.pc,h=harm[k]||new Set(),M=(r+4)%12,m=(r+3)%12;let q=c.q;
+        if(/^(7|maj7|add9|6|9)$/.test(q))q='';else if(/^m(7|6|9)$/.test(q))q='m';
+        if(q===''||q==='m'){if(h.has(m)&&!h.has(M))q='m';else if(h.has(M)&&!h.has(m))q='';else if(!h.has(M)&&!h.has(m)&&scl.has(r))q=scl.has(M)?'':scl.has(m)?'m':q}
+        return NOTES[r]+q};
+      const chAt=b=>{const k=barOf(b),bar=GP.bars[k];if(!bar)return (seq.items[itemAt(b)]||{}).chord;const L=bar.len||4,seg=mbOrig()*60>=140&&Math.round(L)===4?L:Math.min(2,L);
+        const s0=bar.start+Math.floor((b-bar.start)/seg+1e-6)*seg,s1=Math.min(bar.start+L,s0+seg);let best=null,bo=0;
+        for(let i=itemAt(s0);i<seq.items.length&&cum[i]<s1-1e-6;i++){const e1=i+1<cum.length?cum[i+1]:c,ov=Math.min(s1,e1)-Math.max(s0,cum[i]);if(ov>bo&&seq.items[i].chord){bo=ov;best=seq.items[i].chord}}
+        return best?simple(best,k):null};
       const full=(ch,d,up)=>{let ns=chordMidis(ch).map((m,i)=>m==null?null:{midi:m,str:i,fret:0,dur:d}).filter(Boolean);if(up)ns=ns.slice(-4);return ns};
       const isChord=ns=>{const v=ns.filter(n=>!n.dead);if(ns.length>=3)return true;if(v.length===2){const iv=Math.abs(v[0].midi-v[1].midi)%12;return iv===7||iv===5}return false};
       const bars={};ev.forEach(x=>{if(x.gp){const k=barOf(x.b);(bars[k]=bars[k]||[]).push(x)}});
