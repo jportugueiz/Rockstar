@@ -1396,7 +1396,7 @@ const SONG_FX={
 const RIG={key:null,map:{}};
 // cada pista de guitarra tiene su propio equipo (amplificador, efectos) y su propio fader, que maneja la mezcla automática
 function rigIn(k,tr){if(!ctx||!A.gpBus)return null;const key=S.songId+'|'+(song().bpm||0);if(RIG.key!==key){Object.values(RIG.map).forEach(r=>{try{r.out.disconnect();if(r.osc)r.osc.stop()}catch(e){}});RIG.map={};RIG.key=key;mixReset()}
-  const id=k+'#'+(tr==null?'':tr);let r=RIG.map[id];if(!r){r=RIG.map[id]=rigBuild(k,tr);if(tr!=null){const m=mixTrack(tr);m.fd=r.fd;m.an=r.an;m.fd.gain.value=m.want||1}}return r.in}
+  const id=k+'#'+(tr==null?'':tr);let r=RIG.map[id];if(!r){r=RIG.map[id]=rigBuild(k,tr);if(tr!=null){const m=mixTrack(tr);m.fd=r.fd;m.an=r.an;m.anP=r.anP;m.anS=r.cs&&r.cs.an;m.fd.gain.value=m.want||1}}return r.in}
 /* ───────── Mezcla automática: como un sonidista ─────────
    Escucha cuánto suena cada guitarra (antes de su fader) y las equilibra según su papel:
    · la rítmica principal es la referencia;
@@ -1425,16 +1425,16 @@ function mixTick(){if(!ctx||!MIX.key)return;const now=ctx.currentTime,spb=60/((g
   const ref=(fogOn()&&T[90]&&T[90].lg!=null?T[90]:null)||Object.values(T).find(m=>m.role==='main'&&m.lg!=null)||Object.values(T).find(m=>m.role!=='solo'&&m.lg!=null)||Object.values(T).find(m=>m.lg!=null);
   if(ref)MIX.R=MIX.R==null?ref.lg:MIX.R+(ref.lg-MIX.R)*.1;
   // y el volumen general de las guitarras queda parejo de una canción a otra (una partitura muy cargada no sale a todo volumen)
-  if(MIX.R!=null&&A.gpBus){const gb=clamp(Math.exp(-3.3-MIX.R),.25,2)*.8*csGtrM();if(MIX.gb==null||Math.abs(Math.log(gb/MIX.gb))>.03){MIX.gb=gb;A.gpBus.gain.setTargetAtTime(gb,now,MIX.n0?1.2:.05)}MIX.n0=1}
+  if(MIX.R!=null&&A.gpBus){const gm=csGtrM(),gfast=MIX.gm!=null&&MIX.gm!==gm;MIX.gm=gm;const gb=clamp(Math.exp(-3.3-MIX.R),.25,2)*.8*gm;if(MIX.gb==null||Math.abs(Math.log(gb/MIX.gb))>.03||gfast){MIX.gb=gb;A.gpBus.gain.setTargetAtTime(gb,now,gfast?.03:MIX.n0?1.2:.05)}MIX.n0=1}
   for(const tr in T){const m=T[tr];if(!m.fd)continue;let w;
     if(fogOn())w=+tr===90?(Object.keys(T).some(k=>+k!==90&&/lead|solo|mel/.test(T[k].role||'')&&now-T[k].last<1.4)?.6:1):m.role==='solo'?1.5:m.role==='lead'||m.role==='mel'?1.35:1;   // fogata: una sola guitarra; el punteo siempre sobre el rasgueo, sin bajar
     else if(m.lg==null||MIX.R==null)w=m.role==='solo'?1.3:1;
     else{w=Math.exp(MIX.R-m.lg)*((gpGear().mix||{})[m.role]||MIXR[m.role]||1)*(m.role==='solo'&&!rhyOn?.92:1);if(leadOn&&m.role!=='solo'&&m.role!=='mel')w*=m.role==='lead'?.7:.5}
     w=m.role==='main'||m.role==='rhy2'?clamp(w,.55,2.2):clamp(w,.3,2.2);if(m.bandG&&!fogOn())w*=gpGear().bandG||.5;   // solo: las otras guitarras quedan atrás del solista   // nunca una pista a 4x ni la rítmica tapada: un solo arriba, sí; un desastre, no
-w*=csTrackMul(tr);if(m.want==null||Math.abs(Math.log(w/m.want))>.02){m.want=w;m.fd.gain.setTargetAtTime(w,now,w<m.fd.gain.value?.25:.9)}}   // baja rápido para dejar pasar el solo, vuelve despacio
+m.w0=w;const cm=csTrackMul(tr),fast=m.cm!=null&&m.cm!==cm;m.cm=cm;w*=cm;if(m.want==null||Math.abs(Math.log(w/m.want))>.02||fast){m.want=w;m.fd.gain.setTargetAtTime(w,now,fast?.03:w<m.fd.gain.value?.25:.9)}}   // baja rápido para dejar pasar el solo, vuelve despacio
   // la banda acompaña a la guitarra: queda unos 4 dB por debajo de las guitarras y baja un poco más cuando hay un solo; si la guitarra calla, la banda no sube
   if(A.gpMeter&&A.bandMeter&&band.on){const rm=an=>{an.getFloatTimeDomainData(buf);let e=0;for(let i=0;i<buf.length;i++)e+=buf[i]*buf[i];return Math.sqrt(e/buf.length)};
-    const gr=rm(A.gpMeter),br=rm(A.bandMeter);
+    const gr=rm(A.gpMeter)/csGtrK(),br=rm(A.bandMeter);
     if(gr>2e-3)MIX.gL=MIX.gL==null?Math.log(gr):MIX.gL+(Math.log(gr)-MIX.gL)*.012;if(br>2e-3)MIX.bL=MIX.bL==null?Math.log(br):MIX.bL+(Math.log(br)-MIX.bL)*.012;
     if(MIX.gL!=null&&MIX.bL!=null){const w=clamp(Math.exp(MIX.gL-MIX.bL)*.56*(leadOn?.7:1)*(gpGear().band||1),.3,2.4);if(MIX.bw==null||Math.abs(Math.log(w/MIX.bw))>.12){MIX.bw=MIX.bw==null?w:MIX.bw*Math.pow(w/MIX.bw,.5);A.bandAuto.gain.setTargetAtTime(MIX.bw*csBand(),now,5)}}}
   // lo aprendido queda guardado para esta canción
@@ -1464,8 +1464,12 @@ const csDb=d=>Math.pow(10,(d||0)/20);
 function csGroupMul(p){const c=csPeek();if(!c||!p)return 1;let m=1;(p.dca||[]).forEach(i=>{const d=(c.dca||[])[i];if(d){m*=d.mute?0:csDb(d.fader)}});(p.mg||[]).forEach(i=>{const g=(c.mg||[])[i];if(g&&g.on)m=0});return m}
 function csTrackMul(tr){if(CS.cue&&CS.cue!=='t'+tr)return 0;const t=csT(tr);return t?(t.mute?0:csDb(t.fader))*csGroupMul(t):1}
 function csBand(){const c=csPeek();const m=c&&c.master||{};return (m.bandMute?0:csDb(m.band))}
+// cuánto cambió el ingeniero el volumen de las guitarras (ganancia, EQ, compresores, faders, máster): la banda sigue a las guitarras SIN contar eso
+function csGtrK(){if(!csPeek())return 1;const b=MIX.kb||(MIX.kb=new Float32Array(2048));const rm=an=>{an.getFloatTimeDomainData(b);let e=0;for(let i=0;i<b.length;i++)e+=b[i]*b[i];return Math.sqrt(e/b.length)};let num=0,den=0;
+  for(const tr in MIX.tr){const m=MIX.tr[tr];if(!m.anP||!m.anS||m.w0==null)continue;const pr=rm(m.anP);if(pr<1e-4)continue;num+=rm(m.anS)*m.w0*csTrackMul(tr);den+=pr*m.w0}
+  if(den>0)MIX.gk=num/den;return Math.max(.02,(MIX.gk||1)*csGtrM())}
 function csGtrM(){const c=csPeek();const m=c&&c.master||{};return (m.gtrMute?0:csDb(m.gtr))}
-const CS_EQ0=[{t:'lowshelf',f:100,g:0,q:.7},{t:'peaking',f:400,g:0,q:1},{t:'peaking',f:2500,g:0,q:1},{t:'highshelf',f:8000,g:0,q:.7}];
+const CS_EQ0=[{t:'lowshelf',f:150,g:0,q:.7},{t:'peaking',f:500,g:0,q:1},{t:'peaking',f:2000,g:0,q:1},{t:'highshelf',f:5000,g:0,q:.7}];   // donde la guitarra y la banda tienen sonido
 const CS_SEQ0=[63,125,250,500,1000,2000,4000,8000];
 const CS_GEQF=[20,25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000];
 /* ── procesadores en hilo de audio (puerta/expansor y moldeador de transientes) ── */
@@ -1483,14 +1487,16 @@ registerProcessor('rk-cstrans',Tr)`;
 function csWL(){if(CS.wl)return CS.wl;try{const u=URL.createObjectURL(new Blob([CS_WL_SRC],{type:'application/javascript'}));CS.wl=ctx.audioWorklet.addModule(u).then(()=>true,()=>false)}catch(_){CS.wl=Promise.resolve(false)}return CS.wl}
 const csGateReady=csWL;
 /* ── utilidades de armado ── */
-function csN(c){return{G:v=>{const g=c.createGain();g.gain.value=v==null?1:v;return g},B:(t,f,q,g)=>{const b=c.createBiquadFilter();b.type=t;b.frequency.value=f;if(q!=null)b.Q.value=q;if(g!=null)b.gain.value=g;return b},
-  C:()=>{const k=c.createDynamicsCompressor();k.threshold.value=0;k.ratio.value=1;return k},WS:(drv,asym)=>{const w=c.createWaveShaper(),n=2048,cv=new Float32Array(n),k=1+drv;for(let i=0;i<n;i++){const x=i/(n-1)*2-1,y=x+(asym||0)*x*x;cv[i]=Math.tanh(k*y)/Math.tanh(k)}w.curve=cv;w.oversample='2x';return w}}}
+function csN(c){return{G:v=>{const g=c.createGain();g.gain.value=v==null?1:v;return g},B:(t,f,q,g)=>{const b=c.createBiquadFilter();b.type=t;b.frequency.value=f;if(q!=null)b.Q.value=(t==='lowpass'||t==='highpass')?20*Math.log10(q):q;   /* en Web Audio el Q de pasa-altos/bajos va en dB: 0.7071 = Butterworth = −3 dB */if(g!=null)b.gain.value=g;return b},
+  C:()=>{const k=c.createDynamicsCompressor();k.threshold.value=0;k.ratio.value=1;return k},WS:(drv,asym)=>{const w=c.createWaveShaper(),n=2048,cv=new Float32Array(n),k=1+drv;for(let i=0;i<n;i++){const x=i/(n-1)*2-1,y=x+(asym||0)*x*x;cv[i]=Math.tanh(k*y)/Math.tanh(k*.15)*.15}w.curve=cv;w.oversample='2x';return w}}}
+// el compresor del navegador sube solo el volumen ((1/ganancia a 0 dBFS)^0.6); en una consola real eso lo decide el ingeniero con GAIN/MAKEUP
+const csAutoMk=(T,R)=>.6*Math.max(0,-T)*(1-1/Math.max(1,R));
 const csSet=(a,v)=>{try{a.setTargetAtTime(v,ctx.currentTime,.02)}catch(_){a.value=v}};
 function csIR(c,secs,pre,damp,kind){const sr=c.sampleRate,len=Math.floor(sr*(secs+pre)),b=c.createBuffer(2,len,sr);for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);let lp=0;const a=clamp(damp,0,.95);
     for(let i=0;i<len;i++){const t=i/sr-pre;if(t<0){d[i]=0;continue}const env=Math.pow(1-t/secs,kind==='plate'?1.6:kind==='room'?3:2.2)*Math.exp(-t*(kind==='room'?3:1.2));const n=Math.random()*2-1;lp=lp*a+n*(1-a);d[i]=lp*env*(kind==='plate'?1.1:1)}
     for(let k=0;k<(kind==='room'?14:8);k++){const at=Math.floor(sr*(pre+.004+Math.random()*(kind==='room'?.05:.09)));if(at<len)d[at]+=(Math.random()>.5?1:-1)*.6*(1-k/16)}}return b}
 // compresor genérico con mezcla paralela y medidor de reducción
-function csCompUnit(c,o){const n=csN(c),u={in:n.G(1),out:n.G(1),k:n.C(),dry:n.G(0),wet:n.G(1),mk:n.G(1),pre:n.G(1)};u.in.connect(u.pre).connect(u.k).connect(u.wet).connect(u.mk).connect(u.out);u.in.connect(u.dry).connect(u.out);u.gr=()=>-(u.k.reduction||0);return u}
+function csCompUnit(c,o){const n=csN(c),u={in:n.G(1),out:n.G(1),k:n.C(),ac:n.G(1),dry:n.G(0),wet:n.G(1),mk:n.G(1),pre:n.G(1)};u.in.connect(u.pre).connect(u.k).connect(u.ac).connect(u.wet).connect(u.mk).connect(u.out);u.tr=(T,R)=>{csSet(u.k.threshold,T);csSet(u.k.ratio,R);csSet(u.ac.gain,csDb(-csAutoMk(T,R)))};u.in.connect(u.dry).connect(u.out);u.gr=()=>-(u.k.reduction||0);return u}
 /* ── catálogo de plugins ──
    slot: dyn1 (antes del EQ), dyn2 (después del EQ), ins (inserción), fx (efecto en envío), main (salida).
    P = valores de controles; build(c) devuelve {in,out,set(P),gr?()} */
@@ -1502,28 +1508,28 @@ const CS_PLUG={
     build(c){const u=CS_PLUG.gate.build(c);const s0=u.set;u.set=P=>s0(Object.assign({hold:20},P));return u}},
   deesser:{name:'DE-ESSER',maker:'DYN',cat:'Dinámica',slots:['dyn1','dyn2','ins'],face:'dyn',params:[['f','FRECUENCIA',1000,12500,5000,'Hz',1],['thr','UMBRAL',-60,0,-24,'dB'],['ratio','RATIO',1,20,6,':1',1]],
     build(c){const n=csN(c),u={in:n.G(1),out:n.G(1),lo:n.B('lowpass',5000,.7),lo2:n.B('lowpass',5000,.7),hi:n.B('highpass',5000,.7),hi2:n.B('highpass',5000,.7),k:n.C()};u.k.attack.value=.001;u.k.release.value=.06;
-      u.in.connect(u.lo).connect(u.lo2).connect(u.out);u.in.connect(u.hi).connect(u.hi2).connect(u.k).connect(u.out);u.gr=()=>-(u.k.reduction||0);u.set=P=>{[u.lo,u.lo2,u.hi,u.hi2].forEach(b=>csSet(b.frequency,P.f));csSet(u.k.threshold,P.thr);csSet(u.k.ratio,P.ratio)};return u}},
+      u.ac=n.G(1);u.in.connect(u.lo).connect(u.lo2).connect(u.out);u.in.connect(u.hi).connect(u.hi2).connect(u.k).connect(u.ac).connect(u.out);u.gr=()=>-(u.k.reduction||0);u.set=P=>{[u.lo,u.lo2,u.hi,u.hi2].forEach(b=>csSet(b.frequency,P.f));csSet(u.k.threshold,P.thr);csSet(u.k.ratio,P.ratio);csSet(u.ac.gain,csDb(-csAutoMk(P.thr,P.ratio)))};return u}},
   comp260:{name:'COMP260',maker:'DYN',cat:'Dinámica',slots:['dyn1','dyn2','ins'],face:'dyn',params:[['thr','UMBRAL',-60,0,-20,'dB'],['ratio','RATIO',1,20,4,':1',1],['att','ATAQUE',.1,200,10,'ms',1],['rel','SALIDA',10,1000,150,'ms',1],['knee','KNEE',0,20,6,'dB'],['mk','GANANCIA',0,18,0,'dB'],['mix','MIX BAL.',0,100,100,'%']],
-    build(c){const u=csCompUnit(c);u.set=P=>{csSet(u.k.threshold,P.thr);csSet(u.k.ratio,P.ratio);u.k.attack.value=P.att/1000;u.k.release.value=P.rel/1000;u.k.knee.value=P.knee;csSet(u.mk.gain,csDb(P.mk));csSet(u.wet.gain,P.mix/100);csSet(u.dry.gain,1-P.mix/100)};return u}},
+    build(c){const u=csCompUnit(c);u.set=P=>{u.tr(P.thr,P.ratio);u.k.attack.value=P.att/1000;u.k.release.value=P.rel/1000;u.k.knee.value=P.knee;csSet(u.mk.gain,csDb(P.mk));csSet(u.wet.gain,P.mix/100);csSet(u.dry.gain,1-P.mix/100)};return u}},
   legacy:{name:'LEGACY COMP',maker:'DYN',cat:'Dinámica',slots:['dyn1','dyn2','ins'],face:'dyn',params:[['thr','UMBRAL',-60,0,-18,'dB'],['ratio','RATIO',1,20,3,':1',1],['att','ATAQUE',.1,200,25,'ms',1],['rel','SALIDA',10,1000,250,'ms',1],['mk','GANANCIA',0,18,0,'dB']],
-    build(c){const u=csCompUnit(c);u.set=P=>{csSet(u.k.threshold,P.thr);csSet(u.k.ratio,P.ratio);u.k.attack.value=P.att/1000;u.k.release.value=P.rel/1000;u.k.knee.value=10;csSet(u.mk.gain,csDb(P.mk))};return u}},
+    build(c){const u=csCompUnit(c);u.set=P=>{u.tr(P.thr,P.ratio);u.k.attack.value=P.att/1000;u.k.release.value=P.rel/1000;u.k.knee.value=10;csSet(u.mk.gain,csDb(P.mk))};return u}},
   fetlim:{name:'FET LIMITER',maker:'DYN',cat:'Dinámica',slots:['dyn2','ins'],face:'u76',params:[['input','INPUT',0,30,10,'dB'],['output','OUTPUT',-30,10,-8,'dB'],['att','ATTACK',1,7,4,''],['rel','RELEASE',1,7,4,''],['ratio','RATIO',0,4,0,'',0,['4','8','12','20','ALL']],['mix','MIX BAL.',0,100,100,'%']],
-    build(c){const u=csCompUnit(c);u.k.knee.value=0;u.k.threshold.value=-24;u.set=P=>{const R=[4,8,12,20,20][Math.round(P.ratio)];csSet(u.pre.gain,csDb(P.input));csSet(u.k.ratio,R);u.k.knee.value=Math.round(P.ratio)===4?0:2;u.k.attack.value=(.02+(7-P.att)*.11)/1000*10;u.k.release.value=.05+(7-P.rel)*.15;csSet(u.mk.gain,csDb(P.output));csSet(u.wet.gain,P.mix/100);csSet(u.dry.gain,1-P.mix/100)};return u}},
+    build(c){const u=csCompUnit(c);u.k.knee.value=0;u.k.threshold.value=-24;u.set=P=>{const R=[4,8,12,20,20][Math.round(P.ratio)];csSet(u.pre.gain,csDb(P.input));u.tr(-24,R);u.k.knee.value=Math.round(P.ratio)===4?0:2;u.k.attack.value=(.02+(7-P.att)*.11)/1000*10;u.k.release.value=.05+(7-P.rel)*.15;csSet(u.mk.gain,csDb(P.output));csSet(u.wet.gain,P.mix/100);csSet(u.dry.gain,1-P.mix/100)};return u}},
   diode:{name:'DIODE BRIDGE',maker:'DYN',cat:'Dinámica',slots:['dyn2','ins'],face:'dyn',params:[['thr','UMBRAL',-60,0,-16,'dB'],['ratio','RATIO',1.5,10,3,':1',1],['att','ATAQUE',1,100,15,'ms',1],['rel','SALIDA',30,2000,300,'ms',1],['color','COLOR',0,10,3,''],['mk','GANANCIA',0,18,2,'dB']],
-    build(c){const n=csN(c),u=csCompUnit(c);u.ws=n.WS(1,.2);u.k.disconnect();u.k.connect(u.ws).connect(u.wet);u.set=P=>{csSet(u.k.threshold,P.thr);csSet(u.k.ratio,P.ratio);u.k.attack.value=P.att/1000;u.k.release.value=P.rel/1000;u.k.knee.value=12;const w=csN(c).WS(P.color*.5,.25);u.ws.curve=w.curve;csSet(u.mk.gain,csDb(P.mk))};return u}},
+    build(c){const n=csN(c),u=csCompUnit(c);u.ws=n.WS(1,.2);u.ac.disconnect();u.ac.connect(u.ws).connect(u.wet);u.set=P=>{u.tr(P.thr,P.ratio);u.k.attack.value=P.att/1000;u.k.release.value=P.rel/1000;u.k.knee.value=12;const w=csN(c).WS(P.color*.5,.25);u.ws.curve=w.curve;csSet(u.mk.gain,csDb(P.mk))};return u}},
   u76:{name:'U76',maker:'PREMIUM',cat:'Compresores de rack',slots:['dyn2','ins'],face:'u76',params:[['input','INPUT',0,30,12,'dB'],['output','OUTPUT',-30,10,-10,'dB'],['att','ATTACK',1,7,4,''],['rel','RELEASE',1,7,5,''],['ratio','RATIO',0,4,0,'',0,['4','8','12','20','ALL']]],
     build(c){return CS_PLUG.fetlim.build(c)}},
   opt2a:{name:'OPT-2A',maker:'PREMIUM',cat:'Compresores de rack',slots:['dyn2','ins'],face:'opt',params:[['peak','PEAK RED.',0,100,40,''],['gain','GAIN',0,40,10,'dB'],['mode','MODO',0,1,0,'',0,['COMP','LIMIT']]],
-    build(c){const u=csCompUnit(c);u.k.attack.value=.01;u.k.release.value=.4;u.k.knee.value=18;u.set=P=>{csSet(u.k.threshold,-P.peak*.45);csSet(u.k.ratio,P.mode>.5?12:3);csSet(u.mk.gain,csDb(P.gain-10))};return u}},
+    build(c){const u=csCompUnit(c);u.k.attack.value=.01;u.k.release.value=.4;u.k.knee.value=18;u.set=P=>{u.tr(-P.peak*.45,P.mode>.5?12:3);csSet(u.mk.gain,csDb(P.gain-10))};return u}},
   p5043:{name:'PORTICO 5043',maker:'PREMIUM',cat:'Compresores de rack',slots:['dyn2','ins','main'],face:'portico',params:[['thr','THRESHOLD',-50,0,-20,'dB'],['ratio','RATIO',1.1,29,3,':1',1],['att','ATTACK',20,75,30,'ms'],['rel','RELEASE',100,2500,300,'ms',1],['gain','GAIN',-6,20,0,'dB'],['fb','FB',0,1,0,'',0,['FF','FB']]],
-    build(c){const u=csCompUnit(c);u.set=P=>{csSet(u.k.threshold,P.thr);csSet(u.k.ratio,Math.min(20,P.ratio));u.k.attack.value=P.att/1000;u.k.release.value=P.rel/1000;u.k.knee.value=P.fb>.5?14:6;csSet(u.mk.gain,csDb(P.gain))};return u}},
+    build(c){const u=csCompUnit(c);u.set=P=>{u.tr(P.thr,Math.min(20,P.ratio));u.k.attack.value=P.att/1000;u.k.release.value=P.rel/1000;u.k.knee.value=P.fb>.5?14:6;csSet(u.mk.gain,csDb(P.gain))};return u}},
   bus369:{name:'BUSS COMP 369',maker:'PREMIUM',cat:'Compresores de rack',slots:['dyn2','ins','main'],face:'bus',params:[['thr','THRESHOLD',-30,0,-12,'dB'],['ratio','RATIO',1.5,6,2,':1'],['att','ATTACK',.1,30,10,'ms',1],['rec','RECOVERY',50,1200,200,'ms',1],['gain','GAIN',0,15,0,'dB'],['mix','MIX',0,100,100,'%']],
-    build(c){const u=csCompUnit(c);u.k.knee.value=4;u.set=P=>{csSet(u.k.threshold,P.thr);csSet(u.k.ratio,P.ratio);u.k.attack.value=P.att/1000;u.k.release.value=P.rec/1000;csSet(u.mk.gain,csDb(P.gain));csSet(u.wet.gain,P.mix/100);csSet(u.dry.gain,1-P.mix/100)};return u}},
+    build(c){const u=csCompUnit(c);u.k.knee.value=4;u.set=P=>{u.tr(P.thr,P.ratio);u.k.attack.value=P.att/1000;u.k.release.value=P.rec/1000;csSet(u.mk.gain,csDb(P.gain));csSet(u.wet.gain,P.mix/100);csSet(u.dry.gain,1-P.mix/100)};return u}},
   mbc4:{name:'MBC4',maker:'PREMIUM',cat:'Compresores de rack',slots:['ins','main'],face:'mbc',params:[['x1','CROSS 1',60,400,120,'Hz',1],['x2','CROSS 2',400,3000,1000,'Hz',1],['x3','CROSS 3',2000,10000,5000,'Hz',1],['t1','THR 1',-40,0,-12,'dB'],['t2','THR 2',-40,0,-12,'dB'],['t3','THR 3',-40,0,-12,'dB'],['t4','THR 4',-40,0,-12,'dB'],['ratio','RATIO',1,10,3,':1',1],['g','GANANCIA',0,12,0,'dB']],
     build(c){const n=csN(c),u={in:n.G(1),out:n.G(1),k:[],b:[]};const xo=(src,f,type)=>{const a=n.B(type,f,.7071),b=n.B(type,f,.7071);src.connect(a).connect(b);return{a,b}};
       const l1=xo(u.in,120,'lowpass'),h1=xo(u.in,120,'highpass'),l2=xo(h1.b,1000,'lowpass'),h2=xo(h1.b,1000,'highpass'),l3=xo(h2.b,5000,'lowpass'),h3=xo(h2.b,5000,'highpass');u.f=[[l1,h1],[l2,h2],[l3,h3]];
       [l1.b,l2.b,l3.b,h3.b].forEach(src=>{const k=n.C();k.attack.value=.01;k.release.value=.15;src.connect(k);const g=n.G(1);k.connect(g).connect(u.out);u.k.push(k);u.b.push(g)});u.gr=()=>Math.max(...u.k.map(k=>-(k.reduction||0)));
-      u.set=P=>{const fs=[P.x1,P.x2,P.x3];u.f.forEach((pr,i)=>pr.forEach(x=>{csSet(x.a.frequency,fs[i]);csSet(x.b.frequency,fs[i])}));u.k.forEach((k,i)=>{csSet(k.threshold,P['t'+(i+1)]);csSet(k.ratio,P.ratio)});u.b.forEach(g=>csSet(g.gain,csDb(P.g)))};return u}},
+      u.set=P=>{const fs=[P.x1,P.x2,P.x3];u.f.forEach((pr,i)=>pr.forEach(x=>{csSet(x.a.frequency,fs[i]);csSet(x.b.frequency,fs[i])}));u.k.forEach((k,i)=>{csSet(k.threshold,P['t'+(i+1)]);csSet(k.ratio,P.ratio)});u.b.forEach((g,i)=>csSet(g.gain,csDb(P.g-csAutoMk(P['t'+(i+1)],P.ratio))))};return u}},
   p5045:{name:'PORTICO 5045',maker:'PREMIUM',cat:'Compresores de rack',slots:['dyn1','ins'],face:'portico',params:[['thr','THRESHOLD',-60,0,-40,'dB'],['depth','DEPTH',0,30,8,'dB'],['tc','TIME',1,6,3,'']],
     build(c){const u=CS_PLUG.gate.build(c);const s0=u.set;u.set=P=>s0({thr:P.thr,range:-P.depth,att:3,hold:20*P.tc,rel:60*P.tc,ratio:2});return u}},
   p5033:{name:'PORTICO 5033',maker:'PREMIUM',cat:'Ecualizadores',slots:['ins','main'],face:'portico',params:[['trim','TRIM',-12,12,0,'dB'],['lf','LF',30,300,100,'Hz',1],['lfg','LF GAIN',-12,12,0,'dB'],['lmf','LMF',50,400,200,'Hz',1],['lmfg','LMF GAIN',-12,12,0,'dB'],['mf','MF',330,2500,1000,'Hz',1],['mfg','MF GAIN',-12,12,0,'dB'],['hmf','HMF',1800,16000,4000,'Hz',1],['hmfg','HMF GAIN',-12,12,0,'dB'],['hf','HF',2500,25000,10000,'Hz',1],['hfg','HF GAIN',-12,12,0,'dB']],
@@ -1548,7 +1554,7 @@ const CS_PLUG={
     build(c){const n=csN(c),u={in:n.G(1),out:n.G(1),node:null};u.in.connect(u.out);csWL().then(ok=>{if(!ok||u.dead)return;try{u.node=new AudioWorkletNode(c,'rk-cstrans',{outputChannelCount:[2]});u.in.disconnect();u.in.connect(u.node).connect(u.out);u.set(u.P||{attack:0,sustain:0})}catch(_){}});
       u.set=P=>{u.P=P;if(!u.node)return;const t=c.currentTime;u.node.parameters.get('attack').setValueAtTime(P.attack,t);u.node.parameters.get('sustain').setValueAtTime(P.sustain,t)};return u}},
   limiter:{name:'MAX100 LIMITER',maker:'DYN',cat:'Dinámica',slots:['ins','main','dyn2'],face:'bus',params:[['ceil','TECHO',-20,0,-1,'dB'],['in','ENTRADA',0,18,0,'dB'],['rel','SALIDA',10,500,60,'ms',1]],
-    build(c){const u=csCompUnit(c);u.k.ratio.value=20;u.k.knee.value=0;u.k.attack.value=.001;u.set=P=>{csSet(u.pre.gain,csDb(P.in));csSet(u.k.threshold,P.ceil);u.k.release.value=P.rel/1000};return u}},
+    build(c){const u=csCompUnit(c);u.k.ratio.value=20;u.k.knee.value=0;u.k.attack.value=.001;u.set=P=>{csSet(u.pre.gain,csDb(P.in));u.tr(P.ceil,20);u.k.release.value=P.rel/1000};return u}},
   // ── efectos (en inserción o como FX1/FX2 en envío) ──
   rev:{name:'REV HD',maker:'FX',cat:'Efectos',slots:['fx','ins'],face:'rev',params:[['type','TIPO',0,2,0,'',0,['HALL','ROOM','PLATE']],['time','REV TIME',.3,8,2,'s',1],['pre','INI DLY',0,200,20,'ms'],['damp','HI DAMP',0,9,4,''],['lpf','LPF',2000,20000,9000,'Hz',1],['hpf','HPF',20,800,120,'Hz',1],['mix','MIX',0,100,100,'%']],
     build(c){const n=csN(c),u={in:n.G(1),out:n.G(1),cv:c.createConvolver(),hp:n.B('highpass',120,.7),lp:n.B('lowpass',9000,.7),w:n.G(1),d:n.G(0),key:''};u.in.connect(u.hp).connect(u.cv).connect(u.lp).connect(u.w).connect(u.out);u.in.connect(u.d).connect(u.out);
@@ -1600,14 +1606,14 @@ function csSlot(S,key,spec){const cur=S.slot[key],[a,b]=CS_SLOTPOS[key],A0=S.J[a
   if(want){const P=Object.assign(csPlugDefaults(want),spec.P||{});try{S.slot[key].u.set(P)}catch(_){}}}
 function csApply(S,p,bus){if(!S||!ctx)return;p=p||{};
   csSet(S.trim.gain,csDb(p.trim));csSet(S.dg.gain,csDb(p.dgain));csSet(S.ph.gain,p.inv?-1:1);
-  const hp=p.hpf||{},hon=!!hp.on,sl=hp.slope||12;csSet(S.hpf[0].frequency,hon?clamp(hp.f||80,20,2000):10);csSet(S.hpf[1].frequency,hon&&sl>12?clamp(hp.f||80,20,2000):10);S.hpf[0].Q.value=sl===6?.5:.7071;
+  const hp=p.hpf||{},hon=!!hp.on,sl=hp.slope||12;csSet(S.hpf[0].frequency,hon?clamp(hp.f||80,20,2000):10);csSet(S.hpf[1].frequency,hon&&sl>12?clamp(hp.f||80,20,2000):10);S.hpf[0].Q.value=20*Math.log10(sl===6?.5:.7071);
   const lp=p.lpf||{};csSet(S.lpf.frequency,lp.on?clamp(lp.f||12000,1000,22000):22000);
   csSlot(S,'dyn1',p.dyn1);csSlot(S,'dyn2',p.dyn2);for(let i=0;i<4;i++)csSlot(S,'ins'+i,(p.ins||[])[i]);
   const eq=p.eq||[],eqOn=p.eqOn!==false;csSet(S.eqatt.gain,csDb(eqOn?p.eqAtt||0:0));S.eq.forEach((b,i)=>{const e=Object.assign({},CS_EQ0[i],eq[i]||{});b.type=e.t;csSet(b.frequency,clamp(e.f,20,20000));csSet(b.Q,clamp(e.q||1,.1,10));csSet(b.gain,eqOn&&e.on!==false?clamp(e.g||0,-18,18):0)});
   if(S.pan.pan)csSet(S.pan.pan,clamp(p.pan||0,-1,1));
   if(bus)csSet(S.out.gain,p.mute?0:csDb(p.fader)*csGroupMul(p));
   if(!S.master){const sd=p.sends||[];S.sends.forEach((g,i)=>{csSet(g.gain,(sd[i]&&sd[i].on!==false?csDb(sd[i].lv==null?-60:sd[i].lv):0)*(sd[i]&&sd[i].lv<=-59.5?0:1))})}
-  if(S===A.csm&&A.limit)csSet(A.limit.threshold,clamp(p.ceil==null?-4:p.ceil,-20,0))}
+  if(S===A.csm&&A.limit){const ce=clamp(p.ceil==null?-4:p.ceil,-20,0);csSet(A.limit.threshold,ce);if(A.clip)csSet(A.clip.gain,.5*csDb(csAutoMk(-4,12)-csAutoMk(ce,12)))}}
 // gr de un canal (para el medidor de reducción): DYN1/DYN2
 function csGR(S,key){const s=S&&S.slot[key];return s&&s.u.gr?s.u.gr():0}
 /* ── FX1 / FX2: efectos en envío (como el FX rack), con retorno a la mezcla ── */
@@ -1626,7 +1632,7 @@ function csDsp(c){const n=csN(c);const D={in:n.G(1),dry:n.G(1),wet:n.G(0),sum:n.
   let l=D.sum;D.seq.forEach(b=>{l.connect(b);l=b});l.connect(D.wet).connect(D.out);D.in.connect(D.dry).connect(D.out);return D}
 function csDspApply(D,p){if(!D)return;p=p||{};const on=!!p.on;csSet(D.dry.gain,on?0:1);csSet(D.wet.gain,on?1:0);
   const f1=clamp(p.f1||90,30,300),f2=clamp(p.f2||1500,500,6000);D.bands[0].f.forEach(x=>csSet(x.frequency,f1));D.bands[1].f.forEach((x,i)=>csSet(x.frequency,i<2?f1:f2));D.bands[2].f.forEach(x=>csSet(x.frequency,f2));
-  const bd=p.bands||[];D.bands.forEach((b,i)=>{const q=bd[i]||{};csSet(b.g.gain,(q.inv?-1:1)*(q.mute?0:csDb(q.g)));csSet(b.d.delayTime,clamp((q.dly||0)/1000,0,.05));const lo=q.lim!=null&&q.lim<0;b.lim.threshold.value=lo?clamp(q.lim,-30,0):0;b.lim.ratio.value=lo?20:1});
+  const bd=p.bands||[];D.bands.forEach((b,i)=>{const q=bd[i]||{};const lo=q.lim!=null&&q.lim<0;csSet(b.g.gain,(q.inv?-1:1)*(q.mute?0:csDb((q.g||0)-(lo?csAutoMk(clamp(q.lim,-30,0),20):0))));csSet(b.d.delayTime,clamp((q.dly||0)/1000,0,.05));b.lim.threshold.value=lo?clamp(q.lim,-30,0):0;b.lim.ratio.value=lo?20:1});
   const sq=p.seq||[];D.seq.forEach((b,i)=>{const e=sq[i]||{};csSet(b.frequency,clamp(e.f||CS_SEQ0[i],20,20000));csSet(b.gain,clamp(e.g||0,-15,15));csSet(b.Q,clamp(e.q||1.4,.3,8))})}
 function csApplyAll(){if(!ctx)return;try{csFxApply()}catch(_){}const c=csPeek()||{};if(A.csm)csApply(A.csm,c.main,1);if(A.dsp)csDspApply(A.dsp,(c.main||{}).dsp);
   if(A.csb)['drums','bass','keys'].forEach(b=>{csApply(A.csb[b],csB(b),1);if(CS.cue&&CS.cue!==b)csSet(A.csb[b].out.gain,0)});
@@ -1634,7 +1640,7 @@ function csApplyAll(){if(!ctx)return;try{csFxApply()}catch(_){}const c=csPeek()|
 function rigBuild(k,tr){const c=ctx,G=v=>{const g=c.createGain();g.gain.value=v==null?1:v;return g},F=(t,f,q,gn)=>{const b=c.createBiquadFilter();b.type=t;b.frequency.value=f;if(q!=null)b.Q.value=q;if(gn!=null)b.gain.value=gn;return b};
   const fx=k==='fog'?{}:SONG_FX[S.songId]||SONG_FX[gpNorm(song().title||'')]||SONG_FX[gpNorm(song().title||'').replace(/ \(?solo\)?$/,'')]||{},P=Object.assign({},RIGS[k]||RIGS.strat,fx.all||{},fx[k]||{}),spb=60/(song().bpm||100);
   {const ct=tr!=null?csT(tr):null;if(ct){if(ct.cho)P.cho=ct.cho.on?ct.cho.mix:0;if(ct.dly){P.delay=null;P.slap=null;P.delayS=ct.dly.on?[ct.dly.t,ct.dly.fb,ct.dly.mix]:null}if(ct.rev)P.rev=ct.rev.on?ct.rev.mix:0;if(ct.dbl)P.dbl=ct.dbl.on?1:0}}   // efectos que el ingeniero ajustó en la consola
-  const r={in:G(),out:G()};let last=r.in;
+  const r={in:G(),out:G(),P};let last=r.in;
   // sonido nuevo, crunch y distorsión: guitarra directa → preamplificador de válvula (las notas de un acorde se ensucian juntas, como en un amplificador de verdad) → parlante 4x12 real
   const realAmp=newSnd()&&(/^crunch/.test(k)||/^dist/.test(k)),cabK=newSnd()?(realAmp?'m412':k==='gretsch'||k==='arch'?'dlx':null):null,cab=cabK?cabIR(cabK):null;
   if(realAmp){const hp0=F('highpass',95,.7),ts=F('peaking',/^dist/.test(k)?720:800,.8,/^dist/.test(k)?6:3.5),gn=G(/^dist/.test(k)?16+(P.drive||1.5)*3:3.5+(P.drive||3)*1.4),sh=c.createWaveShaper(),n=4096,cv=new Float32Array(n);
@@ -1652,8 +1658,8 @@ function rigBuild(k,tr){const c=ctx,G=v=>{const g=c.createGain();g.gain.value=v=
     if(cab){lp.frequency.value=Math.max(P.lp,12000);last.connect(cab);last=cab}}   // guitarra directa (Gretsch, archtop): por su parlante real
   (P.geq||[]).forEach(([f,gn])=>{const b=F('peaking',f,1.1,gn);last.connect(b);last=b});   // ecualizador por octavas (medido contra la grabación original)
   // fader de la mezcla automática (después del amplificador: bajar el volumen no cambia el tono) y su medidor
-  if(tr!=null){const st=csStrip(c);last.connect(st.in);last=st.out;r.cs=st;csApply(st,csT(tr));try{const U=A.fxu;if(U){st.sends.forEach((g,i)=>g.connect(U[i].in));st.fxLinked=1}}catch(_){}}   // canal de consola: ganancia, filtro, ecualizador, compresor y paneo
-  r.an=c.createAnalyser();r.an.fftSize=2048;{const kh=F('highpass',100,.5),ks=F('highshelf',1500,null,4);last.connect(kh).connect(ks).connect(r.an)}   // se mide como oye el oído (más peso a los agudos que cortan)
+  const pre=last;if(tr!=null){r.anP=c.createAnalyser();r.anP.fftSize=2048;pre.connect(r.anP);const st=csStrip(c);last.connect(st.in);last=st.out;r.cs=st;csApply(st,csT(tr));try{const U=A.fxu;if(U){st.sends.forEach((g,i)=>g.connect(U[i].in));st.fxLinked=1}}catch(_){}}   // canal de consola: ganancia, filtro, ecualizador, compresor y paneo
+  r.an=c.createAnalyser();r.an.fftSize=2048;{const kh=F('highpass',100,.5),ks=F('highshelf',1500,null,4);pre.connect(kh).connect(ks).connect(r.an)}   // se mide como oye el oído (más peso a los agudos que cortan), ANTES de la consola: así la mezcla automática no deshace lo que mueve el ingeniero
   r.fd=G(1);last.connect(r.fd);last=r.fd;
   // chorus: una copia apenas desafinada que se mueve
   if(P.cho){const d=c.createDelay(.05);d.delayTime.value=.012;const o=c.createOscillator();r.osc=o;o.frequency.value=.7;const od=G(.0025);o.connect(od).connect(d.delayTime);o.start();const w=G(P.cho);last.connect(d).connect(w).connect(r.out)}
