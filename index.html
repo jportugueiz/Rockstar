@@ -744,7 +744,7 @@ const SONG_GEAR={
   'no-podras':{def:'cho',rules:[[/guitarra 2|dist|power/i,'dist'],[/ac[uú]st/i,'acu']]},   // pop-rock 1992: limpia con chorus y eco; coros con distorsión
   'november-rain':{def:'neck',rules:[[/solo|fills/i,'crunch'],[/ac[uú]st/i,'acu']],fill:'neck',mel:'neck'},   // Slash: Les Paul (Derrig) a Marshall, poco efecto, algo de eco
   'rayando-el-sol':{def:'cho',rules:[[/acompa|ac[uú]st/i,'acu'],[/solo/i,'crunch']]},   // Ulises Calleros: eléctrica limpia con chorus y eco + acústicas
-  'tren-al-sur':{def:'acu',rules:[[/charango/i,'charango']],fill:'acu',mel:'cho',band:2.6,fillAll:1,fillSkip:/intro/i,fogPat:[0,1,2,3].flatMap(q=>[[q,'D',q%2?.85:1],[q+.5,'D',.72],[q+.75,'U',.66]])},   // la intro es solo sintetizador   // no tiene guitarra rasgueada: charango y sintetizadores (Wikipedia; 178 bpm)
+  'tren-al-sur':{def:'acu',rules:[[/charango/i,'charango']],fill:'acu',mel:'cho',band:2.6,fillAll:1,fillSkip:/intro/i,fogPat:[[0,'D',1],[.5,'U',.5],[1,'D',.8],[1.5,'U',.6],[2,'D',.95],[2.5,'U',.5],[3,'D',.8],[3.5,'U',.65]]},   // la intro es solo sintetizador   // no tiene guitarra rasgueada: charango y sintetizadores (Wikipedia; 178 bpm)
          // charango de Santaolalla (brillante, cuerdas dobles)
   'persiana-americana':{def:'cho',rules:[[/solo|lead/i,'crunch']]},                   // Cerati 1986: Jackson, chorus de los 80 y eco de corchea con puntillo
   'sweet-child':{def:'crunch'},                                                       // Slash: Les Paul, pastilla del mástil, Marshall alquilado, casi sin efectos
@@ -1169,9 +1169,10 @@ function stepBuild(){const key=S.songId+'|'+S.transpose+'|'+S.simple+'|'+seq.ite
       const vox=/\b(voz|voces|voice|vocals?|vox|voix|canto|coros?|choir)\b/i;
       const syn=GP.tracks.filter(T=>!T.drums&&!/guitar|bass/i.test(T.type)&&!vox.test(T.name||'')&&!(T.prog>=48&&T.prog<=55)&&!(T.prog>=88&&T.prog<=95)&&!(T.prog>=32&&T.prog<=39)&&T.ev.length>=8&&T.ev.reduce((a,e)=>a+e.notes.length,0)/T.ev.length<=1.4);
       const sbar=new Map();syn.forEach(T=>{const m={};T.ev.forEach(e=>{const k=barOf(e.b);(m[k]=m[k]||[]).push(e)});sbar.set(T,m)});
+      let synBest=null,sbc=0;syn.forEach(T=>{const c=Object.values(sbar.get(T)).filter(a=>a.length>=2).length;if(c>sbc){sbc=c;synBest=T}});   // la melodía de teclado más presente en la canción
       const F=[],PAT=gpGear().fogPat||[[0,'D',1],[1,'D',.8],[1.5,'U',.7],[2.5,'U',.7],[3,'D',.85],[3.5,'U',.7]];
       const strum=(b,d,dir,dyn,dead,ac)=>{const ch=chAt(b);if(!ch)return;let ns=full(ch,d,dir==='U');if(dead)ns=ns.map(n=>Object.assign({},n,{dead:true}));
-        if(ns.length)F.push({ii:itemAt(b),b,gp:{ns,lead:false,dyn,brush:dir==='U'?'Up':'Down',dur:d,tr:0,snd:'fog',role:'main',ac}})};
+        if(ns.length)F.push({ii:itemAt(b),b,gp:{ns,lead:false,dyn,brush:dir==='U'?'Up':'Down',dur:d,tr:90,snd:'fog',role:'main',ac}})};
       const lvl=['PPP','PP','P','MP','MF','F','FF','FFF'],atLeast=(d,m)=>lvl.indexOf(d||'MF')<lvl.indexOf(m)?m:d;
       GP.bars.forEach((bar,k)=>{const xs=bars[k]||[],len=bar.len||4;
         const solo1=ti=>{const T=GP.tracks[ti];if(!T||!T.ev.length)return false;if(T.solo1==null)T.solo1=T.ev.reduce((q,e)=>q+e.notes.length,0)/T.ev.length<=2.2;return T.solo1};   // pista de punteo: casi siempre notas sueltas o dobles
@@ -1185,7 +1186,7 @@ function stepBuild(){const key=S.songId+'|'+S.transpose+'|'+S.simple+'|'+seq.ite
         lead.forEach(x=>F.push(Object.assign({},x,{gp:Object.assign({},x.gp,{ns:fix(x.gp.ns),snd:'fog',lead:true})})));
         line.forEach(x=>F.push(Object.assign({},x,{gp:Object.assign({},x.gp,{ns:fix(x.gp.ns),snd:'fog',role:'main'})})));
         // melodía de teclados donde la guitarra no tiene línea propia
-        let mel=0;if(line.length<3&&lead.length<3){let best=null,bc=1;syn.forEach(T=>{const c=(sbar.get(T)[k]||[]).length;if(c>bc){bc=c;best=T}});
+        let mel=0;if(line.length<3&&lead.length<3){const best=synBest&&(sbar.get(synBest)[k]||[]).length>=2?synBest:null;
           if(best){(sbar.get(best)[k]||[]).forEach(e=>{const ns=e.notes.filter(n=>!n.skip).map(n=>{let m=n.midi;while(m>86)m-=12;while(m<52)m+=12;return Object.assign({},n,{midi:m})});if(ns.length){mel++;F.push({ii:itemAt(e.b),b:e.b,gp:{ns,lead:true,mel:true,dyn:atLeast(e.dyn,'MF'),brush:null,dur:e.d,tr:98,snd:'fog',role:'mel'}})}})}}
         const sustained=chd.length&&chd.length<=2&&chd.every(x=>(x.gp.dur||1)>=1.5);
         if(chd.length&&!sustained){const has16=chd.filter(x=>{const f=(x.b-bar.start)*4;return Math.abs(f-Math.round(f))<.02&&Math.round(f)%2===1}).length>=3,u=has16?.25:.5;
@@ -1193,7 +1194,7 @@ function stepBuild(){const key=S.songId+'|'+S.transpose+'|'+S.simple+'|'+seq.ite
             strum(x.b,Math.max(.25,x.gp.dur||.5),dir,atLeast(x.gp.dyn,dir==='D'?'MF':'MP'),x.gp.ns.every(n=>n.dead),i===0&&onGrid)});return}
         if(line.length>=3)return;   // riff o arpegio: la guitarra hace eso, sin rasgueo encima
         const soft=lead.length>=2||mel>=2;
-        PAT.forEach(([o,dir,a])=>{if(o>=len-1e-6)return;strum(bar.start+o,.5,dir,soft?(a>.9?'MF':'MP'):(a>.9?'F':'MF'),false,a>.9)})});
+        const lv=a=>a>=.95?'F':a>=.8?'MF':a>=.6?'MP':'P';PAT.forEach(([o,dir,a])=>{if(o>=len-1e-6)return;strum(bar.start+o,.5,dir,lv(soft?a*.85:a),false,a>=.95)})});
       ev.length=0;F.forEach(x=>ev.push(x))}
     else if(fogOn()){const F=[],main=mainT,mbar={};if(main)main.ev.forEach(e=>{const k=barOf(e.b);(mbar[k]=mbar[k]||[]).push(e)});
       const chAt=b=>(seq.items[itemAt(b)]||{}).chord,open=(ch,d)=>chordMidis(ch).map((m,i)=>m==null?null:{midi:m,str:i,fret:0,dur:d}).filter(Boolean);
@@ -1289,12 +1290,13 @@ function mixTick(){if(!ctx||!MIX.key)return;const now=ctx.currentTime,spb=60/((g
     if(now-m.last<.3&&now>=m.last-2){m.an.getFloatTimeDomainData(buf);let e=0;for(let i=0;i<buf.length;i++)e+=buf[i]*buf[i];const rms=Math.sqrt(e/buf.length);
       if(rms>3e-4){const lv=Math.log(rms);m.lg=m.lg==null?lv:m.lg+(lv-m.lg)*(m.n<12?.25:.035);m.n++}}}
   // referencia: la rítmica principal; si todavía no suena, la que se conozca
-  const ref=Object.values(T).find(m=>m.role==='main'&&m.lg!=null)||Object.values(T).find(m=>m.role!=='solo'&&m.lg!=null)||Object.values(T).find(m=>m.lg!=null);
+  const ref=(fogOn()&&T[90]&&T[90].lg!=null?T[90]:null)||Object.values(T).find(m=>m.role==='main'&&m.lg!=null)||Object.values(T).find(m=>m.role!=='solo'&&m.lg!=null)||Object.values(T).find(m=>m.lg!=null);
   if(ref)MIX.R=MIX.R==null?ref.lg:MIX.R+(ref.lg-MIX.R)*.1;
   // y el volumen general de las guitarras queda parejo de una canción a otra (una partitura muy cargada no sale a todo volumen)
   if(MIX.R!=null&&A.gpBus){const gb=clamp(Math.exp(-3.3-MIX.R),.25,2)*.8;if(MIX.gb==null||Math.abs(Math.log(gb/MIX.gb))>.03){MIX.gb=gb;A.gpBus.gain.setTargetAtTime(gb,now,MIX.n0?1.2:.05)}MIX.n0=1}
   for(const tr in T){const m=T[tr];if(!m.fd)continue;let w;
-    if(m.lg==null||MIX.R==null)w=m.role==='solo'?1.3:1;
+    if(fogOn())w=+tr===90?(Object.keys(T).some(k=>+k!==90&&/lead|solo|mel/.test(T[k].role||'')&&now-T[k].last<1.4)?.6:1):m.role==='solo'?1.5:m.role==='lead'||m.role==='mel'?1.35:1;   // fogata: una sola guitarra; el punteo siempre sobre el rasgueo, sin bajar
+    else if(m.lg==null||MIX.R==null)w=m.role==='solo'?1.3:1;
     else{w=Math.exp(MIX.R-m.lg)*(MIXR[m.role]||1)*(m.role==='solo'&&!rhyOn?.92:1);if(leadOn&&m.role!=='solo'&&m.role!=='mel')w*=m.role==='lead'?.7:.5}
     w=m.role==='main'||m.role==='rhy2'?clamp(w,.55,2.2):clamp(w,.3,2.2);   // nunca una pista a 4x ni la rítmica tapada: un solo arriba, sí; un desastre, no
 if(m.want==null||Math.abs(Math.log(w/m.want))>.02){m.want=w;m.fd.gain.setTargetAtTime(w,now,w<m.fd.gain.value?.25:.9)}}   // baja rápido para dejar pasar el solo, vuelve despacio
@@ -1380,9 +1382,10 @@ function playGp(g,t,vscale,spb,b){const k=g.tr,SN=gpSnd(),gk0=gpOrig()?(fogOn()?
     const v=voice(n.midi,{when:w,vel:vv,dir:up?'up':'down',mul:g.lead?1.05:.85,pan,bank:bk,dest:dst,soft:n.hopo&&!chord&&newSnd()?.012:strm&&!orig?(light?.022:.012):0,detune:flam?(Math.random()-.5)*8:0});GPV[key]=v;
     // expresión del solista: bends de la partitura, vibrato (y vibrato natural en notas largas de solo), slides y ligados sin púa
     if(!chord&&!n.dead&&newSnd()){const durS=Math.max(.05,n.dur*spb),dt=v.src.detune;
-      if(old&&old.slideOut&&old.midi!==n.midi&&Math.abs(old.midi-n.midi)<=12){dt.setValueAtTime((old.midi-n.midi)*100,w);dt.linearRampToValueAtTime(0,w+Math.min(.09,durS*.5))}
+      if(old&&old.slideOut&&old.midi!==n.midi&&Math.abs(old.midi-n.midi)<=12&&!fogOn()){dt.setValueAtTime((old.midi-n.midi)*100,w);dt.linearRampToValueAtTime(0,w+Math.min(.09,durS*.5))}
       if(n.bend&&n.bend.length){dt.setValueAtTime(n.bend[0][1],w);n.bend.forEach(([ps,c])=>dt.linearRampToValueAtTime(c,w+.005+ps*durS))}
-      if(n.vib||durS>=.35&&(g.role==='solo'||g.lead||g.mel)){const o=ctx.createOscillator(),og=ctx.createGain();o.frequency.value=n.vib?5.8:5.2;og.gain.setValueAtTime(0,w);og.gain.linearRampToValueAtTime((n.vib?45:24)*(fogOn()?.35:1),w+Math.min(.5,durS*.7));o.connect(og).connect(dt);o.start(w+Math.min(.18,durS*.3));o.stop(w+durS+1.2)}
+      if(fogOn()){v.f.frequency.value=Math.min(v.f.frequency.value,2600+4200*vv)}   // nylon: punteo cálido, no brillante como caja de música
+      else if(n.vib||durS>=.35&&(g.role==='solo'||g.lead||g.mel)){const o=ctx.createOscillator(),og=ctx.createGain();o.frequency.value=n.vib?5.8:5.2;og.gain.setValueAtTime(0,w);og.gain.linearRampToValueAtTime((n.vib?45:24)*(fogOn()?.35:1),w+Math.min(.5,durS*.7));o.connect(og).connect(dt);o.start(w+Math.min(.18,durS*.3));o.stop(w+durS+1.2)}
       v.slideOut=n.slide}
     let len=n.pm?Math.min(orig?.16:.2,n.dur*spb):fogOn()&&!chord?Math.max(.3,Math.min(2.4,n.dur*spb*1.8+.25)):g.dense&&chord?Math.max(1,n.dur)*spb+.08:Math.max(.06,n.dur*spb*(n.letRing?2.5:1))+.05;if(g.ring&&!n.pm&&!n.dead&&!/dist|crunch/.test(gk))len=Math.max(len,Math.min(3.2,4*spb));   // arpegio: suena hasta que esa cuerda se vuelve a tocarstopVoice(v,w+len,n.pm?.04:.07);
     // 12 cuerdas: las cuatro graves llevan su octava, las dos agudas van dobladas al unísono; chorus: una segunda guitarra apenas desafinada
