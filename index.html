@@ -3358,7 +3358,7 @@ function gpNameFromFile(fn,G){const base=fn.replace(/\.[^.]+$/,'');let [ar,ti]=b
 function gpDemoFor(n){let best=null,bl=0;DEMOS.forEach(x=>{[gpNorm(x.title.replace(/\(solo\)/i,'')),gpNorm(x.title)].concat((x.aka||[]).map(gpNorm)).forEach(t=>{if(t.length>3&&n.includes(t)&&t.length>bl){best=x;bl=t.length}})});return best}
 function gpTarget(fn,G,sel,picked){const n0=gpNorm(fn);
   if(sel==='__new')return gpNewSong(fn,G);
-  if(sel&&sel!=='__auto'){const ss=allSongs().find(x=>x.id===sel);if(picked||ss&&n0.includes(gpNorm(ss.title)))return sel}
+  if(sel&&sel!=='__auto'){const ss=allSongs().find(x=>x.id===sel);if(picked||ss&&(ss.zone==='solos'||n0.includes(gpNorm(ss.title))))return sel}   // un solo lleva el archivo de la canción completa: se guarda en el solo que elegiste
   const n=gpNorm(fn),hit=gpDemoFor(n);
   if(hit&&(!/(^| )solo( |$)/.test(n)||/solo/i.test(hit.title)||!gpHas(hit.id)))return hit.id;
   const own=userSongs.find(x=>x.gpFile===fn);if(own)return own.id;
@@ -3729,8 +3729,8 @@ addEventListener('hashchange',openFromHash);
 if(!openFromHash()&&firstRun)openSheet('songs');
 (async()=>{try{for(const x of DEMOS)if(!GPHAVE.has(x.id)&&await odbGet('gp|'+x.id))GPHAVE.add(x.id);
   // un archivo que quedó guardado en otra canción (por ejemplo Wish You Were Here dentro de Tren al Sur) vuelve a la suya
-  for(const x of DEMOS){if(!GPHAVE.has(x.id))continue;const r=await odbGet('gp|'+x.id);if(!r||!r.name)continue;const n=gpNorm(r.name),own=gpDemoFor(n);
-    if(own&&own.id!==x.id){if(!GPHAVE.has(own.id)||!(((await odbGet('gp|'+own.id))||{}).name&&gpDemoFor(gpNorm((await odbGet('gp|'+own.id)).name))===own)){await odbPut('gp|'+own.id,r);GPHAVE.add(own.id)}
+  for(const x of DEMOS){if(!GPHAVE.has(x.id)||x.zone==='solos')continue;const r=await odbGet('gp|'+x.id);if(!r||!r.name)continue;const n=gpNorm(r.name),own=gpDemoFor(n);   // los solos usan el archivo de la canción completa: nunca se mueven
+    if(own&&own.id!==x.id&&own.zone!=='solos'){if(!GPHAVE.has(own.id)||!(((await odbGet('gp|'+own.id))||{}).name&&gpDemoFor(gpNorm((await odbGet('gp|'+own.id)).name))===own)){await odbPut('gp|'+own.id,r);GPHAVE.add(own.id)}
       await odbDel('gp|'+x.id);GPHAVE.delete(x.id);delete GPS[x.id];if(S.songId===x.id||S.songId===own.id){delete GPS[own.id];learnedLoad(S.songId)}}}
   // canciones que importaste antes como "nuevas" y que ahora están en el cancionero: su archivo pasa a la canción del cancionero
   for(const u of userSongs.filter(x=>x.gp)){const solo=/\(solo\)/i.test(u.title),d=DEMOS.find(x=>gpNorm(x.title)===gpNorm(u.title.replace(/\(solo\)/i,'')));if(!d||solo&&GPHAVE.has(d.id))continue;
