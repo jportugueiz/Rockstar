@@ -1198,7 +1198,8 @@ function stepBuild(){const key=S.songId+'|'+S.transpose+'|'+S.simple+'|'+seq.ite
             strum(x.b,Math.max(.25,x.gp.dur||.5),dir,atLeast(x.gp.dyn,dir==='D'?'MF':'MP'),x.gp.ns.every(n=>n.dead),i===0&&onGrid)});return}
         if(line.length>=3)return;   // riff o arpegio: la guitarra hace eso, sin rasgueo encima
         const soft=lead.length>=2||mel>=2;
-        const lv=a=>a>=.95?'F':a>=.8?'MF':a>=.6?'MP':'P';PAT.forEach(([o,dir,a])=>{if(o>=len-1e-6)return;strum(bar.start+o,dir==='X'?.2:.5,dir==='X'?'D':dir,lv(soft?a*.85:a),dir==='X',a>=.95)})});
+        const lv=a=>a>=.95?'F':a>=.8?'MF':a>=.6?'MP':'P',half=mbOrig()*60>=140&&Math.round(len)===4,ph=half?(k%2)*4:0;   // canción rápida: el rasgueo de fogata a medio tiempo (dura dos compases), como lo toca una persona
+        PAT.forEach(([o0,dir,a])=>{const o=half?o0*2-ph:o0;if(o<-1e-6||o>=len-1e-6)return;strum(bar.start+o,dir==='X'?.2:.5,dir==='X'?'D':dir,lv(soft?a*.85:a),dir==='X',a>=.95)})});
       ev.length=0;F.forEach(x=>ev.push(x))}
     else if(fogOn()){const F=[],main=mainT,mbar={};if(main)main.ev.forEach(e=>{const k=barOf(e.b);(mbar[k]=mbar[k]||[]).push(e)});
       const chAt=b=>(seq.items[itemAt(b)]||{}).chord,open=(ch,d)=>chordMidis(ch).map((m,i)=>m==null?null:{midi:m,str:i,fret:0,dur:d}).filter(Boolean);
@@ -1630,6 +1631,7 @@ function clPlay(e,t,v){playEv(e,t,v,1/MB.rate)}
 function clPass(vel,dir){
   ensureAudio();if(seq.type!=='chords'||!seq.items.length)return;stepBuild();const E=STEP.ev;if(!E.length)return;
   const now=ctx.currentTime;if(now-MB.last<.035)return;
+  if(fogOn()){const fb=GTS.fog.nb;ensureBank(fb);if(!(banks[fb]&&banks[fb].ready)){if(!clPass.lm||now-clPass.lm>2){clPass.lm=now;flashMsg('Afinando la guitarra… un segundo')}return}}   // fogata: parte limpia, con la guitarra ya cargada
   if(MB.hold&&idx===MB.idx){if(MB.go&&loopOn()&&MB.sec<UN().length-1){vampStop();MB.hold=false;MB.go=false;MB.sec++;if(S.auto)flashMsg('▶ '+UN()[MB.sec].name);render()}
     else if(loopOn()){MB.last=now;mbVamp(dir,vel);seenHint();return}else MB.hold=false}
   if(MB.key!==STEP.key){MB.key=STEP.key;mbSeek(MB.pos)}
