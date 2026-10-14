@@ -1450,9 +1450,10 @@ function cabIR(k){if(!A.irs||!A.irs[k])return null;const cv=ctx.createConvolver(
    La salida MAIN tiene lo mismo más ecualizador gráfico de 31 bandas, limitador y un procesador de sistema con crossover de 3 vías.
    Lo que no se toca queda exactamente como lo deja la mezcla automática: sin nada guardado, la app suena igual que siempre.
    PLUGINS: cada procesador es una entrada de CS_PLUG (nombre, controles y cómo se arma con Web Audio). Para sumar uno nuevo basta agregar su entrada. */
+const RK_CONSOLE=false;   // true solo en la página aparte de la consola (consola.html); la app de los músicos no la muestra
 const BAKED_MIX={};   // mezclas fijas que vienen dentro de la app (las del ingeniero, una vez aprobadas)
 const CS={mix:JSON.parse(JSON.stringify(BAKED_MIX)),db:null,canWrite:null,open:false,sel:null,unsub:null,saveT:null,status:'',songSub:null,drag:false,cue:null,bypass:false};
-try{const L=store.get('csmix',null);if(L)Object.entries(L).forEach(([k,v])=>{CS.mix[k]=v})}catch(_){}
+if(RK_CONSOLE)try{const L=store.get('csmix',null);if(L)Object.entries(L).forEach(([k,v])=>{CS.mix[k]=v})}catch(_){}   // en la app manda lo guardado en la base, no restos locales
 const csMode=()=>fogOn()?'fog':'orig';
 function csCur(id){id=id||S.songId;const m=CS.mix[id]||(CS.mix[id]={});const k=csMode();return m[k]||(m[k]={tr:{},bus:{},master:{}})}
 function csPeek(){if(CS.bypass)return null;const m=CS.mix[S.songId];return m&&m[csMode()]||null}
@@ -2600,7 +2601,7 @@ $('#instBtn').onclick=()=>openSheet('inst');$('#chordBtn').onclick=()=>openSheet
 $('#bandBtn').onclick=()=>openSheet('band');$('#folderBtn').onclick=()=>openSheet('folder');$('#moreBtn').onclick=()=>openSheet('more');
 $('#favBtn').onclick=()=>{if(S.mode==='libre')return;const id=song().id;favs.has(id)?favs.delete(id):favs.add(id);store.set('favs',[...favs]);render()};
 
-function loadSong(id,fromStart){if(OR.els&&OR.id!==id)origRelease();
+function loadSong(id,fromStart){try{setTimeout(csSubSong,0)}catch(_){}if(OR.els&&OR.id!==id)origRelease();
   const s=allSongs().find(x=>x.id===id);if(!s)return;
   if(fromStart){resume[id]={};store.set('resume',resume)}
   S.songId=id;S.fogata=!!(S.fogBy||{})[id];staticKey='';S.transpose=0;S.gpSnd=(S.gpSndBy||{})[id]||'orig';MB.sec=null;MB.go=false;MB.hold=false;
@@ -4445,10 +4446,10 @@ function csTouch(ch,mut,o){o=o||{};const p=csParams(ch,true);mut(p);if(ch.kind==
   try{csApplyAll()}catch(_){}csSave();if(o.redraw)CSUI.cache=null;csLight(ch);if(o.redraw)csRenderView()}
 function csSave(){CS.status='Guardando…';csStatus();clearTimeout(CS.saveT);CS.saveT=setTimeout(async()=>{try{store.set('csmix',CS.mix)}catch(_){}
     const id=S.songId,doc=CS.mix[id];if(CS.db&&CS.canWrite!==false&&doc){try{await CS.db.doc('mixes/'+id).set(JSON.parse(JSON.stringify(doc)));CS.status='✓ Guardado para todos';CS.canWrite=true}catch(e){CS.canWrite=false;CS.status='✓ Guardado en este equipo'}}else CS.status='✓ Guardado en este equipo';csStatus()},900)}
-function csStatus(){const e=CSUI.el&&CSUI.el.querySelector('.dm-status');if(e)e.textContent=CS.status||(CS.db&&CS.canWrite!==false?'EN LÍNEA · lo que guardes llega a todos':'LOCAL · exporta la mezcla para compartirla')}
+function csStatus(){const e=CSUI.el&&CSUI.el.querySelector('.dm-status');if(e)e.textContent=CS.status||(CS.db&&CS.canWrite!==false?'EN LÍNEA · las mezclas quedan guardadas en la consola':'LOCAL · exporta la mezcla para compartirla')}
 async function csDbInit(){try{if(!window.claude||!window.claude.use)return;const db=await window.claude.use('db');if(!db)return;CS.db=db;const u=await window.claude.use('user');if(u){const w=await u.can('data.write');if(w===false)CS.canWrite=false;else if(w===true)CS.canWrite=true}csSubSong();csStatus()}catch(_){}}
 function csSubSong(){if(!CS.db)return;const id=S.songId;if(CS.songSub===id)return;if(CS.unsub){try{CS.unsub()}catch(_){}}CS.songSub=id;
-  try{CS.unsub=CS.db.doc('mixes/'+id).onSnapshot(sn=>{if(!sn.exists||sn.metadata.hasPendingWrites||CS.drag)return;const d=sn.data();CS.mix[id]=JSON.parse(JSON.stringify(d||{}));
+  try{CS.unsub=CS.db.doc('mixes/'+id).onSnapshot(sn=>{if(sn.metadata.hasPendingWrites||CS.drag)return;if(!sn.exists){if(CS.mix[id]&&!RK_CONSOLE){if(BAKED_MIX[id])CS.mix[id]=JSON.parse(JSON.stringify(BAKED_MIX[id]));else delete CS.mix[id];csDropRigs();STEP.key=null;try{csApplyAll()}catch(_){}}return}const d=sn.data();CS.mix[id]=JSON.parse(JSON.stringify(d||{}));
       csDropRigs();STEP.key=null;try{csApplyAll()}catch(_){}if(CS.open)csRender()},()=>{})}catch(_){}}
 function csReplay(){try{if(DEMO.on){demoStop();stepBuild();demoStart()}else stepBuild()}catch(_){}}
 /* ── dónde suena cada canal (para medidores, reducción y analizador) ── */
@@ -4553,7 +4554,7 @@ function csOvCol(ch){const p=csParams(ch),d=document.createElement('div');d.clas
     if(was||s==='name'||s==='ins'||s==='dca'){CSUI.selSec=s;csView('ch');return}const tt=csSecTT(ch,s);csFocus(tt?Object.assign(tt,{el:t}):null);csOvMark()});
   return d}
 function csOvMark(){if(!CSUI.el)return;CSUI.el.querySelectorAll('.dm-col').forEach(c=>c.classList.toggle('sel',!!CS.sel&&c.dataset.ch===CS.sel.id));csSelBox()}
-function csViewOv(V){V.className='dm-view ov';const L=csInputs();if(!L.length){V.innerHTML='<div class="dm-hint">Esta canción no tiene pistas cargadas todavía.</div>';return}
+function csViewOv(V){V.className='dm-view ov';const L=csInputs();if(!L.length){V.innerHTML='<div class="dm-hint">Esta canción no tiene pistas cargadas todavía. Carga el archivo de canciones con <b>⬆ CANCIONES</b> (arriba) y elige la canción en ESCENAS.</div>';return}
   const pages=Math.ceil(L.length/12);CSUI.ovPage=clamp(CSUI.ovPage||0,0,pages-1);const lab=document.createElement('div');lab.className='dm-ovlab';
   lab.innerHTML='<div class="sp"></div>'+['','HA','HPF','DYN1','EQ','DYN2','INSERT','SEND','PAN','DCA / MUTE','FADER'].slice(1).map(s=>`<div>${s}</div>`).join('');
   const grid=document.createElement('div');grid.className='dm-ovgrid';L.slice(CSUI.ovPage*12,CSUI.ovPage*12+12).forEach(ch=>grid.appendChild(csOvCol(ch)));
@@ -4683,7 +4684,7 @@ function csSongList(){return allSongs().filter(x=>gpHas(x.id)||x.gp&&!x.needGp)}
 function csRecall(id,fog){try{demoStop();if(band.on)stopBand()}catch(_){}(S.fogBy=S.fogBy||{})[id]=fog;S.fogata=fog;persist();if(id!==S.songId||fog!==fogOn())loadSong(id,true);CS.sel=null;csSubSong();setTimeout(csRender,500)}
 function csViewScene(V){V.className='dm-view scenev';const L=csSongList();const t=document.createElement('table');t.className='dm-scenes';t.innerHTML='<thead><tr><th>N.º</th><th>CANCIÓN</th><th>ORIGINAL</th><th>FOGATA</th><th>CANALES</th></tr></thead>';const tb=document.createElement('tbody');
   const has=(id,k)=>{const m=CS.mix[id]&&CS.mix[id][k];return !!m&&JSON.stringify(m).length>40};
-  L.forEach((s,i)=>{const tr=document.createElement('tr');if(s.id===S.songId)tr.className='cur';const G=GPS[s.id];tr.innerHTML=`<td>${String(i+1).padStart(3,'0')}</td><td>${csEsc(s.title)}<small>${csEsc(s.artist||'')}</small></td><td></td><td></td><td>${G?G.tracks.length:'—'}</td>`;
+  L.forEach((s,i)=>{const tr=document.createElement('tr');if(s.id===S.songId)tr.className='cur';const G=GPS[s.id];tr.innerHTML=`<td>${String(i+1).padStart(3,'0')}</td><td>${csEsc(s.title)}<small>${csEsc(s.artist||'')}</small></td><td></td><td></td><td>${G?G.tracks.length:''}</td>`;
     ['orig','fog'].forEach((k,j)=>{const cur=s.id===S.songId&&csMode()===k;const b=csBtn((cur?'● ':'')+(has(s.id,k)?'MEZCLA':'AUTO'),cur,has(s.id,k)?'stored':'',()=>csRecall(s.id,k==='fog'));tr.children[2+j].appendChild(b)});tb.appendChild(tr)});t.appendChild(tb);
   const tools=document.createElement('div');tools.className='dm-scenetools';
   tools.append(csBtn('EXPORTAR MEZCLAS',false,'',csExport),Object.assign(document.createElement('label'),{className:'dm-btn',innerHTML:'IMPORTAR<input type="file" accept=".json,application/json" hidden>'}),
@@ -4764,13 +4765,14 @@ function csBuild(){const el=document.createElement('div');el.id='rkConsole';el.h
     <div class="dm-selch"><span class="no"></span><b></b></div>
     <div class="dm-scene"><button class="dm-btn ghost dm-prev">◀</button><div class="sb"><small>ESCENA</small><span class="dm-scno"></span><span class="dm-sct"></span></div><button class="dm-btn ghost dm-next">▶</button><div class="dm-scmode"><button class="dm-btn" data-sc="orig">ORIGINAL</button><button class="dm-btn" data-sc="fog">FOGATA</button></div></div>
     <div class="dm-trans"><button class="dm-btn dm-play">▶ PLAY</button><button class="dm-btn dm-stop">■ STOP</button><button class="dm-btn dm-byp" title="Escuchar la app sin la consola">BYPASS</button><button class="dm-btn dm-cue cuebar" hidden></button></div>
-    <div class="dm-status"></div><div class="dm-clock"></div><button class="dm-btn ghost dm-close">✕</button></header>
+    <div class="dm-status"></div><div class="dm-clock"></div><label class="dm-btn dm-lib" title="El archivo de canciones de Rockstar">⬆ CANCIONES<input type="file" accept=".json,application/json" hidden></label><button class="dm-btn ghost dm-close">✕</button></header>
    <nav class="dm-tabs">${[['ov','OVERVIEW'],['ch','CANAL'],['rack','RACK'],['meter','METER'],['scene','ESCENAS'],['dca','DCA'],['sys','SISTEMA']].map(([k,n])=>`<button class="dm-btn" data-v="${k}">${n}</button>`).join('')}</nav>
    <main class="dm-view"></main>
    <footer class="dm-baywrap"><div class="dm-layers">${[['in','ENTRADAS'],['band','BANDA'],['dca','DCA'],['out','SALIDAS']].map(([k,n])=>`<button class="dm-btn" data-l="${k}">${n}</button>`).join('')}</div><div class="dm-strips"></div>
     <div class="dm-tt"><div class="kn"><i></i></div><div class="tx"><small>TOUCH AND TURN</small><b class="tl"></b><span class="tv"></span></div></div></footer>`;
   document.body.appendChild(el);CSUI.el=el;
-  el.querySelector('.dm-close').onclick=csClose;el.querySelector('.dm-brand').onclick=()=>csView('ov');
+  el.querySelector('.dm-close').onclick=csClose;if(RK_CONSOLE)el.querySelector('.dm-close').hidden=true;
+  el.querySelector('.dm-lib input').onchange=async e=>{const f=e.target.files[0];if(!f)return;CS.status='Cargando canciones…';csStatus();await libImport(f);CS.status='';try{closeSheet()}catch(_){}flashMsg(sheet.libMsg||'Listo');CS.sel=null;csRender();e.target.value=''};el.querySelector('.dm-brand').onclick=()=>csView('ov');
   el.querySelectorAll('.dm-tabs .dm-btn').forEach(b=>b.onclick=()=>csView(b.dataset.v));
   el.querySelectorAll('.dm-layers .dm-btn').forEach(b=>b.onclick=()=>{CSUI.layer=b.dataset.l;CSUI.mtr=CSUI.mtr.filter(m=>!m.el.closest('.dm-strips'));csBay()});
   el.querySelector('.dm-selch').onclick=()=>csView('ch');
@@ -4784,9 +4786,8 @@ function csBuild(){const el=document.createElement('div');el.id='rkConsole';el.h
   csTTInit(el.querySelector('.dm-tt'));
   const css=document.createElement('style');css.textContent=CS_CSS;document.head.appendChild(css)}
 // entrada: #consola en el link, o 5 toques seguidos en el nombre de la canción
-function csHash(){if(location.hash==='#consola')csOpen()}
-addEventListener('hashchange',csHash);setTimeout(csHash,1200);
-document.addEventListener('pointerdown',e=>{const t=e.target.closest&&e.target.closest('#curName');if(!t)return;const now=performance.now();CSUI.taps=CSUI.taps.filter(x=>now-x<2000);CSUI.taps.push(now);if(CSUI.taps.length>=5){CSUI.taps=[];csOpen()}},true);
+// la consola vive en su propia página (para el ingeniero); la app de los músicos solo aplica las mezclas guardadas
+if(RK_CONSOLE){try{document.title='Rockstar Consola'}catch(_){}setTimeout(()=>{try{closeSheet()}catch(_){}csOpen()},900)}
 setTimeout(csDbInit,800);
 const CS_CSS=`
 #rkConsole{--bg:#141517;--pn:#1d1f22;--tl:#26292d;--tl2:#2f3237;--ln:#3a3e44;--tx:#eceef0;--dm:#8d939b;--pink:#FF4FA0;--blue:#3D8BFF;--grn:#3AD06A;--yel:#F5D02A;--org:#FF9A2E;
