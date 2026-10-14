@@ -4410,6 +4410,8 @@ learnedLoad(S.songId);
    (Premium Rack, FX Rack, GEQ); METER con analizador de espectro; lista de ESCENAS; DCA y grupos de mute; procesador de SISTEMA;
    abajo, el banco de faders por capas (ENTRADAS · BANDA · DCA · SALIDAS) y la perilla TOUCH AND TURN, que mueve el control marcado en rosado.
    Se abre con el link que termina en #consola, o tocando 5 veces seguidas el nombre de la canción. */
+CS.dirty=new Set((()=>{try{return store.get('csdirty',[])||[]}catch(_){return[]}})());
+const CS_SYNC='trig_01PEKETXdwu2grXsjNZvANgd';   // tarea que copia lo subido desde la consola a la app
 const CSUI={el:null,raf:0,taps:[],view:'ov',layer:'in',focus:null,mtr:[],rta:[],grs:[],lv:{},rackTab:'prem',bayPage:0};
 const CS_COLORS=['#3D7BFF','#FF8A1F','#F5D02A','#A66BFF','#22D3EE','#FF4FA0','#FF3B30','#34D058'];
 const CS_AMPS=[['acu','Acústica'],['acm','Acústica grabada nota a nota'],['doce','Acústica 12 cuerdas'],['nyl','Nylon'],['strat','Fender limpia'],['cho','Fender con chorus'],['neck','Eléctrica suave'],['tw','Fender Twin (IA)'],['tws','Fender Twin + eco corto (IA)'],['vl','Vox al borde (IA)'],['vc','Vox empujado (IA)'],['nam_lo','Marshall suave (IA)'],['nam_rhy','Marshall crunch (IA)'],['nam_neck','Marshall mástil (IA)'],['nam_lead','Marshall solista (IA)'],['j9b','Marshall JCM900 dist. (IA)'],['gretsch','Gretsch hueca'],['arch','Archtop'],['crunch','Crunch (simulado)'],['dist','Distorsión (simulado)'],['charango','Charango'],['fla','Flamenca']];
@@ -4444,13 +4446,21 @@ function csDropRigs(tr){Object.keys(RIG.map).forEach(id=>{if(tr==null||id.endsWi
 // cambiar algo: se aplica al sonido al instante y se guarda; o.rebuild rearma la cadena de la guitarra; o.redraw redibuja la vista
 function csTouch(ch,mut,o){o=o||{};const p=csParams(ch,true);mut(p);if(ch.kind==='gtr'&&o.rebuild){csDropRigs(ch.tr);if(o.rebuild==='amp'){STEP.key=null;try{gpBanks(GPS[S.songId])}catch(_){}}}
   try{csApplyAll()}catch(_){}csSave();if(o.redraw)CSUI.cache=null;csLight(ch);if(o.redraw)csRenderView()}
-function csSave(){CS.status='Guardando…';csStatus();clearTimeout(CS.saveT);CS.saveT=setTimeout(async()=>{try{store.set('csmix',CS.mix)}catch(_){}
+function csSave(){if(RK_CONSOLE&&S.songId){CS.dirty.add(S.songId);try{store.set('csdirty',[...CS.dirty])}catch(_){}csUpBtn()}CS.status='Guardando…';csStatus();clearTimeout(CS.saveT);CS.saveT=setTimeout(async()=>{try{store.set('csmix',CS.mix)}catch(_){}
     const id=S.songId,doc=CS.mix[id];if(CS.db&&CS.canWrite!==false&&doc){try{await CS.db.doc('mixes/'+id).set(JSON.parse(JSON.stringify(doc)));CS.status='✓ Guardado para todos';CS.canWrite=true}catch(e){CS.canWrite=false;CS.status='✓ Guardado en este equipo'}}else CS.status='✓ Guardado en este equipo';csStatus()},900)}
 function csStatus(){const e=CSUI.el&&CSUI.el.querySelector('.dm-status');if(e)e.textContent=CS.status||(CS.db&&CS.canWrite!==false?'EN LÍNEA · las mezclas quedan guardadas en la consola':'LOCAL · exporta la mezcla para compartirla')}
 async function csDbInit(){try{if(!window.claude||!window.claude.use)return;const db=await window.claude.use('db');if(!db)return;CS.db=db;const u=await window.claude.use('user');if(u){const w=await u.can('data.write');if(w===false)CS.canWrite=false;else if(w===true)CS.canWrite=true}csSubSong();csStatus()}catch(_){}}
 function csSubSong(){if(!CS.db)return;const id=S.songId;if(CS.songSub===id)return;if(CS.unsub){try{CS.unsub()}catch(_){}}CS.songSub=id;
   try{CS.unsub=CS.db.doc('mixes/'+id).onSnapshot(sn=>{if(sn.metadata.hasPendingWrites||CS.drag)return;if(!sn.exists){if(CS.mix[id]&&!RK_CONSOLE){if(BAKED_MIX[id])CS.mix[id]=JSON.parse(JSON.stringify(BAKED_MIX[id]));else delete CS.mix[id];csDropRigs();STEP.key=null;try{csApplyAll()}catch(_){}}return}const d=sn.data();CS.mix[id]=JSON.parse(JSON.stringify(d||{}));
       csDropRigs();STEP.key=null;try{csApplyAll()}catch(_){}if(CS.open)csRender()},()=>{})}catch(_){}}
+function csUpBtn(){const b=CSUI.el&&CSUI.el.querySelector('.dm-up');if(!b)return;const n=CS.dirty.size;b.classList.toggle('pend',n>0);b.textContent=CS.upBusy?'SUBIENDO…':n?'GUARDAR Y SUBIR ('+n+')':'✓ TODO SUBIDO'}
+// guardar sesión y subir: deja la mezcla de cada canción tocada lista para la app y avisa a la tarea que la copia (si se puede, al tiro; si no, antes de una hora)
+async function csUpload(){if(CS.upBusy)return;if(!CS.db){CS.status='Sin conexión: no se pudo subir. Usa EXPORTAR en ESCENAS.';csStatus();return}
+  CS.upBusy=true;csUpBtn();clearTimeout(CS.saveT);const ids=[...new Set([...CS.dirty,S.songId])].filter(id=>CS.mix[id]);let ok=0,bad=0;
+  for(const id of ids){const d=JSON.parse(JSON.stringify(CS.mix[id]));try{await CS.db.doc('mixes/'+id).set(d);await CS.db.doc('subir/'+id).set(Object.assign(d,{subido:Date.now()}));CS.dirty.delete(id);ok++}catch(_){bad++}}
+  try{store.set('csdirty',[...CS.dirty]);store.set('csmix',CS.mix)}catch(_){}
+  let now=false;if(ok){try{const m=window.claude&&await window.claude.use('mcp');if(m){await m.callTool('Claude Code Remote','fire_trigger',{trigger_id:CS_SYNC,text:'Subida desde la consola'});now=true}}catch(_){}}
+  CS.upBusy=false;CS.status=bad?'No se pudieron subir '+bad+' canciones (¿tienes permiso de edición en la consola?)':ok?(now?'✓ Subido: en la app en un par de minutos':'✓ Subido: llega a la app antes de una hora'):'Nada que subir';csStatus();csUpBtn()}
 function csReplay(){try{if(DEMO.on){demoStop();stepBuild();demoStart()}else stepBuild()}catch(_){}}
 /* ── dónde suena cada canal (para medidores, reducción y analizador) ── */
 function csStripOf(ch){if(!ch||!ctx)return null;if(ch.kind==='gtr'){let s=null;Object.entries(RIG.map).forEach(([k,r])=>{if(k.endsWith('#'+ch.tr)&&r.cs)s=r.cs});return s}if(ch.kind==='bus')return A.csb&&A.csb[ch.bus];if(ch.kind==='main')return A.csm;return null}
@@ -4765,13 +4775,13 @@ function csBuild(){const el=document.createElement('div');el.id='rkConsole';el.h
     <div class="dm-selch"><span class="no"></span><b></b></div>
     <div class="dm-scene"><button class="dm-btn ghost dm-prev">◀</button><div class="sb"><small>ESCENA</small><span class="dm-scno"></span><span class="dm-sct"></span></div><button class="dm-btn ghost dm-next">▶</button><div class="dm-scmode"><button class="dm-btn" data-sc="orig">ORIGINAL</button><button class="dm-btn" data-sc="fog">FOGATA</button></div></div>
     <div class="dm-trans"><button class="dm-btn dm-play">▶ PLAY</button><button class="dm-btn dm-stop">■ STOP</button><button class="dm-btn dm-byp" title="Escuchar la app sin la consola">BYPASS</button><button class="dm-btn dm-cue cuebar" hidden></button></div>
-    <div class="dm-status"></div><div class="dm-clock"></div><label class="dm-btn dm-lib" title="El archivo de canciones de Rockstar">⬆ CANCIONES<input type="file" accept=".json,application/json" hidden></label><button class="dm-btn ghost dm-close">✕</button></header>
+    <div class="dm-status"></div><div class="dm-clock"></div><button class="dm-btn dm-up" title="Guarda la sesión y la sube a la app">GUARDAR Y SUBIR</button><label class="dm-btn dm-lib" title="El archivo de canciones de Rockstar">⬆ CANCIONES<input type="file" accept=".json,application/json" hidden></label><button class="dm-btn ghost dm-close">✕</button></header>
    <nav class="dm-tabs">${[['ov','OVERVIEW'],['ch','CANAL'],['rack','RACK'],['meter','METER'],['scene','ESCENAS'],['dca','DCA'],['sys','SISTEMA']].map(([k,n])=>`<button class="dm-btn" data-v="${k}">${n}</button>`).join('')}</nav>
    <main class="dm-view"></main>
    <footer class="dm-baywrap"><div class="dm-layers">${[['in','ENTRADAS'],['band','BANDA'],['dca','DCA'],['out','SALIDAS']].map(([k,n])=>`<button class="dm-btn" data-l="${k}">${n}</button>`).join('')}</div><div class="dm-strips"></div>
     <div class="dm-tt"><div class="kn"><i></i></div><div class="tx"><small>TOUCH AND TURN</small><b class="tl"></b><span class="tv"></span></div></div></footer>`;
   document.body.appendChild(el);CSUI.el=el;
-  el.querySelector('.dm-close').onclick=csClose;if(RK_CONSOLE)el.querySelector('.dm-close').hidden=true;
+  el.querySelector('.dm-close').onclick=csClose;if(RK_CONSOLE)el.querySelector('.dm-close').hidden=true;else el.querySelector('.dm-up').hidden=true;el.querySelector('.dm-up').onclick=csUpload;csUpBtn();
   el.querySelector('.dm-lib input').onchange=async e=>{const f=e.target.files[0];if(!f)return;CS.status='Cargando canciones…';csStatus();await libImport(f);CS.status='';try{closeSheet()}catch(_){}flashMsg(sheet.libMsg||'Listo');CS.sel=null;csRender();e.target.value=''};el.querySelector('.dm-brand').onclick=()=>csView('ov');
   el.querySelectorAll('.dm-tabs .dm-btn').forEach(b=>b.onclick=()=>csView(b.dataset.v));
   el.querySelectorAll('.dm-layers .dm-btn').forEach(b=>b.onclick=()=>{CSUI.layer=b.dataset.l;CSUI.mtr=CSUI.mtr.filter(m=>!m.el.closest('.dm-strips'));csBay()});
@@ -4807,7 +4817,7 @@ const CS_CSS=`
 #rkConsole .dm-scene{display:flex;align-items:center;gap:4px;background:var(--tl);border-radius:4px;padding:3px}
 #rkConsole .dm-scene .sb{display:flex;align-items:center;gap:8px;padding:0 6px;min-width:150px;max-width:260px}#rkConsole .dm-scno{font:700 14px 'IBM Plex Mono';color:var(--grn)}#rkConsole .dm-sct{font:600 13px 'Instrument Sans';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #rkConsole .dm-scmode{display:flex;gap:2px}#rkConsole .dm-scmode .dm-btn.lit{background:var(--grn);color:#04150a;border-color:#1f9a48}
-#rkConsole .dm-trans{display:flex;gap:4px}#rkConsole .dm-play.lit{background:var(--grn);color:#04150a}#rkConsole .dm-byp.lit{background:var(--org);color:#1a0d00}
+#rkConsole .dm-trans{display:flex;gap:4px}#rkConsole .dm-up{background:#1f6f3a;border-color:#0f4022}#rkConsole .dm-up.pend{background:var(--pink);border-color:#b8306f;color:#fff;animation:dmpulse 1.6s infinite}@keyframes dmpulse{50%{box-shadow:0 0 14px var(--pink)}}#rkConsole .dm-play.lit{background:var(--grn);color:#04150a}#rkConsole .dm-byp.lit{background:var(--org);color:#1a0d00}
 #rkConsole .dm-status{flex:1;min-width:120px;font:600 10px 'IBM Plex Mono';color:var(--dm);letter-spacing:.06em}#rkConsole .dm-clock{font:700 14px 'IBM Plex Mono';color:var(--tx)}
 #rkConsole .dm-tabs{display:flex;gap:2px;padding:4px 8px;background:#101112;border-bottom:1px solid #000;overflow-x:auto}#rkConsole .dm-tabs .dm-btn{border-radius:3px 3px 0 0;min-width:84px}
 #rkConsole .dm-view{flex:1;min-height:0;overflow:auto;padding:8px;touch-action:pan-x pan-y}
