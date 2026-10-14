@@ -3356,11 +3356,17 @@ function gpNameFromFile(fn,G){const base=fn.replace(/\.[^.]+$/,'');let [ar,ti]=b
   return{title,artist:cap(ar)||G.artist||'Guitar Pro'}}
 // la canción del cancionero a la que corresponde un nombre de archivo (el título más largo que aparezca en el nombre)
 function gpDemoFor(n){let best=null,bl=0;DEMOS.forEach(x=>{[gpNorm(x.title.replace(/\(solo\)/i,'')),gpNorm(x.title)].concat((x.aka||[]).map(gpNorm)).forEach(t=>{if(t.length>3&&n.includes(t)&&t.length>bl){best=x;bl=t.length}})});return best}
+// ¿este archivo trae el solo? (tiene esos compases y la guitarra solista toca ahí)
+function gpSoloFits(x,G){try{const c=x.crop;if(!c||!G||!G.bars||G.bars.length<c.to)return false;const T=G.tracks[c.lead];if(!T||T.drums)return false;const a=G.bars[c.from-1].start,z=G.bars[c.to-1].start+G.bars[c.to-1].len;return T.ev.filter(e=>e.b>=a&&e.b<z).length>=8}catch(_){return false}}
 function gpTarget(fn,G,sel,picked){const n0=gpNorm(fn);
   if(sel==='__new')return gpNewSong(fn,G);
-  if(sel&&sel!=='__auto'){const ss=allSongs().find(x=>x.id===sel);if(picked||ss&&(ss.zone==='solos'||n0.includes(gpNorm(ss.title))))return sel}   // un solo lleva el archivo de la canción completa: se guarda en el solo que elegiste
+  gpTarget.also=[];if(sel&&sel!=='__auto'){const ss=allSongs().find(x=>x.id===sel);if(ss&&ss.zone==='solos'){const b=gpNorm(ss.title.replace(/\s*\([^)]*\)\s*/g,' '));gpTarget.also=DEMOS.filter(x=>x.zone==='solos'&&x.id!==sel&&!gpHas(x.id)&&gpSoloFits(x,G)&&gpNorm(x.title.replace(/\s*\([^)]*\)\s*/g,' '))===b).map(x=>x.id);return sel}   // un solo lleva el archivo de la canción completa: se guarda en el solo que elegiste (y en los otros solos de esa canción que aún no lo tienen)
+    if(picked||ss&&n0.includes(gpNorm(ss.title)))return sel}   // un solo lleva el archivo de la canción completa: se guarda en el solo que elegiste
   const n=gpNorm(fn),hit=gpDemoFor(n);
-  if(hit&&(!/(^| )solo( |$)/.test(n)||/solo/i.test(hit.title)||!gpHas(hit.id)))return hit.id;
+  // solos: el archivo se reconoce por el nombre de la canción (sin "(1er solo)"); un archivo sirve a todos los solos de esa canción
+  const base=x=>gpNorm(x.title.replace(/\s*\([^)]*\)\s*/g,' ')),solos=DEMOS.filter(x=>x.zone==='solos'&&base(x).length>=3&&(' '+n+' ').includes(' '+base(x)+' '));
+  if(solos.length&&(/(^| )solo/.test(n)||!hit||hit.zone==='solos')){const ok=solos.filter(x=>gpSoloFits(x,G)),L=ok.length?ok:solos;gpTarget.also=L.slice(1).map(x=>x.id);return L[0].id}
+  if(hit&&hit.zone!=='solos'){const miss=solos.filter(x=>!gpHas(x.id)&&gpSoloFits(x,G)).map(x=>x.id);if(gpHas(hit.id)&&miss.length){gpTarget.also=miss.slice(1);return miss[0]}gpTarget.also=miss;return hit.id}   // si la canción ya tiene su archivo, este va a los solos que lo esperan (no se pisa la canción)   // la canción completa también sirve a sus solos que aún no tienen archivo
   const own=userSongs.find(x=>x.gpFile===fn);if(own)return own.id;
   return gpNewSong(fn,G)}
 function gpNewSong(fn,G){const nm=gpNameFromFile(fn,G),id='g'+Date.now()+Math.floor(Math.random()*1e3);
@@ -3371,7 +3377,7 @@ async function gpImport(files,sel){files=[].slice.call(files);const out=[];let l
       const isGpx=/^BCF[ZS]/.test(String.fromCharCode(...new Uint8Array(buf,0,4)));
       if(isZip||isGpx){const xml=isZip?await gpUnzip(buf):gpxUnpack(buf);G=gpParseXml(xml);rec={xml,name:file.name}}else{G=gpParseBin(buf);rec={bin:buf,name:file.name}}
       if(!G.bars.length)throw new Error('la partitura está vacía');if(!G.tracks.some(t=>!t.drums&&t.ev.length))throw new Error('no trae notas que la guitarra pueda tocar');
-      const id=gpTarget(file.name,G,files.length>1?'__auto':sel,sheet.gpPick);await odbPut('gp|'+id,rec);GPHAVE.add(id);store.set('gpHave',[...GPHAVE]);delete GPS[id];await gpLoad(id);const sg=allSongs().find(x=>x.id===id);lastId=id;
+      const id=gpTarget(file.name,G,files.length>1?'__auto':sel,sheet.gpPick);await odbPut('gp|'+id,rec);GPHAVE.add(id);for(const o of gpTarget.also||[]){await odbPut('gp|'+o,rec);GPHAVE.add(o);delete GPS[o]}store.set('gpHave',[...GPHAVE]);delete GPS[id];await gpLoad(id);const sg=allSongs().find(x=>x.id===id);lastId=id;
       out.push('✓ '+(sg?sg.title:file.name)+' · '+G.bars.length+' compases a '+Math.round(G.bpm)+' por minuto')}
     catch(e){out.push('✗ '+file.name+': '+(e&&e.message||e))}}
   sheet.gpMsg=out.join('\n')+(lastId?'\nElige la canción, cierra y toca "▶ Tocar sola".':'\nSirven .gp, .gpx, .gp3, .gp4 y .gp5 (Guitar Pro 3 a 8).');
