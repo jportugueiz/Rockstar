@@ -1416,7 +1416,7 @@ function lvlTick(){if(!ctx||!A.lvlAn||ctx.state!=='running')return;const b=lvlTi
   const want=clamp(.14/lvlTick.ema,.35,2.4);if(Math.abs(Math.log(want/g))>.18){lvlTick.g=g*Math.pow(want/g,.3);A.lvl.gain.setTargetAtTime(lvlTick.g,ctx.currentTime,4)}   // lento y con margen: sin subidas y bajadas que se noten
   if(performance.now()-lvlTick.sv>8000){lvlTick.sv=performance.now();store.set('lvl|'+id,+lvlTick.g.toFixed(3))}}
 setInterval(()=>{try{lvlTick()}catch(e){}},250);
-function mixTick(){if(!ctx||!MIX.key)return;const now=ctx.currentTime,spb=60/((gpOn()||{}).bpm||song().bpm||100),T=MIX.tr,buf=MIX.buf||(MIX.buf=new Float32Array(2048));
+function mixTick(){if(!ctx||!MIX.key)return;{const c=csPeek();if(c&&c.auto){const x=csSecNow(),k=x?x.a:null;if(k!==CS.secK){CS.secK=k;try{csApplyAll()}catch(_){}}}}const now=ctx.currentTime,spb=60/((gpOn()||{}).bpm||song().bpm||100),T=MIX.tr,buf=MIX.buf||(MIX.buf=new Float32Array(2048));
   let leadOn=false,rhyOn=false;
   for(const tr in T){const m=T[tr];if(!m.an)continue;const on=now-m.last<Math.max(.9,spb*2.2);if(m.role==='solo'&&now-m.last<Math.max(2,spb*6))leadOn=true;if(on){if(m.role==='solo'){}else if(m.role!=='mel')rhyOn=true}
     if(now-m.last<.3&&now>=m.last-2){m.an.getFloatTimeDomainData(buf);let e=0;for(let i=0;i<buf.length;i++)e+=buf[i]*buf[i];const rms=Math.sqrt(e/buf.length);
@@ -1462,13 +1462,20 @@ function csB(b){const c=csPeek();return c&&c.bus&&c.bus[b]||null}
 const csDb=d=>Math.pow(10,(d||0)/20);
 // DCA y grupos de mute: un canal sigue a sus DCA (volumen y mute) y se apaga si alguno de sus grupos de mute está activo
 function csGroupMul(p){const c=csPeek();if(!c||!p)return 1;let m=1;(p.dca||[]).forEach(i=>{const d=(c.dca||[])[i];if(d){m*=d.mute?0:csDb(d.fader)}});(p.mg||[]).forEach(i=>{const g=(c.mg||[])[i];if(g&&g.on)m=0});return m}
-function csTrackMul(tr){if(CS.cue&&CS.cue!=='t'+tr)return 0;const t=csT(tr);return t?(t.mute?0:csDb(t.fader))*csGroupMul(t):1}
-function csBand(){const c=csPeek();const m=c&&c.master||{};return (m.bandMute?0:csDb(m.band))}
+/* automatización por partes: cada parte de la canción (intro, estrofa, coro, solo…) puede subir o bajar canales; la app lo aplica sola al llegar ahí */
+function csSecs(id){id=id||S.songId;const G=GPS[id];if(!G||!G.bars||!G.bars.length)return [];const k=id+'|'+G.bars.length;if(csSecs.k===k)return csSecs.c;const out=[];
+  const named=G.bars.some(b=>b.section);G.bars.forEach((b,i)=>{if(named?(b.section||i===0):i%8===0)out.push({a:+b.start.toFixed(3),bar:i+1,name:named?(b.section||'Inicio'):'Compases '+(i+1)+'–'+Math.min(G.bars.length,i+8)})});
+  out.forEach((x,i)=>{x.b=i+1<out.length?out[i+1].a:1e9;const same=out.filter(y=>y.name===x.name);{const j=same.indexOf(x);x.label=j>0?x.name+' ('+(j+1)+')':x.name}});csSecs.k=k;return csSecs.c=out}
+function csPos(){try{if(MB.on&&ctx)return mbPosAt(ctx.currentTime);return (STEP.cum&&STEP.cum[idx])||MB.pos||0}catch(_){return 0}}
+function csSecNow(){const L=csSecs();if(!L.length)return null;const b=csPos()+1e-3;let r=L[0];for(const x of L)if(x.a<=b)r=x;return r}
+function csOff(id){const c=csPeek();if(!c||!c.auto)return 0;const x=csSecNow();if(!x)return 0;const o=c.auto[String(x.a)];return o&&o[id]||0}
+function csTrackMul(tr){if(CS.cue&&CS.cue!=='t'+tr)return 0;const t=csT(tr);return (t?(t.mute?0:csDb(t.fader))*csGroupMul(t):1)*csDb(csOff('t'+tr))}
+function csBand(){const c=csPeek();const m=c&&c.master||{};return (m.bandMute?0:csDb(m.band))*csDb(csOff('mb'))}
 // cuánto cambió el ingeniero el volumen de las guitarras (ganancia, EQ, compresores, faders, máster): la banda sigue a las guitarras SIN contar eso
 function csGtrK(){if(!csPeek())return 1;const b=MIX.kb||(MIX.kb=new Float32Array(2048));const rm=an=>{an.getFloatTimeDomainData(b);let e=0;for(let i=0;i<b.length;i++)e+=b[i]*b[i];return Math.sqrt(e/b.length)};let num=0,den=0;
   for(const tr in MIX.tr){const m=MIX.tr[tr];if(!m.anP||!m.anS||m.w0==null)continue;const pr=rm(m.anP);if(pr<1e-4)continue;num+=rm(m.anS)*m.w0*csTrackMul(tr);den+=pr*m.w0}
   if(den>0)MIX.gk=num/den;return Math.max(.02,(MIX.gk||1)*csGtrM())}
-function csGtrM(){const c=csPeek();const m=c&&c.master||{};return (m.gtrMute?0:csDb(m.gtr))}
+function csGtrM(){const c=csPeek();const m=c&&c.master||{};return (m.gtrMute?0:csDb(m.gtr))*csDb(csOff('mg'))}
 const CS_EQ0=[{t:'lowshelf',f:150,g:0,q:.7},{t:'peaking',f:500,g:0,q:1},{t:'peaking',f:2000,g:0,q:1},{t:'highshelf',f:5000,g:0,q:.7}];   // donde la guitarra y la banda tienen sonido
 const CS_SEQ0=[63,125,250,500,1000,2000,4000,8000];
 const CS_GEQF=[20,25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000];
@@ -1635,7 +1642,7 @@ function csDspApply(D,p){if(!D)return;p=p||{};const on=!!p.on;csSet(D.dry.gain,o
   const bd=p.bands||[];D.bands.forEach((b,i)=>{const q=bd[i]||{};const lo=q.lim!=null&&q.lim<0;csSet(b.g.gain,(q.inv?-1:1)*(q.mute?0:csDb((q.g||0)-(lo?csAutoMk(clamp(q.lim,-30,0),20):0))));csSet(b.d.delayTime,clamp((q.dly||0)/1000,0,.05));b.lim.threshold.value=lo?clamp(q.lim,-30,0):0;b.lim.ratio.value=lo?20:1});
   const sq=p.seq||[];D.seq.forEach((b,i)=>{const e=sq[i]||{};csSet(b.frequency,clamp(e.f||CS_SEQ0[i],20,20000));csSet(b.gain,clamp(e.g||0,-15,15));csSet(b.Q,clamp(e.q||1.4,.3,8))})}
 function csApplyAll(){if(!ctx)return;try{csFxApply()}catch(_){}const c=csPeek()||{};if(A.csm)csApply(A.csm,c.main,1);if(A.dsp)csDspApply(A.dsp,(c.main||{}).dsp);
-  if(A.csb)['drums','bass','keys'].forEach(b=>{csApply(A.csb[b],csB(b),1);if(CS.cue&&CS.cue!==b)csSet(A.csb[b].out.gain,0)});
+  if(A.csb)['drums','bass','keys'].forEach(b=>{csApply(A.csb[b],csB(b),1);{const o=csOff(b),q=csB(b)||{};if(o)csSet(A.csb[b].out.gain,q.mute?0:csDb(q.fader)*csGroupMul(q)*csDb(o))}if(CS.cue&&CS.cue!==b)csSet(A.csb[b].out.gain,0)});
   Object.entries(RIG.map||{}).forEach(([id,r])=>{const tr=id.split('#')[1];if(r.cs&&tr!=='')csApply(r.cs,csT(tr))});if(MIX.bw!=null&&A.bandAuto)csSet(A.bandAuto.gain,MIX.bw*csBand())}
 function rigBuild(k,tr){const c=ctx,G=v=>{const g=c.createGain();g.gain.value=v==null?1:v;return g},F=(t,f,q,gn)=>{const b=c.createBiquadFilter();b.type=t;b.frequency.value=f;if(q!=null)b.Q.value=q;if(gn!=null)b.gain.value=gn;return b};
   const fx=k==='fog'?{}:SONG_FX[S.songId]||SONG_FX[gpNorm(song().title||'')]||SONG_FX[gpNorm(song().title||'').replace(/ \(?solo\)?$/,'')]||{},P=Object.assign({},RIGS[k]||RIGS.strat,fx.all||{},fx[k]||{}),spb=60/(song().bpm||100);
@@ -4674,6 +4681,23 @@ function csViewDca(V){V.className='dm-view dcav';const c=csPeek()||{};const top=
     const b=csBtn((g.name||'MUTE '+(i+1)),!!g.on,'mgbig',()=>{const C=csCur();C.mg=C.mg||[];C.mg[i]=Object.assign({},C.mg[i]||{},{on:!g.on});try{csApplyAll()}catch(_){}csSave();csRenderView()});
     const s=document.createElement('small');s.textContent=mem.length?mem.map(x=>x.name).join(' · '):'sin canales (asígnalos en el canal)';w.append(b,s);mg.body.appendChild(w)}
   V.append(top,mg.el)}
+/* ── PARTES: automatización por partes de la canción ── */
+function csAutoSet(sa,id,v){const C=csCur();C.auto=C.auto||{};const r=C.auto[sa]=C.auto[sa]||{};if(Math.abs(v)<.05)delete r[id];else r[id]=+(+v).toFixed(1);if(!Object.keys(r).length)delete C.auto[sa];if(!Object.keys(C.auto).length)delete C.auto;CS.secK=undefined;try{csApplyAll()}catch(_){}csSave()}
+function csGoSec(x){try{ensureAudio();if(DEMO.on)demoStop();stepBuild();const cum=STEP.cum||[0];let i=0;while(i<cum.length-1&&cum[i+1]<=x.a+1e-6)i++;idx=i;MB.idx=-1;if(!fogOn()&&!band.on)startBand();demoStart()}catch(_){}setTimeout(csSelBox,300)}
+function csViewAuto(V){V.className='dm-view autov';const L=csSecs();if(!L.length){V.innerHTML='<div class="dm-hint">Esta canción no tiene partes cargadas todavía.</div>';return}
+  const cols=[...csInputs().map(c=>({id:c.kind==='gtr'?'t'+c.tr:c.id,name:c.name,color:c.color})),{id:'mg',name:'GUITARRAS',color:'#E8E8E8'}];if(!fogOn())cols.push({id:'mb',name:'BANDA',color:'#E8E8E8'});
+  const c=csPeek()||{},A0=c.auto||{};const n=document.createElement('p');n.className='dm-note';n.textContent='Cada parte de la canción puede subir o bajar canales (en dB, sobre la mezcla de la escena). La app lo aplica sola al llegar a esa parte. Toca una casilla y gira la perilla TOUCH AND TURN; doble toque la vuelve a 0. ▶ salta a esa parte y la toca.';
+  const t=document.createElement('table');t.className='dm-autot';const hd=document.createElement('tr');hd.innerHTML='<th></th><th>PARTE</th><th>COMPÁS</th>'+cols.map(x=>`<th style="--cc:${x.color}"><span>${csEsc(x.name)}</span></th>`).join('');const th=document.createElement('thead');th.appendChild(hd);t.appendChild(th);const tb=document.createElement('tbody');
+  const now=csSecNow();L.forEach(x=>{const sa=String(x.a),o=A0[sa]||{},tr=document.createElement('tr');tr.dataset.a=sa;if(now&&now.a===x.a)tr.className='now';
+    const go=document.createElement('td');go.appendChild(csBtn('▶',false,'tiny',()=>csGoSec(x)));tr.appendChild(go);
+    const nm=document.createElement('td');nm.className='pn';nm.textContent=x.label;tr.appendChild(nm);const br=document.createElement('td');br.className='br';br.textContent=x.bar;tr.appendChild(br);
+    cols.forEach(cl=>{const td=document.createElement('td');td.className='cell';const v=o[cl.id]||0;const draw=()=>{const w=((csPeek()||{}).auto||{})[sa]||{},vv=w[cl.id]||0;td.textContent=vv?(vv>0?'+':'')+vv.toFixed(1):'·';td.classList.toggle('up',vv>0);td.classList.toggle('dn',vv<0)};draw();
+      const tt={label:x.label+' · '+cl.name,get:()=>(((csPeek()||{}).auto||{})[sa]||{})[cl.id]||0,min:-20,max:10,fmt:v=>(v>0?'+':'')+v.toFixed(1)+' dB',set:(v,end)=>{csAutoSet(sa,cl.id,Math.round(v*2)/2);draw()},el:td};
+      td.onclick=()=>csFocus(tt);td.ondblclick=()=>{csAutoSet(sa,cl.id,0);draw();csTTDraw()};tr.appendChild(td)});tb.appendChild(tr)});t.appendChild(tb);
+  const wrap=document.createElement('div');wrap.className='dm-autowrap';wrap.appendChild(t);
+  const tools=document.createElement('div');tools.className='dm-scenetools';tools.append(csBtn('▶ PARTE ANTERIOR',false,'',()=>{const x=csSecNow(),i=L.findIndex(y=>x&&y.a===x.a);csGoSec(L[Math.max(0,i-1)])}),csBtn('PARTE SIGUIENTE ▶',false,'',()=>{const x=csSecNow(),i=L.findIndex(y=>x&&y.a===x.a);csGoSec(L[Math.min(L.length-1,i+1)])}),
+    csBtn(CSUI.clrA?'¿SEGURO? TOCA OTRA VEZ':'BORRAR TODA LA AUTOMATIZACIÓN',!!CSUI.clrA,'warn',()=>{if(!CSUI.clrA){CSUI.clrA=1;setTimeout(()=>{CSUI.clrA=0},4000);csRenderView();return}CSUI.clrA=0;const C=csCur();delete C.auto;CS.secK=undefined;try{csApplyAll()}catch(_){}csSave();csRenderView()}));
+  V.append(tools,n,wrap)}
 /* ── RACK ── */
 function csViewRack(V){V.className='dm-view rackv';const tabs=document.createElement('div');tabs.className='dm-subtabs';[['prem','PREMIUM RACK'],['fx','FX RACK'],['geq','GEQ RACK']].forEach(([k,n])=>tabs.appendChild(csBtn(n,CSUI.rackTab===k,'',()=>{CSUI.rackTab=k;csRenderView()})));V.appendChild(tabs);
   const R=document.createElement('div');R.className='dm-rack';V.appendChild(R);const L=[...csInputs(),...csOutputs().filter(c=>c.kind==='main')];
@@ -4757,6 +4781,7 @@ function csMeters(){if(!CS.open){CSUI.raf=0;return}CSUI.raf=requestAnimationFram
     ['dyn1','dyn2'].forEach(sl=>{const u=csUnitOf(ch,sl),g=c.querySelector(`.t[data-s="${sl}"] .grm i`);if(g)g.style.width=clamp((u&&u.gr?u.gr():0)/20,0,1)*100+'%'})});
   CSUI.grs=CSUI.grs.filter(g=>g.el.isConnected);CSUI.grs.forEach(g=>{let r=0;try{r=g.fn()||0}catch(_){}g.el.firstChild.style.width=clamp(r/20,0,1)*100+'%';g.el.lastChild.textContent='GR '+r.toFixed(1)});
   CSUI.rta=CSUI.rta.filter(r=>r.cv.isConnected);CSUI.rta.forEach(csRtaDraw);
+  {const x=csSecNow(),k=x?x.a:null;if(k!==CSUI.partK){CSUI.partK=k;const e=CSUI.el.querySelector('.dm-part');if(e)e.textContent=x?'▸ '+x.label:'';CSUI.el.querySelectorAll('.dm-autot tr[data-a]').forEach(r=>r.classList.toggle('now',r.dataset.a===String(k)))}}
   if(!CSUI.clk||now-CSUI.clk>10000){CSUI.clk=now;const e=CSUI.el.querySelector('.dm-clock');if(e)e.textContent=new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}}
 function csRtaDraw(R){const an=csAnOf(R.ch)||(csStripOf(R.ch)||{}).an;const cv=R.cv,r=cv.getBoundingClientRect(),dpr=devicePixelRatio||1;if(!r.width)return;if(cv.width!==Math.round(r.width*dpr)){cv.width=r.width*dpr;cv.height=r.height*dpr}const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);const W=r.width,H=r.height;
   if(R.big){g.fillStyle='#0d0e10';g.fillRect(0,0,W,H);g.strokeStyle='rgba(255,255,255,.07)';g.font='10px IBM Plex Mono';g.fillStyle='rgba(255,255,255,.4)';const X=f=>Math.log(f/20)/Math.log(1000)*W;[31.5,63,125,250,500,1000,2000,4000,8000,16000].forEach(f=>{g.beginPath();g.moveTo(X(f),0);g.lineTo(X(f),H);g.stroke();g.fillText(csFmtHz(f),X(f)+2,H-4)});
@@ -4772,17 +4797,17 @@ function csSelBox(){if(!CSUI.el)return;const ch=CS.sel&&csFind(CS.sel.id);const 
 function csView(v){CSUI.view=v;csRenderView()}
 function csRenderView(){if(!CSUI.el)return;CSUI.cache=null;const V=CSUI.el.querySelector('.dm-view');if(CSUI.lastView!==CSUI.view){V.scrollTop=0;CSUI.lastView=CSUI.view}V.innerHTML='';CSUI.rta=[];CSUI.grs=CSUI.grs.filter(g=>g.el.isConnected&&g.el.closest('.dm-modal'));if(CSUI.focus&&CSUI.focus.el&&!CSUI.focus.el.isConnected)csFocus(null);
   CSUI.el.querySelectorAll('.dm-tabs .dm-btn').forEach(b=>b.classList.toggle('lit',b.dataset.v===CSUI.view));
-  ({ov:csViewOv,ch:csViewCh,rack:csViewRack,meter:csViewMeter,scene:csViewScene,dca:csViewDca,sys:csViewSys}[CSUI.view]||csViewOv)(V);csSelBox()}
+  ({ov:csViewOv,ch:csViewCh,auto:csViewAuto,rack:csViewRack,meter:csViewMeter,scene:csViewScene,dca:csViewDca,sys:csViewSys}[CSUI.view]||csViewOv)(V);csSelBox()}
 function csRender(){if(!CSUI.el)return;CSUI.cache=null;if(CS.sel&&!csFind(CS.sel.id))CS.sel=null;if(!CS.sel)CS.sel=csInputs()[0]||null;CSUI.mtr=[];csBay();csRenderView();csStatus()}
 function csOpen(){ensureAudio();CS.open=true;if(!CSUI.el)csBuild();CSUI.el.hidden=false;document.body.classList.add('cs-on');csSubSong();csRender();if(!CSUI.raf)csMeters()}
 function csClose(){CS.open=false;if(CSUI.el)CSUI.el.hidden=true;document.body.classList.remove('cs-on');if(location.hash==='#consola')try{history.replaceState(null,'',location.pathname+location.search)}catch(_){}}
 function csBuild(){const el=document.createElement('div');el.id='rkConsole';el.hidden=true;
   el.innerHTML=`<header class="dm-bar"><button class="dm-btn dm-brand">ROCKSTAR<small>DM · CONSOLA</small></button>
     <div class="dm-selch"><span class="no"></span><b></b></div>
-    <div class="dm-scene"><button class="dm-btn ghost dm-prev">◀</button><div class="sb"><small>ESCENA</small><span class="dm-scno"></span><span class="dm-sct"></span></div><button class="dm-btn ghost dm-next">▶</button><div class="dm-scmode"><button class="dm-btn" data-sc="orig">ORIGINAL</button><button class="dm-btn" data-sc="fog">FOGATA</button></div></div>
+    <div class="dm-scene"><button class="dm-btn ghost dm-prev">◀</button><div class="sb"><small>ESCENA</small><span class="dm-scno"></span><span class="dm-sct"></span><span class="dm-part"></span></div><button class="dm-btn ghost dm-next">▶</button><div class="dm-scmode"><button class="dm-btn" data-sc="orig">ORIGINAL</button><button class="dm-btn" data-sc="fog">FOGATA</button></div></div>
     <div class="dm-trans"><button class="dm-btn dm-play">▶ PLAY</button><button class="dm-btn dm-stop">■ STOP</button><button class="dm-btn dm-byp" title="Escuchar la app sin la consola">BYPASS</button><button class="dm-btn dm-cue cuebar" hidden></button></div>
     <div class="dm-status"></div><div class="dm-clock"></div><button class="dm-btn dm-up" title="Guarda la sesión y la sube a la app">GUARDAR Y SUBIR</button><label class="dm-btn dm-lib" title="El archivo de canciones de Rockstar">⬆ CANCIONES<input type="file" accept=".json,application/json" hidden></label><button class="dm-btn ghost dm-close">✕</button></header>
-   <nav class="dm-tabs">${[['ov','OVERVIEW'],['ch','CANAL'],['rack','RACK'],['meter','METER'],['scene','ESCENAS'],['dca','DCA'],['sys','SISTEMA']].map(([k,n])=>`<button class="dm-btn" data-v="${k}">${n}</button>`).join('')}</nav>
+   <nav class="dm-tabs">${[['ov','OVERVIEW'],['ch','CANAL'],['auto','PARTES'],['rack','RACK'],['meter','METER'],['scene','ESCENAS'],['dca','DCA'],['sys','SISTEMA']].map(([k,n])=>`<button class="dm-btn" data-v="${k}">${n}</button>`).join('')}</nav>
    <main class="dm-view"></main>
    <footer class="dm-baywrap"><div class="dm-layers">${[['in','ENTRADAS'],['band','BANDA'],['dca','DCA'],['out','SALIDAS']].map(([k,n])=>`<button class="dm-btn" data-l="${k}">${n}</button>`).join('')}</div><div class="dm-strips"></div>
     <div class="dm-tt"><div class="kn"><i></i></div><div class="tx"><small>TOUCH AND TURN</small><b class="tl"></b><span class="tv"></span></div></div></footer>`;
@@ -4915,6 +4940,12 @@ const CS_CSS=`
 #rkConsole .dm-scenes td{padding:4px 6px;border-bottom:1px solid #0b0c0d;background:var(--tl)}#rkConsole .dm-scenes td:first-child{font:700 12px 'IBM Plex Mono';color:var(--dm);width:50px}#rkConsole .dm-scenes td small{display:block;text-transform:none;letter-spacing:0}
 #rkConsole .dm-scenes tr.cur td{background:#1f3a2a}#rkConsole .dm-scenes tr.cur td:first-child{color:var(--grn)}#rkConsole .dm-scenes .dm-btn.lit{background:var(--grn);color:#04150a}
 #rkConsole .dm-scenetools{display:flex;gap:6px;flex-wrap:wrap}
+#rkConsole .dm-part{font:700 11px 'IBM Plex Mono';color:var(--grn);white-space:nowrap}
+#rkConsole .dm-autowrap{overflow:auto;max-width:100%}#rkConsole .dm-autot{border-collapse:separate;border-spacing:2px;font:600 12px 'IBM Plex Mono'}
+#rkConsole .dm-autot th{font:700 9px 'IBM Plex Mono';color:var(--dm);padding:4px;vertical-align:bottom;text-align:center;position:sticky;top:0;background:var(--bg);z-index:1}#rkConsole .dm-autot th span{display:block;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-top:3px solid var(--cc);padding-top:3px;color:var(--tx)}
+#rkConsole .dm-autot td{background:var(--tl);padding:6px 8px;border-radius:3px;border:2px solid transparent}#rkConsole .dm-autot td.pn{font:700 12.5px 'Instrument Sans';white-space:nowrap;min-width:110px}#rkConsole .dm-autot td.br{color:var(--dm);text-align:center}
+#rkConsole .dm-autot td.cell{text-align:center;min-width:56px;cursor:pointer;color:#5b6068}#rkConsole .dm-autot td.cell.up{color:#fff;background:#1f4a2c}#rkConsole .dm-autot td.cell.dn{color:#fff;background:#4a1f26}
+#rkConsole .dm-autot tr.now td{box-shadow:inset 0 0 0 1px var(--grn)}#rkConsole .dm-autot tr.now td.pn{background:#1f3a2a;color:var(--grn)}#rkConsole .dm-autot td.focus{outline:2px solid var(--pink);outline-offset:-2px}
 /* DCA */
 #rkConsole .dm-dcas{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-bottom:8px}#rkConsole .dm-dca{background:var(--tl);border-top:5px solid var(--pink);border-radius:4px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:5px}#rkConsole .dm-dca.muted{border-top-color:#FF3B30}
 #rkConsole .dm-dca b{font:700 12px 'Instrument Sans'}#rkConsole .dm-dca small{text-transform:none;letter-spacing:0;text-align:center;min-height:2.4em}
