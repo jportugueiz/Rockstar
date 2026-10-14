@@ -1343,7 +1343,7 @@ const GPV={},DYN={PPP:.3,PP:.38,P:.48,MP:.58,MF:.68,F:.8,FF:.9,FFF:1};
    Cada sonido tiene su cadena (como el pedalero y el amplificador del guitarrista), y cada canción ajusta sus efectos
    según cómo se grabó (investigado por canción: chorus de Cerati, eco corto de rockabilly, delay de los solos de Slash…). */
 const RIGS={   // drive 0-10, hp/lp: filtros del parlante, mid: [frecuencia, dB], hi: brillo dB, cho/rev: cuánto, dbl: guitarra doblada a los lados
-  nam_lead:{drive:0,hp:80,lp:9000,mid:[800,0],hi:0,rev:.2},nam_neck:{drive:0,hp:80,lp:7000,mid:[700,0],hi:0,rev:.2},nam_rhy:{drive:0,hp:85,lp:8000,mid:[800,0],hi:0,rev:.18},nam_lo:{drive:0,hp:85,lp:8000,mid:[800,0],hi:0,rev:.18},tw:{drive:0,hp:70,lp:12000,mid:[1000,0],hi:0,rev:.15},tws:{drive:0,hp:70,lp:12000,mid:[1000,0],hi:0,rev:.18,slap:[.1,.14]},twd:{drive:0,hp:70,lp:12000,mid:[1000,0],hi:0,rev:.2},vl:{drive:0,hp:80,lp:9000,mid:[800,0],hi:0,rev:.14},vc:{drive:0,hp:85,lp:8000,mid:[800,0],hi:0,rev:.12},j9a:{drive:0,hp:85,lp:8000,mid:[800,0],hi:0,rev:.14},j9b:{drive:0,hp:90,lp:7500,mid:[800,0],hi:0,rev:.16},mg:{drive:0,hp:90,lp:8000,mid:[900,0],hi:0,rev:.15},nylm:{drive:0,hp:70,lp:13000,lo:[120,.5],mid:[260,-1],pres:[2600,1],hi:.5,rev:.16,gain:1.9},   // el amplificador ya viene en la muestra: aquí solo ecualización y efectos
+  nam_lead:{drive:0,hp:80,lp:9000,mid:[800,0],hi:0,rev:.2},nam_neck:{drive:0,hp:80,lp:7000,mid:[700,0],hi:0,rev:.2},nam_rhy:{drive:0,hp:85,lp:8000,mid:[800,0],hi:0,rev:.18},nam_lo:{drive:0,hp:85,lp:8000,mid:[800,0],hi:0,rev:.18},tw:{drive:0,gain:1.8,hp:70,lp:10000,mid:[1000,0],pres:[3000,-4],hi:0,rev:.15},tws:{drive:0,gain:1.8,hp:70,lp:10000,mid:[1000,0],pres:[3000,-4],hi:0,rev:.18,slap:[.1,.14]},twd:{drive:0,gain:1.8,hp:70,lp:10000,mid:[1000,0],pres:[3000,-4],hi:0,rev:.2},vl:{drive:0,hp:80,lp:9000,mid:[800,0],hi:0,rev:.14},vc:{drive:0,hp:85,lp:8000,mid:[800,0],hi:0,rev:.12},j9a:{drive:0,hp:85,lp:8000,mid:[800,0],hi:0,rev:.14},j9b:{drive:0,hp:90,lp:7500,mid:[800,0],hi:0,rev:.16},mg:{drive:0,hp:90,lp:8000,mid:[900,0],hi:0,rev:.15},nylm:{drive:0,hp:70,lp:13000,lo:[120,.5],mid:[260,-1],pres:[2600,1],hi:.5,rev:.16,gain:1.9},   // el amplificador ya viene en la muestra: aquí solo ecualización y efectos
   fog:{drive:0,hp:65,lp:14000,lo:[120,1],mid:[260,-1],pres:[2600,1.2],hi:.5,rev:.12,gain:1.9},   // fogata: guitarra de nylon cálida, cerca, con un poco de aire (la grabación es muy seca)   // fogata: una acústica cerca, con cuerpo, al aire libre (casi sin sala)
   charango:{drive:0,hp:160,lp:15000,lo:[300,2],mid:[650,-1],pres:[3800,2.5],hi:2,rev:.14,gain:.55,dbl:1,dblG:1,dblD:.026},   // doblado pesado: dos tomas iguales a los lados, con más cuerpo   // charango: brillante, sin graves, cuerpo chico
   acu:{drive:0,hp:75,lp:16000,mid:[220,-2.5],hi:2,rev:.14,dbl:1,gain:1.7},doce:{drive:0,hp:90,lp:16000,mid:[220,-3],hi:2.5,rev:.12,dbl:1,gain:1.7},nyl:{drive:0,hp:70,lp:11000,mid:[250,-1.5],hi:1,rev:.16,dbl:1,gain:1.7},fla:{drive:0,hp:95,lp:15000,lo:[180,-3],mid:[320,-2],pres:[2800,2],hi:1.5,rev:.11,dbl:1,gain:1.9},
@@ -1940,6 +1940,30 @@ Object.assign(SONG_GEAR,{
   'november rain':{def:'nam_rhy',rules:[[/guitar 1/i,'nam_lead'],[/guitar 2/i,'nam_lo'],[/guitar 3/i,'nam_neck'],[/guitar 4/i,'nam_rhy']],mix:{solo:1.8}},
   // Los Tres 1991: bolero eléctrico limpio (Ibanez en la pastilla del mástil, Sheraton); la "flauta" es la melodía de la voz
   'amor-violento':{band:1.6,def:'tw',rules:[[/pista 2/i,'tws'],[/pista 1/i,'tw']],noMel:1,keysOff:[0]}});
+/* Solos (octubre 2026): todos con amplificadores copiados con IA, nada de amplificador imitado con fórmulas.
+   Knopfler: Strat limpia a un Fender, con los dedos · Slash: Les Paul a Marshall con eco · Gilmour: Strat, Big Muff a Hiwatt, mucho eco ·
+   Brian May: Red Special con treble booster a Vox AC30 · Jabs/Schenker: Marshall cantante con mucha sala · Hammett: Mesa/Boogie con medios recortados */
+Object.assign(SONG_GEAR,{
+  'sultans-swing':{band:1.3,def:'tw',mix:{lead:2,solo:2.1}},
+  'solo-sultans-1':{def:'tw',leadSnd:'tw',mix:{solo:2.2},band:.5},'solo-sultans-2':{def:'tw',leadSnd:'tw',mix:{solo:2.2},band:.5},
+  'solo-nov-1':{def:'nam_lo',leadSnd:'nam_lead',rules:[[/fills/i,'nam_rhy']],zones:[{tr:3,from:1,to:300,vm:.6}],mix:{solo:2.2},band:.3},
+  'solo-nov-2':{def:'nam_rhy',leadSnd:'nam_lead',zones:[{tr:3,from:1,to:300,vm:.7}],mix:{solo:2.2},band:.3},
+  'solo-numb-1':{def:'tw',leadSnd:'j9b',rules:[[/ac[oó]?[uú]st/i,'doce']],mix:{solo:2.2},band:.25},
+  'solo-numb-2':{def:'tw',leadSnd:'j9b',rules:[[/ac[oó]?[uú]st/i,'doce']],mix:{solo:2.2},band:.3},
+  'solo-bohemian':{def:'vl',leadSnd:'vc',mix:{solo:2.2},band:.45},
+  'solo-still-1':{def:'tw',leadSnd:'nam_lead',mix:{solo:2.2},band:.3},'solo-still-2':{def:'tw',leadSnd:'nam_lead',mix:{solo:2.2},band:.2},
+  'solo-one':{bpm:200,def:'nam_lead',leadSnd:'nam_lead',rules:[[/ac[oó]?[uú]st/i,'acu']],mix:{solo:2.2},band:.3}});
+Object.assign(SONG_FX,{
+  'sultans-swing':{tw:{rev:.14,lo:[150,-3],mid:[1200,0],pres:[2800,-5],hi:0,geq:[[250,-7],[2000,-9],[3150,-6],[4000,-5],[6300,-3]]}},
+  'solo-sultans-1':{tw:{rev:.14,lo:[150,-3],mid:[1200,0],pres:[2800,-5],hi:0,geq:[[250,-7],[2000,-9],[3150,-6],[4000,-5],[6300,-3]]}},'solo-sultans-2':{tw:{rev:.14,lo:[150,-3],mid:[1200,0],pres:[2800,-5],hi:0,geq:[[250,-7],[2000,-9],[3150,-6],[4000,-5],[6300,-3]]}},
+  'solo-nov-1':{nam_lead:{lp:7500,mid:[800,1.5],delayS:[.76,.3,.2],rev:.35},nam_lo:{lp:7000,delayS:[.38,.25,.15],rev:.25},nam_rhy:{lp:6500,rev:.2}},
+  'solo-nov-2':{nam_lead:{lp:7500,mid:[800,1.5],delayS:[.38,.3,.2],rev:.3},nam_rhy:{lp:6500,rev:.2}},
+  'solo-numb-1':{j9b:{lp:6500,mid:[900,1.5],delayS:[.44,.35,.28],rev:.4},tw:{cho:.2,rev:.25}},
+  'solo-numb-2':{j9b:{lp:6500,mid:[900,1.5],delayS:[.44,.35,.28],rev:.4},tw:{cho:.2,rev:.25}},
+  'solo-bohemian':{vc:{lp:7000,mid:[1500,3],delayS:[.3,.2,.15],rev:.25},vl:{rev:.15}},
+  'solo-still-1':{nam_lead:{lp:7500,mid:[800,1],delayS:[.4,.25,.2],rev:.4},tw:{cho:.35,delayS:[.4,.2,.15],rev:.3}},
+  'solo-still-2':{nam_lead:{lp:7500,mid:[800,1],delayS:[.4,.25,.2],rev:.4},tw:{cho:.35,delayS:[.4,.2,.15],rev:.3}},
+  'solo-one':{nam_lead:{lp:8000,mid:[750,-3],pres:[3000,2],delayS:[.3,.2,.12],rev:.2},acu:{rev:.15}}});
 Object.assign(SONG_FX,{
   'musica-ligera':{vl:{rev:.12,mid:[800,1]},vc:{rev:.12,mid:[750,1.5],dbl:1,dblG:.6,dblD:.012}},
   'baile-sobran':{nylm:{rev:.15,pres:[2800,1.5]}},
