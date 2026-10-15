@@ -776,12 +776,12 @@ const gpSnd=()=>GPSND[S.gpSnd]||GPSND.b;
 /* La guitarra de cada canción, según lo que se sabe de la grabación original (investigación: entrevistas, Guitar World, Ground Guitar,
    Equipboard, créditos de los discos). Cada regla mira el nombre de la pista en la partitura. Donde no hay datos, la mejor estimación. */
 const SONG_GEAR={
-  'sultans-swing':{def:'strat',mix:{lead:1.5,solo:1.85}},
+  'sultans-swing':{def:'strat',bandG:1},   // como en la versión 128 (a pedido): Strat limpia, mezcla automática normal
  'solo-sweet-child':{def:'crunch',leadSnd:'dist_slash',mix:{solo:2.2},band:.3},   // Slash: Les Paul (Derrig) a Marshall; primera parte en la pastilla del mástil, después wah Cry Baby
   'solo-numb-1':{def:'dist',leadSnd:'dist_lead',rules:[[/ac[oó]?[uú]st/i,'doce']],mix:{solo:2.2},band:.25},   // Gilmour: Black Strat, Big Muff, Hiwatt, parlante rotatorio y eco
   'solo-numb-2':{def:'dist',leadSnd:'dist_lead',rules:[[/ac[oó]?[uú]st/i,'doce']],mix:{solo:2.2},band:.3},
   'solo-bohemian':{def:'crunch',leadSnd:'dist_lead',mix:{solo:2.2},band:.45},   // Brian May: Red Special con moneda, Rangemaster a Vox AC30; un solo que canta
-  'solo-sultans-1':{def:'strat',leadSnd:'strat',mix:{solo:2.2},band:.5},'solo-sultans-2':{def:'strat',leadSnd:'strat',mix:{solo:2.2},band:.5},   // Knopfler: Strat con los dedos, limpia
+  'solo-sultans-1':{def:'strat',leadSnd:'strat',bandG:1,mix:{solo:1.15}},'solo-sultans-2':{def:'strat',leadSnd:'strat',bandG:1,mix:{solo:1.15}},   // Knopfler: Strat con los dedos, limpia
   'solo-nov-1':{def:'neck',leadSnd:'dist_slash',rules:[[/fills/i,'crunch']],zones:[{tr:3,from:1,to:300,vm:.6}],mix:{solo:2.2},band:.3},'solo-nov-2':{def:'crunch',leadSnd:'dist_slash',zones:[{tr:3,from:1,to:300,vm:.7}],mix:{solo:2.2},band:.3},   // Slash: Les Paul a Marshall, eco y sala
   'solo-still-1':{def:'cho',leadSnd:'dist_lead',mix:{solo:2.2},band:.3},'solo-still-2':{def:'cho',leadSnd:'dist_lead',mix:{solo:2.2},band:.2},   // Jabs: humbucker cantante, mucha sala de los 80; Schenker en arpegios limpios
   'solo-one':{bpm:200,def:'dist',leadSnd:'dist_lead',rules:[[/ac[oó]?[uú]st/i,'acu']],mix:{solo:2.2},band:.3},   // Kirk Hammett: ESP con EMG a Mesa/Boogie, sonido sin medios; armonía a dos guitarras
@@ -1357,12 +1357,12 @@ const RIGS={   // drive 0-10, hp/lp: filtros del parlante, mid: [frecuencia, dB]
 // por canción: 'all' vale para todas sus guitarras, o por sonido; delay en tiempos [tiempos, repeticiones, cuánto] o en segundos (delayS); slap: eco corto rockabilly
 const SONG_FX={
   'wish-you-were-here':{acm:{hp:85,lo:[150,-2],mid:[250,-1.5],pres:[3000,-3],hi:-2,lp:9000,rev:.16,gain:1.7,dbl:0}},   // una sola guitarra, sin doblar: cada nota grabada en su propia cuerda (sin estirar el sonido de otra nota)   // cálida y redonda: sin el brillo plástico
-  'sultans-swing':{all:{rev:.2},strat:{drive:1,pres:[3000,2]}},
+  'sultans-swing':{all:{rev:.14}},   // v128
   'solo-sweet-child':{dist_slash:{drive:6,hp:90,lp:5500,mid:[800,3],pres:[3000,-1],delayS:[.38,.15,.12],rev:.2},crunch:{drive:4,rev:.15}},
   'solo-numb-1':{dist_lead:{drive:6.5,hp:100,lp:6000,mid:[700,2],pres:[2500,2],cho:.3,delayS:[.44,.3,.2],rev:.3},dist:{drive:5,lp:4500,mid:[1000,-3],rev:.25}},
   'solo-numb-2':{dist_lead:{drive:7.5,hp:100,lp:6000,mid:[700,3],pres:[2500,2],cho:.3,delayS:[.44,.3,.25],rev:.3,dbl:1},dist:{drive:5,lp:4500,mid:[1000,-3],rev:.25}},
   'solo-bohemian':{dist_lead:{drive:6,hp:120,lp:6500,mid:[1000,4],pres:[3500,2],delayS:[.3,.1,.08],rev:.25},crunch:{drive:5,hp:150,mid:[1000,3],rev:.2}},
-  'solo-sultans-1':{strat:{drive:1.5,hp:100,lp:7000,mid:[1200,-1],pres:[3000,3],rev:.2}},'solo-sultans-2':{strat:{drive:1.5,hp:100,lp:7000,mid:[1200,-1],pres:[3000,3],rev:.2}},
+  'solo-sultans-1':{all:{rev:.14}},'solo-sultans-2':{all:{rev:.14}},   // el mismo setup de Sultans (v128)
   'solo-nov-1':{dist_slash:{drive:5.5,hp:90,lp:5000,mid:[750,3],delayS:[.45,.25,.18],rev:.35},neck:{rev:.2}},
   'solo-nov-2':{dist_slash:{drive:7,hp:90,lp:6000,mid:[750,3],pres:[3000,1],delayS:[.45,.25,.2],rev:.3},crunch:{drive:5,rev:.2}},
   'solo-still-1':{dist_lead:{drive:6.5,hp:100,lp:5500,mid:[900,2],cho:.1,delayS:[.42,.3,.2],rev:.45},cho:{cho:.3,rev:.35}},
@@ -2112,7 +2112,7 @@ const STYLES={
    Knopfler: Strat limpia a un Fender, con los dedos · Slash: Les Paul a Marshall con eco · Gilmour: Strat, Big Muff a Hiwatt, mucho eco ·
    Brian May: Red Special con treble booster a Vox AC30 · Jabs/Schenker: Marshall cantante con mucha sala · Hammett: Mesa/Boogie con medios recortados */
 Object.assign(SONG_GEAR,{
-  'solo-sultans-1':{def:'strat',leadSnd:'strat',mix:{solo:2.2},band:.5},'solo-sultans-2':{def:'strat',leadSnd:'strat',mix:{solo:2.2},band:.5},   // el mismo sonido de Sultans completa (el que tenía potencia)
+  'solo-sultans-1':{def:'strat',leadSnd:'strat',bandG:1,mix:{solo:1.15}},'solo-sultans-2':{def:'strat',leadSnd:'strat',bandG:1,mix:{solo:1.15}},   // el mismo sonido de Sultans completa (el que tenía potencia)
   'solo-nov-1':{def:'nam_lo',leadSnd:'nam_lead',rules:[[/fills/i,'nam_rhy']],zones:[{tr:3,from:1,to:300,vm:.6}],mix:{solo:2.2},band:.3},
   'solo-nov-2':{def:'nam_rhy',leadSnd:'nam_lead',zones:[{tr:3,from:1,to:300,vm:.7}],mix:{solo:2.2},band:.3},
   // Gilmour: Strat con Big Muff a Hiwatt: el solo SOSTIENE (no se apaga después del golpe); acústica 'high-strung' grabada de verdad; rítmica con fuzz
