@@ -761,7 +761,7 @@ Object.keys(SPRITES).forEach(k=>SAMPLE_SETS[k]={sprite:'samples/x/'+k+'.mp3',reg
 // cada guitarra: banco de notas (b), banco de golpes apagados (m), y si es de 12 cuerdas o lleva chorus
 const GTS={acu:{n:'Acústica',b:'ka',nb:'ka4',m:'kam'},acm:{n:'Acústica (grabada nota por nota)',b:'mst',nb:'mst',m:'kam',hid:1},nam_lead:{n:'Marshall IA solista',b:'emj',nb:'emj',m:'kemc',hid:1},nam_neck:{n:'Marshall IA mástil',b:'emc',nb:'emc',m:'kemc',hid:1},nam_rhy:{n:'Marshall IA crunch',b:'emc',nb:'emc',m:'kemc',hid:1},nam_lo:{n:'Marshall IA suave',b:'eml',nb:'eml',m:'kemc',hid:1},tw:{n:'Fender Twin limpio',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},tws:{n:'Fender Twin con eco',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},twd:{n:'Fender Twin con delay',b:'e_tw',nb:'e_tw',m:'k_tw',hid:1},vl:{n:'Vox al borde',b:'e_vl',nb:'e_vl',m:'k_tw',hid:1},vc:{n:'Vox empujado',b:'e_vc',nb:'e_vc',m:'kemc',hid:1},j9a:{n:'Marshall JCM900 crunch',b:'e_9a',nb:'e_9a',m:'kemc',hid:1},j9b:{n:'Marshall JCM900 distorsión',b:'e_9b',nb:'e_9b',m:'kemc',hid:1},mg:{n:'Combo chico al máximo',b:'e_mg',nb:'e_mg',m:'kemc',hid:1},nylm:{n:'Nylon (criolla)',b:'nym',nb:'nym',m:'kam',hid:1},doce:{n:'Acústica 12 cuerdas',b:'ka',nb:'ka4',m:'kam',twelve:1},nyl:{n:'Nylon / clásica',b:'ny',nb:'ny2',m:'kam'},
   strat:{n:'Eléctrica limpia (Fender)',b:'fc2',m:'kem'},cho:{n:'Eléctrica con chorus',b:'fc2',m:'kem',cho:1},neck:{n:'Eléctrica suave',b:'fj2',m:'kem'},
-  arch:{n:'Eléctrica archtop',b:'ke',m:'kem'},gretsch:{n:'Gretsch hueca',b:'gg',m:'ggm'},crunch:{n:'Crunch',b:'fd',nb:'em',m:'kem'},dist:{n:'Distorsión',b:'fd2',nb:'em',m:'kem'},
+  arch:{n:'Eléctrica archtop',b:'ke',m:'kem'},gretsch:{n:'Gretsch hueca',b:'gg',m:'ggm'},knopf:{n:'Strat directa a Fender (gabinete real)',b:'em',m:'kem',hid:1},crunch:{n:'Crunch',b:'fd',nb:'em',m:'kem'},dist:{n:'Distorsión',b:'fd2',nb:'em',m:'kem'},
   doce_e:{n:'Eléctrica 12 cuerdas',b:'fc2',m:'kem',twelve:1},
   charango:{n:'Charango',b:'ch',m:'chm',course:1},
   fog:{n:'Fogata (nylon)',b:'nyx',nb:'nyx',m:'kam'},
@@ -777,12 +777,12 @@ const gpSnd=()=>GPSND[S.gpSnd]||GPSND.b;
 /* La guitarra de cada canción, según lo que se sabe de la grabación original (investigación: entrevistas, Guitar World, Ground Guitar,
    Equipboard, créditos de los discos). Cada regla mira el nombre de la pista en la partitura. Donde no hay datos, la mejor estimación. */
 const SONG_GEAR={
-  'sultans-swing':{def:'tw',bandG:1,natural:1},   // Fender Twin real (modelo IA), sin vibrato automático ni deslizamientos largos: lo de la Strat de muestras sonaba «de mentira» y con «gua gua»   // como en la versión 128 (a pedido): Strat limpia, mezcla automática normal
+  'sultans-swing':{def:'knopf',bandG:1,natural:1},   // Fender Twin real (modelo IA), sin vibrato automático ni deslizamientos largos: lo de la Strat de muestras sonaba «de mentira» y con «gua gua»   // como en la versión 128 (a pedido): Strat limpia, mezcla automática normal
  'solo-sweet-child':{def:'crunch',leadSnd:'dist_slash',mix:{solo:2.2},band:.3},   // Slash: Les Paul (Derrig) a Marshall; primera parte en la pastilla del mástil, después wah Cry Baby
   'solo-numb-1':{def:'dist',leadSnd:'dist_lead',rules:[[/ac[oó]?[uú]st/i,'doce']],mix:{solo:2.2},band:.25},   // Gilmour: Black Strat, Big Muff, Hiwatt, parlante rotatorio y eco
   'solo-numb-2':{def:'dist',leadSnd:'dist_lead',rules:[[/ac[oó]?[uú]st/i,'doce']],mix:{solo:2.2},band:.3},
   'solo-bohemian':{def:'crunch',leadSnd:'dist_lead',mix:{solo:2.2},band:.45},   // Brian May: Red Special con moneda, Rangemaster a Vox AC30; un solo que canta
-  'solo-sultans-1':{def:'tw',leadSnd:'tw',bandG:1,natural:1,mix:{solo:1.15}},'solo-sultans-2':{def:'tw',leadSnd:'tw',bandG:1,natural:1,mix:{solo:1.15}},   // Knopfler: Strat con los dedos, limpia
+  'solo-sultans-1':{def:'knopf',leadSnd:'knopf',bandG:1,natural:1,mix:{solo:1.15}},'solo-sultans-2':{def:'knopf',leadSnd:'knopf',bandG:1,natural:1,mix:{solo:1.15}},   // Knopfler: Strat con los dedos, limpia
   'solo-nov-1':{def:'neck',leadSnd:'dist_slash',rules:[[/fills/i,'crunch']],zones:[{tr:3,from:1,to:300,vm:.6}],mix:{solo:2.2},band:.3},'solo-nov-2':{def:'crunch',leadSnd:'dist_slash',zones:[{tr:3,from:1,to:300,vm:.7}],mix:{solo:2.2},band:.3},   // Slash: Les Paul a Marshall, eco y sala
   'solo-still-1':{def:'cho',leadSnd:'dist_lead',mix:{solo:2.2},band:.3},'solo-still-2':{def:'cho',leadSnd:'dist_lead',mix:{solo:2.2},band:.2},   // Jabs: humbucker cantante, mucha sala de los 80; Schenker en arpegios limpios
   'solo-one':{bpm:200,def:'dist',leadSnd:'dist_lead',rules:[[/ac[oó]?[uú]st/i,'acu']],mix:{solo:2.2},band:.3},   // Kirk Hammett: ESP con EMG a Mesa/Boogie, sonido sin medios; armonía a dos guitarras
@@ -1352,7 +1352,7 @@ const RIGS={   // drive 0-10, hp/lp: filtros del parlante, mid: [frecuencia, dB]
   doce:{drive:0,hp:80,lp:13000,mid:[220,-1.5],pres:[3200,-1.5],hi:0,rev:.13,dbl:1,gain:1.7},nyl:{drive:0,hp:70,lp:11000,mid:[250,-1.5],hi:1,rev:.16,dbl:1,gain:1.7},fla:{drive:0,hp:95,lp:15000,lo:[180,-3],mid:[320,-2],pres:[2800,2],hi:1.5,rev:.11,dbl:1,gain:1.9},
   // Fender: ecualización ajustada midiendo el espectro de la guitarra de Sultans of Swing original contra la de la app
   strat:{drive:1.5,hp:60,lp:16000,mid:[1000,0],hi:0,rev:.12,geq:[[125,-10],[200,-5],[400,-4],[1600,-6],[2500,-6],[6300,-2],[11000,6]],gain:2},cho:{drive:1,hp:60,lp:16000,mid:[1000,0],hi:0,rev:.14,cho:.35,geq:[[125,-10],[200,-5],[400,-4],[1600,-6],[2500,-6],[6300,-2],[11000,6]],gain:2},neck:{drive:1,hp:60,lp:9000,mid:[1000,0],hi:-1,rev:.15,geq:[[125,-8],[200,-4],[1600,-4],[2500,-4]],gain:1.7},
-  arch:{drive:1,hp:85,lp:5500,mid:[800,1.5],hi:-1,rev:.15},gretsch:{drive:2.5,hp:95,lp:6000,mid:[1500,2],hi:0,rev:.12,slap:[.1,.14]},
+  arch:{drive:1,hp:85,lp:5500,mid:[800,1.5],hi:-1,rev:.15},gretsch:{drive:2.5,hp:95,lp:6000,mid:[1500,2],hi:0,rev:.12,slap:[.1,.14]},knopf:{drive:.35,hp:110,lo:[160,-2],lp:9500,mid:[700,-4],pres:[2700,4],hi:1.5,rev:.16,slap:[.09,.08],gain:11}/* Knopfler: Strat posición 4 (puente+medio), con los dedos, Fender limpio */,
   crunch:{drive:3,hp:100,lp:5600,mid:[800,2.5],hi:0,rev:.1},dist_slash:{drive:6,hp:90,lp:5000,mid:[800,3],hi:-1,rev:.3},dist_lead:{drive:6,hp:100,lp:5500,mid:[900,2],hi:0,rev:.3},dist_slashneck:{drive:4.5,hp:80,lp:4300,mid:[700,2],hi:-1,rev:.2},crunch_lo:{drive:2.5,hp:100,lp:5000,mid:[800,1.5],hi:0,rev:.12},dist:{drive:1.5,hp:100,lp:5200,mid:[750,2],hi:-1,rev:.12},doce_e:{drive:.5,hp:120,lp:9000,mid:[2500,2],hi:1,rev:.12}};
 // por canción: 'all' vale para todas sus guitarras; delay en tiempos de la canción [tiempos, repeticiones, cuánto] o en segundos (delayS)
 // por canción: 'all' vale para todas sus guitarras, o por sonido; delay en tiempos [tiempos, repeticiones, cuánto] o en segundos (delayS); slap: eco corto rockabilly
@@ -1452,7 +1452,7 @@ function cabIR(k){if(!A.irs||!A.irs[k])return null;const cv=ctx.createConvolver(
    Lo que no se toca queda exactamente como lo deja la mezcla automática: sin nada guardado, la app suena igual que siempre.
    PLUGINS: cada procesador es una entrada de CS_PLUG (nombre, controles y cómo se arma con Web Audio). Para sumar uno nuevo basta agregar su entrada. */
 const RK_CONSOLE=false;   // true solo en la página aparte de la consola (consola.html); la app de los músicos no la muestra
-const BAKED_MIX={};   // mezclas fijas que vienen dentro de la app (las del ingeniero, una vez aprobadas)
+const BAKED_MIX={'sultans-swing':{orig:{tr:{0:{dyn2:{type:'comp260',on:true,P:{thr:-26,ratio:3,att:8,rel:120,knee:6,mk:1,mix:100}}},1:{dyn2:{type:'comp260',on:true,P:{thr:-26,ratio:3,att:8,rel:120,knee:6,mk:1,mix:100}}}},bus:{},master:{}}},'solo-sultans-1':{orig:{tr:{0:{dyn2:{type:'comp260',on:true,P:{thr:-26,ratio:3,att:8,rel:120,knee:6,mk:1,mix:100}}},1:{dyn2:{type:'comp260',on:true,P:{thr:-26,ratio:3,att:8,rel:120,knee:6,mk:1,mix:100}}}},bus:{},master:{}}},'solo-sultans-2':{orig:{tr:{0:{dyn2:{type:'comp260',on:true,P:{thr:-26,ratio:3,att:8,rel:120,knee:6,mk:1,mix:100}}},1:{dyn2:{type:'comp260',on:true,P:{thr:-26,ratio:3,att:8,rel:120,knee:6,mk:1,mix:100}}}},bus:{},master:{}}}};   // compresión suave de estudio en las guitarras de Sultans (como en el disco)   // mezclas fijas que vienen dentro de la app (las del ingeniero, una vez aprobadas)
 const CS={mix:JSON.parse(JSON.stringify(BAKED_MIX)),db:null,canWrite:null,open:false,sel:null,unsub:null,saveT:null,status:'',songSub:null,drag:false,cue:null,bypass:false};
 if(RK_CONSOLE)try{const L=store.get('csmix',null);if(L)Object.entries(L).forEach(([k,v])=>{CS.mix[k]=v})}catch(_){}   // en la app manda lo guardado en la base, no restos locales
 const csMode=()=>fogOn()?'fog':'orig';
@@ -1650,7 +1650,7 @@ function rigBuild(k,tr){const c=ctx,G=v=>{const g=c.createGain();g.gain.value=v=
   {const ct=tr!=null?csT(tr):null;if(ct){if(ct.cho)P.cho=ct.cho.on?ct.cho.mix:0;if(ct.dly){P.delay=null;P.slap=null;P.delayS=ct.dly.on?[ct.dly.t,ct.dly.fb,ct.dly.mix]:null}if(ct.rev)P.rev=ct.rev.on?ct.rev.mix:0;if(ct.dbl)P.dbl=ct.dbl.on?1:0}}   // efectos que el ingeniero ajustó en la consola
   const r={in:G(),out:G(),P};let last=r.in;
   // sonido nuevo, crunch y distorsión: guitarra directa → preamplificador de válvula (las notas de un acorde se ensucian juntas, como en un amplificador de verdad) → parlante 4x12 real
-  const realAmp=newSnd()&&(/^crunch/.test(k)||/^dist/.test(k)),cabK=newSnd()?(realAmp?'m412':k==='gretsch'||k==='arch'?'dlx':null):null,cab=cabK?cabIR(cabK):null;
+  const realAmp=newSnd()&&(/^crunch/.test(k)||/^dist/.test(k)),cabK=newSnd()?(realAmp?'m412':k==='gretsch'||k==='arch'||k==='knopf'?'dlx':null):null,cab=cabK?cabIR(cabK):null;
   if(realAmp){const hp0=F('highpass',95,.7),ts=F('peaking',/^dist/.test(k)?720:800,.8,/^dist/.test(k)?6:3.5),gn=G(/^dist/.test(k)?16+(P.drive||1.5)*3:3.5+(P.drive||3)*1.4),sh=c.createWaveShaper(),n=4096,cv=new Float32Array(n);
     for(let i=0;i<n;i++){const x=i/(n-1)*2-1,y=x+.12*x*x;cv[i]=Math.tanh(1.6*y)/Math.tanh(1.6)}sh.curve=cv;sh.oversample='4x';
     const lp0=F('lowpass',7500,.7),bass=F('lowshelf',110,null,2),mid0=F('peaking',650,.7,/^dist/.test(k)?-2.5:1.5),tre=F('highshelf',2800,null,1.5),post=G(/^dist/.test(k)?.32:.55);
@@ -2113,7 +2113,7 @@ const STYLES={
    Knopfler: Strat limpia a un Fender, con los dedos · Slash: Les Paul a Marshall con eco · Gilmour: Strat, Big Muff a Hiwatt, mucho eco ·
    Brian May: Red Special con treble booster a Vox AC30 · Jabs/Schenker: Marshall cantante con mucha sala · Hammett: Mesa/Boogie con medios recortados */
 Object.assign(SONG_GEAR,{
-  'solo-sultans-1':{def:'tw',leadSnd:'tw',bandG:1,natural:1,mix:{solo:1.15}},'solo-sultans-2':{def:'tw',leadSnd:'tw',bandG:1,natural:1,mix:{solo:1.15}},   // el mismo sonido de Sultans completa (el que tenía potencia)
+  'solo-sultans-1':{def:'knopf',leadSnd:'knopf',bandG:1,natural:1,mix:{solo:1.15}},'solo-sultans-2':{def:'knopf',leadSnd:'knopf',bandG:1,natural:1,mix:{solo:1.15}},   // el mismo sonido de Sultans completa (el que tenía potencia)
   'solo-nov-1':{def:'nam_lo',leadSnd:'nam_lead',rules:[[/fills/i,'nam_rhy']],zones:[{tr:3,from:1,to:300,vm:.6}],mix:{solo:2.2},band:.3},
   'solo-nov-2':{def:'nam_rhy',leadSnd:'nam_lead',zones:[{tr:3,from:1,to:300,vm:.7}],mix:{solo:2.2},band:.3},
   // Gilmour: Strat con Big Muff a Hiwatt: el solo SOSTIENE (no se apaga después del golpe); acústica 'high-strung' grabada de verdad; rítmica con fuzz
@@ -4428,7 +4428,7 @@ CS.dirty=new Set((()=>{try{return store.get('csdirty',[])||[]}catch(_){return[]}
 const CS_SYNC='trig_01PEKETXdwu2grXsjNZvANgd';   // tarea que copia lo subido desde la consola a la app
 const CSUI={el:null,raf:0,taps:[],view:'ov',layer:'in',focus:null,mtr:[],rta:[],grs:[],lv:{},rackTab:'prem',bayPage:0};
 const CS_COLORS=['#3D7BFF','#FF8A1F','#F5D02A','#A66BFF','#22D3EE','#FF4FA0','#FF3B30','#34D058'];
-const CS_AMPS=[['acu','Acústica'],['acm','Acústica grabada nota a nota'],['doce','Acústica 12 cuerdas'],['nyl','Nylon'],['strat','Fender limpia'],['cho','Fender con chorus'],['neck','Eléctrica suave'],['tw','Fender Twin (IA)'],['tws','Fender Twin + eco corto (IA)'],['vl','Vox al borde (IA)'],['vc','Vox empujado (IA)'],['nam_lo','Marshall suave (IA)'],['nam_rhy','Marshall crunch (IA)'],['nam_neck','Marshall mástil (IA)'],['nam_lead','Marshall solista (IA)'],['j9b','Marshall JCM900 dist. (IA)'],['gretsch','Gretsch hueca'],['arch','Archtop'],['crunch','Crunch (simulado)'],['dist','Distorsión (simulado)'],['charango','Charango'],['fla','Flamenca']];
+const CS_AMPS=[['acu','Acústica'],['acm','Acústica grabada nota a nota'],['doce','Acústica 12 cuerdas'],['nyl','Nylon'],['strat','Fender limpia'],['cho','Fender con chorus'],['neck','Eléctrica suave'],['knopf','Strat directa a Fender (gabinete real)'],['tw','Fender Twin (IA)'],['tws','Fender Twin + eco corto (IA)'],['vl','Vox al borde (IA)'],['vc','Vox empujado (IA)'],['nam_lo','Marshall suave (IA)'],['nam_rhy','Marshall crunch (IA)'],['nam_neck','Marshall mástil (IA)'],['nam_lead','Marshall solista (IA)'],['j9b','Marshall JCM900 dist. (IA)'],['gretsch','Gretsch hueca'],['arch','Archtop'],['crunch','Crunch (simulado)'],['dist','Distorsión (simulado)'],['charango','Charango'],['fla','Flamenca']];
 const csEsc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const csFmtDb=v=>(v<=-59.5?'−∞':(v>0?'+':'')+(+v).toFixed(1))+' dB',csFmtHz=v=>v>=1000?(v/1000).toFixed(v>=10000?0:1)+'k':Math.round(v)+'';
 const csFadPos=db=>{db=clamp(db,-60,10);return db>=0?(10-db)/10*.2:db>=-10?.2+(-db)/10*.2:db>=-30?.4+(-db-10)/20*.3:.7+(-db-30)/30*.3};
