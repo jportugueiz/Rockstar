@@ -569,6 +569,7 @@ if(!S.easyV){S.auto=true;S.easyV=1}
 if(S.easyV<2){S.auto=false;S.easyV=2}
 if(S.easyV<3){S.gpSndBy={};S.easyV=3}   // el sonido elegido es de cada canción (antes era uno para todas y Bamboleo heredaba la eléctrica)
 S.gpSnd=(S.gpSndBy||{})[S.songId]||'orig';
+if(!store.get('sultReset1',false)){['sultans-swing','solo-sultans-1','solo-sultans-2'].forEach(id=>{if(S.gpSndBy)delete S.gpSndBy[id];try{localStorage.removeItem('rk.mix|'+id);localStorage.removeItem('rk.lvl|'+id)}catch(_){}});S.gpSnd=(S.gpSndBy||{})[S.songId]||'orig';store.set('sultReset1',true);try{store.set('state',S)}catch(_){}}   // Sultans parte limpia: sin guitarra elegida a mano ni volúmenes aprendidos de versiones anteriores
 if(S.handV!==2){S.hand='right';S.handV=2}
 if(S.notesV!==1){delete S.origMode;S.notesV=1}
 let fx=presetToFx(PRESETS.find(p=>p.id===S.preset)||PRESETS[0]);
