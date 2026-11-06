@@ -586,6 +586,7 @@ const free=Object.assign({root:9,q:'m',prog:['Am','F','C','G'],sel:0},store.get(
 const band=Object.assign({mode:'follow',style:'pop',bpm:90,count:true,parts:{drums:[true,.8],bass:[true,.75],keys:[false,.55],gtr:[false,.7]}},store.get('band',{}));
 band.on=false;
 if(!store.get('keysOff2',false)){band.parts.keys[0]=false;store.set('keysOff2',true);try{saveBand()}catch(_){}}
+if(!store.get('origAll1',false)){S.fogata=false;S.fogBy={};store.set('origAll1',true);try{persist()}catch(_){}}   // todas las canciones vuelven a Original (con banda); Fogata se elige de nuevo en el cancionero
 if(!store.get('bandOn1',false)){const P=band.parts;P.drums=[true,P.drums&&P.drums[1]>.2?P.drums[1]:.8];P.bass=[true,P.bass&&P.bass[1]>.2?P.bass[1]:.75];band.mode=band.mode||'follow';store.set('bandOn1',true);try{saveBand()}catch(_){}}   // batería y bajo encendidos de nuevo en cada teléfono (si alguien los había apagado, la banda no sonaba)   // los teclados vuelven a estar apagados por defecto (como en la v132): se encienden con el botón Teclado
 let seq={type:'chords',items:[],sections:[]};
 let idx=0;
